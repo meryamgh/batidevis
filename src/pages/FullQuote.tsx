@@ -16,28 +16,26 @@ type AggregatedQuoteItem = {
 const FullQuote: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const quote: QuoteItem[] = location.state?.quote || []; // Retrieve `quote` from `location.state`
+    const quote: QuoteItem[] = location.state?.quote || []; 
 
-    // Aggregate items with the same `details` and `price`
     const aggregatedQuote: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
         const existingItem = acc.find(
             (i) => i.details === item.details && i.price === item.price
         );
 
         if (existingItem) {
-            existingItem.quantity += 1; // Increase quantity if item already exists
+            existingItem.quantity += 1; 
         } else {
-            acc.push({ details: item.details, price: item.price, quantity: 1 }); // Add new item
+            acc.push({ details: item.details, price: item.price, quantity: 1 }); 
         }
 
         return acc;
     }, [] as AggregatedQuoteItem[]);
 
-    // Calculate total price
     const total = aggregatedQuote.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const handleBack = () => {
-        navigate('/', { state: { quote } }); // Pass the `quote` back to the homepage
+        navigate('/', { state: { quote } }); 
     };
 
     return (
