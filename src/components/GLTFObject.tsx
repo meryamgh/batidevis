@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Mesh } from "three";
 
 type GLTFObjectProps = {
     id: string;
@@ -11,9 +12,10 @@ type GLTFObjectProps = {
     rotation?: [number, number, number];
     onUpdatePosition: (id: string, position: [number, number, number]) => void;
     isMovable: boolean;
+    gltf?: GLTF | Mesh;
     onClick: () => void;
     texture: string;
-    showDimensions: boolean; // Ajout de la prop pour afficher/masquer les dimensions
+    showDimensions: boolean; 
 };
 
 const GLTFObject: React.FC<GLTFObjectProps> = ({
@@ -21,7 +23,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     url,
     position,
     scale,
-    rotation = [0, 0, 0],
+    rotation,
     onUpdatePosition,
     isMovable,
     onClick,
@@ -30,9 +32,11 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
     const [scene, setScene] = useState<THREE.Group | THREE.Mesh | null>(null);
-    const arrowsRef = useRef<THREE.Group | null>(null); // Référence pour stocker les flèches de dimension
+    const arrowWidthRef = useRef<THREE.Group | null>(null);
+    const arrowHeightRef = useRef<THREE.Group | null>(null);
+    const arrowDepthRef = useRef<THREE.Group | null>(null);
 
-    // Fonction pour créer un label texte sous forme de sprite
+    
     const createTextSprite = (text: string) => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -46,138 +50,147 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         const texture = new THREE.CanvasTexture(canvas);
         const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
         const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(2, 1, 1); // Ajuster la taille du sprite
+        sprite.scale.set(2, 1, 1);  
         return sprite;
     };
-
-    // CHANGEMENT: Utilisation de useEffect pour charger un objet 3D en fonction de l'URL
+    
     useEffect(() => {
         if (url !== '') {
-            // Charger un objet GLTF si l'URL est définie
             const loader = new GLTFLoader();
             loader.load(url, (gltf) => {
                 const clonedScene = gltf.scene.clone();
                 setScene(clonedScene);
             });
         } else {
-            // Si l'URL est vide, générer un mur avec BoxGeometry
-            const wallHeight = 3;  // Hauteur prédéfinie
-            const wallLength = 5;  // Longueur prédéfinie
-            const wallThickness = 0.2;  // Épaisseur prédéfinie
-
-            // Création de la géométrie et du matériau du mur
-            const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallThickness);
+            const wallGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
             const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
-
-            // Création du mesh du mur
             const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-            wallMesh.position.set(...position); // Position initiale
-
-            setScene(wallMesh);  // Définir la scène avec le mur généré
+            console.log("les positions", position);
+            wallMesh.position.set(...position);
+            if(rotation){
+                wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+            }
+            
+            setScene(wallMesh);
         }
     }, [url, position]);
 
     useEffect(() => {
-        if (meshRef.current && scale && scale.length === 3) {
-            meshRef.current.scale.set(scale[0], scale[1], scale[2]);
-            updateDimensionHelpers();
+        if (meshRef.current && scale) { 
+            if ((meshRef.current as THREE.Mesh).geometry) {
+                const mesh = meshRef.current as THREE.Mesh;
+                const newGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
+                mesh.geometry.dispose();
+                mesh.geometry = newGeometry;
+    
+                updateDimensionHelpers();
+            }else{
+                meshRef.current.scale.set(scale[0], scale[1], scale[2]);
+                meshRef.current.updateMatrixWorld(true);
+                updateDimensionHelpers();}
         }
     }, [scale, showDimensions]);
-
-    // Fonction pour mettre à jour les helpers de dimension
+    
+    
+    
+ 
     const updateDimensionHelpers = () => {
-        if (scene) {
-            // Supprimer les anciens helpers de dimension s'ils existent
-            if (arrowsRef.current) {
-                scene.remove(arrowsRef.current);
-                arrowsRef.current = null;
+        if (scene && meshRef.current) { 
+            if (arrowWidthRef.current) {
+                scene.remove(arrowWidthRef.current);
+                arrowWidthRef.current = null;
+            }
+            if (arrowHeightRef.current) {
+                scene.remove(arrowHeightRef.current);
+                arrowHeightRef.current = null;
+            }
+            if (arrowDepthRef.current) {
+                scene.remove(arrowDepthRef.current);
+                arrowDepthRef.current = null;
             }
 
-            // Ajouter de nouveaux helpers de dimension uniquement si `showDimensions` est activé
             if (showDimensions) {
-                console.log("showing dimensions")
-                const box = new THREE.Box3().setFromObject(scene);
+                const box = new THREE.Box3().setFromObject(meshRef.current);
                 const size = new THREE.Vector3();
                 box.getSize(size);
-
-                const arrows = new THREE.Group();
-                arrows.name = 'dimensionHelpers';
-
-                // Flèche pour la largeur (X)
+                console.log(size);
+                const arrowWidthGroup = new THREE.Group();
                 const arrowHelperWidth = new THREE.ArrowHelper(
-                    new THREE.Vector3(1, 0, 0),
+                    new THREE.Vector3(1, 0, 0), 
                     new THREE.Vector3(box.min.x, box.min.y, box.min.z),
                     size.x,
-                    0xff0000 // Rouge pour la largeur
+                    0xff0000
                 );
-                arrows.add(arrowHelperWidth);
+                arrowWidthGroup.add(arrowHelperWidth);
 
-                // Ajouter un label pour la largeur
                 const widthLabel = createTextSprite(`${size.x.toFixed(2)} m`);
                 widthLabel.position.set(
                     box.min.x + size.x / 2,
                     box.min.y,
                     box.min.z
                 );
-                arrows.add(widthLabel);
+                arrowWidthGroup.add(widthLabel);
+
+                scene.add(arrowWidthGroup);
+                arrowWidthRef.current = arrowWidthGroup;
 
                 // Flèche pour la hauteur (Y)
+                const arrowHeightGroup = new THREE.Group();
                 const arrowHelperHeight = new THREE.ArrowHelper(
-                    new THREE.Vector3(0, 1, 0),
-                    new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+                    new THREE.Vector3(0, 1, 0), 
+                    new THREE.Vector3(box.min.x, box.min.y, box.min.z), 
                     size.y,
-                    0x00ff00 // Vert pour la hauteur
+                    0x00ff00
                 );
-                arrows.add(arrowHelperHeight);
+                arrowHeightGroup.add(arrowHelperHeight);
 
-                // Ajouter un label pour la hauteur
                 const heightLabel = createTextSprite(`${size.y.toFixed(2)} m`);
                 heightLabel.position.set(
                     box.min.x,
                     box.min.y + size.y / 2,
                     box.min.z
                 );
-                arrows.add(heightLabel);
+                arrowHeightGroup.add(heightLabel);
 
-                // Flèche pour la profondeur (Z)
+                scene.add(arrowHeightGroup);
+                arrowHeightRef.current = arrowHeightGroup;
+ 
+                const arrowDepthGroup = new THREE.Group();
                 const arrowHelperDepth = new THREE.ArrowHelper(
-                    new THREE.Vector3(0, 0, 1),
-                    new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+                    new THREE.Vector3(0, 0, 1),  
+                    new THREE.Vector3(box.min.x, box.min.y, box.min.z),  
                     size.z,
-                    0x0000ff // Bleu pour la profondeur
+                    0x0000ff 
                 );
-                arrows.add(arrowHelperDepth);
+                arrowDepthGroup.add(arrowHelperDepth);
 
-                // Ajouter un label pour la profondeur
                 const depthLabel = createTextSprite(`${size.z.toFixed(2)} m`);
                 depthLabel.position.set(
                     box.min.x,
                     box.min.y,
                     box.min.z + size.z / 2
                 );
-                arrows.add(depthLabel);
+                arrowDepthGroup.add(depthLabel);
 
-                arrowsRef.current = arrows; // Stocker la référence des flèches et labels
-                scene.add(arrows); // Ajouter les flèches et labels à la scène
+                scene.add(arrowDepthGroup);
+                arrowDepthRef.current = arrowDepthGroup;
             }
         }
     };
 
     useEffect(() => {
-        if (meshRef.current && rotation && rotation.length === 3) {
+        if (meshRef.current && rotation) {
+            console.log("la rotation est : ",rotation)
             meshRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
     }, [rotation]);
 
-    // Appliquer une texture si spécifiée
     useEffect(() => {
         if (scene && texture) {
+            const loadedTexture = new THREE.TextureLoader().load(texture);
+            loadedTexture.anisotropy = 16;
             scene.traverse((child: any) => {
                 if (child.isMesh) {
-                    const loadedTexture = new THREE.TextureLoader().load(texture);
-                    loadedTexture.anisotropy = 16;
-                    loadedTexture.magFilter = THREE.LinearFilter;
-                    loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
                     child.material.map = loadedTexture;
                     child.material.needsUpdate = true;
                 }

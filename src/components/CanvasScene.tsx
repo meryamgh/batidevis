@@ -15,28 +15,25 @@ type CanvasSceneProps = {
     setCamera: (camera: THREE.Camera) => void;
     showDimensions: { [key: string]: boolean };
     is2DView: boolean;
-    walls2D: THREE.Line[];  // Ajout des murs 2D à la liste des propriétés
+    walls2D: THREE.Line[];  
     groundPlane: THREE.Mesh | null;
 };
 
-// Composant pour gérer la caméra (2D et 3D)
 const CameraProvider: React.FC<{ setCamera: (camera: THREE.Camera) => void; is2DView: boolean }> = ({ setCamera, is2DView }) => {
     const { camera } = useThree();
 
     useEffect(() => {
         if (is2DView) {
-            // CHANGEMENT: Définir la vue de la caméra pour la vue 2D
-            camera.position.set(0, 100, 0); // Vue de dessus pour une vue 2D
-            camera.lookAt(0, 0, 0); // Pointe vers le centre de la scène
-            (camera as THREE.PerspectiveCamera).fov = 10; // Ajuster cela pour zoomer/dézoomer
+            camera.position.set(0, 100, 0); 
+            camera.lookAt(0, 0, 0); 
+            (camera as THREE.PerspectiveCamera).fov = 10; 
             camera.updateProjectionMatrix();
         } else {
-            // CHANGEMENT: Revenir à la vue 3D standard
-            camera.position.set(10, 20, 30); // Position standard pour la vue 3D
-            camera.lookAt(0, 0, 0); // Pointe vers le centre de la scène
+            camera.position.set(10, 20, 30); 
+            camera.lookAt(0, 0, 0);
             camera.updateProjectionMatrix();
         }
-        setCamera(camera); // Mettre à jour la caméra globale
+        setCamera(camera);
     }, [camera, is2DView, setCamera]);
 
     return null;
@@ -59,34 +56,23 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
 }) => {
     return (
         <Canvas onClick={() => setIsMoving(null)}>
-            {/* CHANGEMENT: Utilisation de CameraProvider pour gérer la vue 2D ou 3D */}
             <CameraProvider setCamera={setCamera} is2DView={is2DView} />
-
-            {/* Lumières de la scène */}
             <ambientLight intensity={2.0} />
             <directionalLight position={[10, 20, 15]} intensity={3.0} />
             <directionalLight position={[-10, -20, -15]} intensity={3.0} />
             <pointLight position={[0, 10, 10]} intensity={2.5} />
             <pointLight position={[10, -10, 10]} intensity={2.5} />
             <hemisphereLight groundColor={'#b9b9b9'} intensity={2.0} />
-
-            {/* CHANGEMENT: OrbitControls désactivés en mode 2D */}
             <OrbitControls ref={orbitControlsRef} enabled={!is2DView} />
-
-            {/* Plan du sol pour la détection des clics */}
             {groundPlane && (
                 <primitive object={groundPlane} />
             )}
-
-            {/* Plan du sol (uniquement en 3D pour éviter l'encombrement en 2D) */}
             {!is2DView && (
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
                     <planeGeometry args={[50, 50]} />
                     <meshStandardMaterial color="lightgray" />
                 </mesh>
             )}
-
-            {/* Rendu des objets 3D (GLTF) */}
             {objects.map((obj) => (
                 <GLTFObject
                     key={obj.id}
@@ -94,6 +80,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     url={obj.url}
                     scale={obj.scale}
                     position={obj.position}
+                    gltf = {obj.gltf}
                     texture={obj.texture}
                     rotation={obj.rotation}
                     onUpdatePosition={onUpdatePosition}
@@ -103,7 +90,6 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                 />
             ))}
 
-            {/* CHANGEMENT: Rendu des murs 2D (uniquement en vue 2D) */}
             {is2DView && walls2D.map((line, index) => (
                 <primitive key={index} object={line} />
             ))}
