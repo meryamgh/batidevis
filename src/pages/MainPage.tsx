@@ -47,8 +47,8 @@ const MainPage: React.FC = () => {
         const wallHeight = 1;   
         const wallWidth = 0.2;  
         const wallLength = start.distanceTo(end);  
-        start.y = 0;
-        end.y = 0;
+        const pricePerUnitLength = 10; 
+        const wallPrice = wallLength * pricePerUnitLength;
         const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallWidth);
         const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
     
@@ -62,7 +62,7 @@ const MainPage: React.FC = () => {
         const newWallObject: ObjectData = {
             id: uuidv4(),
             url: '',
-            price: 50,
+            price: wallPrice,
             details: 'Mur',
             position: [midPoint.x, 0, midPoint.z], 
             gltf: wallMesh,
@@ -388,8 +388,6 @@ const MainPage: React.FC = () => {
 
     return (
         <div id="container">
-            {/* <DevisMainPagePanel onAddObject={handleAddObject} /> */}
-
             <div ref={leftPanelRef} className="left-panel">
                 <button onClick={() => setCreatingWallMode(!creatingWallMode)} disabled={!is2DView}>
                     {creatingWallMode ? 'Terminer l\'ajout de mur' : 'Ajouter un mur (Mode 2D)'}
