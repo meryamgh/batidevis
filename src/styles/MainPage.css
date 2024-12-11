@@ -13,7 +13,7 @@
 
 /* Dragger style for resizing panels */
 #dragger {
-    width: 10px;
+    width: 20px;
     cursor: col-resize;
     background: #ddd;
 }
@@ -139,7 +139,7 @@
 
 /* Dragger Styles */
 .dragger {
-    width: 10px;
+    width: 20px;
     cursor: col-resize;
     background: #ddd;
 }
@@ -173,9 +173,21 @@
 
  
 .dragger {
-    width: 5px;
+    background-color: #888; /* Couleur pour le rendre plus visible */
+    width: 10px; /* Augmenter la largeur */
     cursor: col-resize;
-    background-color: #ccc;
+    z-index: 10; /* S'assurer qu'il reste au-dessus des autres éléments */
+    position: relative;
+}
+
+.dragger-hitbox {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -5px; /* Étendre la zone de clic à gauche */
+    right: -5px; /* Étendre la zone de clic à droite */
+    cursor: col-resize;
+    z-index: 9;
 }
 
 .full-quote-button {

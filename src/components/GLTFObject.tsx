@@ -15,6 +15,9 @@ type GLTFObjectProps = {
     gltf?: GLTF | Mesh;
     onClick: () => void;
     texture: string;
+    price: number;
+    updateQuotePrice: (id:string, price: number) => void;
+    details: string;
     showDimensions: boolean; 
 };
 
@@ -28,6 +31,9 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     isMovable,
     onClick,
     texture,
+    price,
+    updateQuotePrice,
+    details,
     showDimensions,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
@@ -35,6 +41,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     const arrowWidthRef = useRef<THREE.Group | null>(null);
     const arrowHeightRef = useRef<THREE.Group | null>(null);
     const arrowDepthRef = useRef<THREE.Group | null>(null);
+    //const [price, setPrice] = useState<number>(0); // État pour le prix
+
 
     
     const createTextSprite = (text: string) => {
@@ -73,23 +81,34 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             
             setScene(wallMesh);
         }
-    }, [url, position]);
+    }, [url]);
 
+    const calculatePrice = (scale: [number, number, number]) => {
+        // Exemple : Calcul du prix en fonction du volume
+        const volume = scale[0] * scale[1] * scale[2];
+        const basePricePerUnit = price; // Exemple de base
+        return volume * basePricePerUnit;
+    };
     useEffect(() => {
         if (meshRef.current && scale) { 
-            if ((meshRef.current as THREE.Mesh).geometry) {
-                const mesh = meshRef.current as THREE.Mesh;
+            const mesh = meshRef.current as THREE.Mesh;
+    
+            if (mesh.geometry) {
                 const newGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
                 mesh.geometry.dispose();
                 mesh.geometry = newGeometry;
-    
                 updateDimensionHelpers();
-            }else{
-                meshRef.current.scale.set(scale[0], scale[1], scale[2]);
-                meshRef.current.updateMatrixWorld(true);
-                updateDimensionHelpers();}
+            } else {
+                mesh.scale.set(scale[0], scale[1], scale[2]);
+                mesh.updateMatrixWorld(true);
+                updateDimensionHelpers();
+            }
+            price = calculatePrice(scale);
+            updateQuotePrice(id, price);
+            console.log(`Le prix mis à jour est de ${price  } €`);
         }
-    }, [scale, showDimensions]);
+    }, [scale, showDimensions]); 
+    
     
     
     

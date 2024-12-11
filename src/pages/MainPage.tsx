@@ -18,7 +18,7 @@ const MainPage: React.FC = () => {
     //position 2D du curseur
     const mouse = useRef(new THREE.Vector2());
     const cameraRef = useRef<THREE.Camera | null>(null);
- 
+
     const orbitControlsRef = useRef<any>(null);
     const groundPlaneRef = useRef<THREE.Mesh | null>(null);
     const rightPanelRef = useRef<HTMLDivElement>(null);
@@ -44,52 +44,55 @@ const MainPage: React.FC = () => {
     };
 
     const handleAddWall2D = (start: THREE.Vector3, end: THREE.Vector3) => {
-        const wallHeight = 1;   
-        const wallWidth = 0.2;  
-        const wallLength = start.distanceTo(end);  
-        const pricePerUnitLength = 10; 
+        
+        const wallHeight = 6;
+        const wallWidth = 0.2;
+        const wallLength = start.distanceTo(end);
+        const pricePerUnitLength = 10;
         const wallPrice = wallLength * pricePerUnitLength;
         const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallWidth);
         const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
-    
+
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-     
+
         const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
         midPoint.y = 0;
-        const direction = new THREE.Vector3().subVectors(end, start).normalize();  
-        const angle = Math.atan2(direction.z, direction.x);  
-       
+        const direction = new THREE.Vector3().subVectors(end, start).normalize();
+        const angle = Math.atan2(direction.z, direction.x);
+
         const newWallObject: ObjectData = {
             id: uuidv4(),
             url: '',
             price: wallPrice,
             details: 'Mur',
-            position: [midPoint.x, 0, midPoint.z], 
+            position: [midPoint.x, 0, midPoint.z],
             gltf: wallMesh,
-            rotation: [0,-angle, 0],
+            rotation: [0, -angle, 0],
             texture: 'textures/Cube_BaseColor.png',
-            scale: [wallLength, wallHeight, wallWidth],  
+            scale: [wallLength, wallHeight, wallWidth],
         };
-    
+
         setObjects((prevObjects: ObjectData[]) => [...prevObjects, newWallObject]);
         setQuote((prevQuote: ObjectData[]) => [...prevQuote, newWallObject]);
-    
+
         if (lineHelper.current) {
             setWalls2D((prev) => prev.filter((w) => w !== lineHelper.current!));
             lineHelper.current = null;
         }
     };
-    
 
-    useEffect(() => { 
+
+    useEffect(() => {
         const geometry = new THREE.PlaneGeometry(100, 100);
-        const material = new THREE.MeshBasicMaterial({ visible: false });  
+        const material = new THREE.MeshBasicMaterial({ visible: false });
         const plane = new THREE.Mesh(geometry, material);
-        plane.rotation.x = -Math.PI / 2;  
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = 0; // S'assurer que le plan est à y=0
         groundPlaneRef.current = plane;
     }, []);
-
     
+
+
     useEffect(() => {
         const handleMouseMoveCallback = (e: MouseEvent) => {
             if (isMoving !== null && cameraRef.current) {
@@ -118,8 +121,8 @@ const MainPage: React.FC = () => {
             orbitControlsRef.current.enableRotate = !is2DView;
         }
     }, [is2DView]);
-    
-    
+
+
 
     useEffect(() => {
         const dragger = draggerRef.current;
@@ -130,14 +133,18 @@ const MainPage: React.FC = () => {
 
         let isDragging = false;
 
-        const startDragging = () => {
+        const startDragging = (e: MouseEvent) => {
             isDragging = true;
             document.body.style.cursor = 'col-resize';
+            dragger.style.pointerEvents = 'none'; // Assure que le dragger reste fonctionnel
         };
 
         const stopDragging = () => {
-            isDragging = false;
-            document.body.style.cursor = 'default';
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.cursor = 'default';
+                dragger.style.pointerEvents = 'auto'; // Réactiver les événements sur le dragger
+            }
         };
 
         const handleDragging = (e: MouseEvent) => {
@@ -146,13 +153,18 @@ const MainPage: React.FC = () => {
             const containerWidth = leftPanel.parentElement?.offsetWidth || 0;
             const dragPosition = e.clientX;
 
+            const minRightPanelWidth = 400;
+            const draggerWidth = 10; // Largeur du dragger (ou sa zone active)
+
+            // Calculer la nouvelle largeur pour le panneau gauche
             const newLeftWidth = Math.min(
-                Math.max(200, dragPosition - leftPanel.offsetLeft),
-                containerWidth - 200
+                Math.max(200, dragPosition - leftPanel.offsetLeft), // Limite gauche
+                containerWidth - minRightPanelWidth - draggerWidth // Limite droite
             );
 
+            // Appliquer les nouvelles largeurs
             leftPanel.style.flex = `0 0 ${newLeftWidth}px`;
-            rightPanel.style.flex = `0 0 ${containerWidth - newLeftWidth}px`;
+            rightPanel.style.flex = `1 1 ${containerWidth - newLeftWidth - draggerWidth}px`;
         };
 
         dragger.addEventListener('mousedown', startDragging);
@@ -165,88 +177,92 @@ const MainPage: React.FC = () => {
             document.removeEventListener('mousemove', handleDragging);
         };
     }, []);
-    useEffect(() => {
-        const handleMouseClick = (e: MouseEvent) => {
-            if (!is2DView || !creatingWallMode || !groundPlaneRef.current) return;
-    
-            const target = e.target as HTMLElement;
-            const rect = target?.getBoundingClientRect();
-    
-            if (rect && cameraRef.current && groundPlaneRef.current) { 
-                const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-                const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    
-                mouse.current.set(x, y);
-                raycaster.current.setFromCamera(mouse.current, cameraRef.current);
-     
-                const intersects = raycaster.current.intersectObject(groundPlaneRef.current);
-                if (intersects.length > 0) {
-                    const point = intersects[0].point.clone();   
-                    if (!wallStart) { 
-                        console.log("Wall Start Point Set:", point);
-                        setWallStart(point);
-                    } else { 
-                        console.log("Creating Wall - From:", wallStart, "To:", point);
-                        handleAddWall2D(wallStart, point);
-    
-                        setWallStart(null);  
-                        setCurrentWall(null);  
-                    }
-                }
-            }
-        };
-    
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!is2DView || !creatingWallMode || !wallStart) return;
-    
-            const target = e.target as HTMLElement;
-            const rect = target?.getBoundingClientRect();
-    
-            if (rect && cameraRef.current && groundPlaneRef.current) {
-                const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-                const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    
-                mouse.current.set(x, y);
-                raycaster.current.setFromCamera(mouse.current, cameraRef.current);
-    
-                const intersects = raycaster.current.intersectObject(groundPlaneRef.current);
-                if (intersects.length > 0) {
-                    const point = intersects[0].point.clone();
-                    point.y = 0;
-                    console.log("Mouse Move - Intersection Point:", point);
-    
-                    if (lineHelper.current) { 
-                        const points = [wallStart, point];
-                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                        lineHelper.current.geometry.dispose();
-                        lineHelper.current.geometry = geometry;
-    
-                        console.log("Updated Line Geometry:", points);
-                    } else { 
-                        const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-                        const points = [wallStart, point];
-                        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                        const line = new THREE.Line(geometry, material);
-    
-                        lineHelper.current = line;
-                        console.log("Created New Line Helper:", points);
-    
-                        setCurrentWall(line);
-                        setWalls2D((prev: THREE.Line[]) => [...prev, line]);
-                    }
-                }
-            }
-        };
-     
-        window.addEventListener('click', handleMouseClick);
-        window.addEventListener('mousemove', handleMouseMove);
-    
-        return () => { 
-            window.removeEventListener('click', handleMouseClick);
-            window.removeEventListener('mousemove', handleMouseMove);
-        };
-    }, [is2DView, creatingWallMode, wallStart, currentWall]);
-    
+
+
+
+
+    // useEffect(() => {
+    //     const handleMouseClick = (e: MouseEvent) => {
+    //         if (!is2DView || !creatingWallMode || !groundPlaneRef.current) return;
+
+    //         const target = e.target as HTMLElement;
+    //         const rect = target?.getBoundingClientRect();
+
+    //         if (rect && cameraRef.current && groundPlaneRef.current) {
+    //             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    //             const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    //             mouse.current.set(x, y);
+    //             raycaster.current.setFromCamera(mouse.current, cameraRef.current);
+
+    //             const intersects = raycaster.current.intersectObject(groundPlaneRef.current);
+    //             if (intersects.length > 0) {
+    //                 const point = intersects[0].point.clone();
+    //                 if (!wallStart) {
+    //                     console.log("Wall Start Point Set:", point);
+    //                     setWallStart(point);
+    //                 } else {
+    //                     console.log("Creating Wall - From:", wallStart, "To:", point);
+    //                     handleAddWall2D(wallStart, point);
+    //                     setCreatingWallMode(false);
+    //                     setWallStart(null);
+    //                     setCurrentWall(null);
+    //                 }
+    //             }
+    //         }
+    //     };
+
+    //     const handleMouseMove = (e: MouseEvent) => {
+    //         if (!is2DView || !creatingWallMode || !wallStart) return;
+
+    //         const target = e.target as HTMLElement;
+    //         const rect = target?.getBoundingClientRect();
+
+    //         if (rect && cameraRef.current && groundPlaneRef.current) {
+    //             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    //             const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    //             mouse.current.set(x, y);
+    //             raycaster.current.setFromCamera(mouse.current, cameraRef.current);
+
+    //             const intersects = raycaster.current.intersectObject(groundPlaneRef.current);
+    //             if (intersects.length > 0) {
+    //                 const point = intersects[0].point.clone();
+    //                 point.y = 0;
+    //                 console.log("Mouse Move - Intersection Point:", point);
+
+    //                 if (lineHelper.current) {
+    //                     const points = [wallStart, point];
+    //                     const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    //                     lineHelper.current.geometry.dispose();
+    //                     lineHelper.current.geometry = geometry;
+
+    //                     console.log("Updated Line Geometry:", points);
+    //                 } else {
+    //                     const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
+    //                     const points = [wallStart, point];
+    //                     const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    //                     const line = new THREE.Line(geometry, material);
+
+    //                     lineHelper.current = line;
+    //                     console.log("Created New Line Helper:", points);
+
+    //                     setCurrentWall(line);
+    //                     setWalls2D((prev: THREE.Line[]) => [...prev, line]);
+    //                 }
+    //             }
+    //         }
+    //     };
+
+    //     window.addEventListener('click', handleMouseClick);
+    //     window.addEventListener('mousemove', handleMouseMove);
+
+    //     return () => {
+    //         window.removeEventListener('click', handleMouseClick);
+    //         window.removeEventListener('mousemove', handleMouseMove);
+    //     };
+    // }, [is2DView, creatingWallMode, wallStart, currentWall]);
+
 
     const setCamera = useCallback((camera: THREE.Camera) => {
         cameraRef.current = camera;
@@ -299,10 +315,10 @@ const MainPage: React.FC = () => {
                 price,
                 details,
                 position: [0, 0, 0] as [number, number, number],
-                gltf : gltf,
-                rotation : [0, 0, 0],
+                gltf: gltf,
+                rotation: [0, 0, 0],
                 texture: "textures/Cube_BaseColor.png",
-               // scale: [size.x, size.y, size.z],
+                // scale: [size.x, size.y, size.z],
                 scale: [1, 1, 1],
             };
             setObjects((prevObjects) => [...prevObjects, newObject]);
@@ -312,8 +328,8 @@ const MainPage: React.FC = () => {
         } catch (error) {
             console.error('Error loading GLTF file:', error);
         }
-    }, []);    
-     
+    }, []);
+
     const handleUpdateScale = useCallback((id: string, newScale: [number, number, number]) => {
         setObjects((prevObjects) => {
             return prevObjects.map((obj) => {
@@ -386,6 +402,15 @@ const MainPage: React.FC = () => {
         }
     }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject]);
 
+    const updateQuotePrice = (id: string, newPrice: number) => {
+        console.log("update quote price");
+        setQuote((prevQuote) =>
+            prevQuote.map((item) =>
+                item.id === id ? { ...item, price: newPrice } : item
+            )
+        );
+    };
+
     return (
         <div id="container">
             <div ref={leftPanelRef} className="left-panel">
@@ -416,7 +441,10 @@ const MainPage: React.FC = () => {
                     showDimensions={showDimensions}
                     is2DView={is2DView}
                     walls2D={walls2D}
+                    updateQuotePrice={updateQuotePrice}
                     groundPlane={groundPlaneRef.current}
+                    handleAddWall2D={handleAddWall2D}
+                    creatingWallMode={creatingWallMode}
                 />
             </div>
             <button onClick={toggleView}>
