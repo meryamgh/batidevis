@@ -1,5 +1,7 @@
 #dragger {
-    pointer-events: none;
+    width: 20px;
+    cursor: col-resize;
+    background: #ddd;
 }
 
 #right-panel {
@@ -116,7 +118,7 @@
 }
 
 .dragger {
-    width: 10px;
+    width: 20px;
     cursor: col-resize;
     background: #ddd;
     user-select : none;
