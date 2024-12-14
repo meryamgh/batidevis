@@ -435,7 +435,7 @@ const MainPage: React.FC = () => {
                 </ul>
                 <p>Total: {quote.reduce((sum, item) => sum + item.price, 0)} €</p>
                 <button onClick={navigateToFullQuote} className="full-quote-button">
-                    Afficher Devis Complet
+                    afficher devis complet
                 </button>
             </div>
         </div>
