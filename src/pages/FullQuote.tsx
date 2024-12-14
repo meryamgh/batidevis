@@ -34,19 +34,22 @@ const FullQuote: React.FC = () => {
         return acc;
     }, [] as AggregatedQuoteItem[]);
 
-    // Calcul du total HT (somme des prix * quantités)
+    // Calcul du total HT
     const totalHT = aggregatedQuote.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // Définissez ici votre taux de TVA
+    // Taux de TVA
     const tvaRate = 0.20; 
     const totalTVA = totalHT * tvaRate;
 
     // Total TTC
     const totalTTC = totalHT + totalTVA;
 
-    // Net à payer (ici on le considère identique au Total TTC, 
-    // mais vous pouvez prévoir une logique différente en cas d'acompte, etc.)
-    const netAPayer = totalTTC;
+    // Acompte = 30% du TTC
+    const acompteRate = 0.30;
+    const acompte = totalTTC * acompteRate;
+
+    // Reste à payer = Total TTC - Acompte
+    const resteAPayer = totalTTC - acompte;
 
     const handleBack = () => {
         navigate('/', { state: { quote } }); 
@@ -132,9 +135,9 @@ const FullQuote: React.FC = () => {
             <div className="payment-info">
               <p><strong>Conditions de paiement :</strong></p>
               <p>
-                Acompte de XX.XX€ TTC à la signature
+                Acompte de {acompte.toFixed(2)} € TTC à la signature
                 <br/>
-                Reste à facturer : XX € TTC
+                Reste à facturer : {resteAPayer.toFixed(2)} € TTC
                 <br/>
                 Méthodes de paiement acceptées : Chèque, Espèces.
               </p>
@@ -156,7 +159,7 @@ const FullQuote: React.FC = () => {
                   </tr>
                   <tr className='blue'>
                     <td>NET À PAYER</td>
-                    <td>{netAPayer.toFixed(2)} €</td>
+                    <td>{totalTTC.toFixed(2)} €</td>
                   </tr>
                 </tbody>
               </table>
