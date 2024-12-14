@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ObjectData } from '../types/ObjectData';
-import '../styles/MainPage.css';
 import '../styles/Controls.css';
 
 type ObjectPanelProps = {
@@ -31,6 +30,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [depth, setDepth] = useState(object.scale[2]);
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
+
 
     // Ensure the local state stays in sync with the incoming props
     useEffect(() => {
@@ -83,9 +83,16 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
     return (
         <div className="object-panel">
-            <p><strong>Editing Object:</strong> {object.details}</p>
-            <label>Texture:</label>
-            <select
+            <div className='close'>
+            <button className='bouton-close' onClick={onClosePanel}>x</button>
+            </div>
+            <div className='title_popup'>
+            <p className='modif'>modification de l'objet</p>
+            </div>
+            <p className='texte'>{object.details}</p>
+            <div className='container-label'>
+            <label className='titre-label'>texture</label>
+            <select className = 'selection'
                 value={object.texture}
                 onChange={(e) => onUpdateTexture(object.id, e.target.value)}
             >
@@ -93,7 +100,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 <option value="textures/concrete_texture.jpg">concrete_texture.jpg</option>
             </select>
             <br />
-            <label>Width:</label>
+            <label className='titre-label'>largeur</label>
             <input
                 type="number"
                 step="0.1"
@@ -107,7 +114,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 onBlur={() => handleUpdateScale(width, height, depth)}
             />
             <br />
-            <label>Height:</label>
+            <label className='titre-label'>hauteur</label>
             <input
                 type="number"
                 step="0.1"
@@ -121,7 +128,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 onBlur={() => handleUpdateScale(width, height, depth)}
             />
             <br />
-            <label>Depth:</label>
+            <label className='titre-label'>profondeur</label>
             <input
                 type="number"
                 step="0.1"
@@ -134,11 +141,16 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 }}
                 onBlur={() => handleUpdateScale(width, height, depth)}
             />
+            </div>
             <br />
-            <p><strong>Price:</strong> {object.price} €</p>
-            <button onClick={() => onRemoveObject(object.id)}>Delete</button>
-            <button onClick={onMoveObject}>Move</button>
-            <button
+            <p><strong>Prix:</strong> {object.price} €</p>
+
+            <div className='bouton-container'>
+            <button onClick={() => onRemoveObject(object.id)} className='bouton-popup'>supprimer</button>
+            <button onClick={onMoveObject} className='bouton-popup'>déplacer</button>
+            </div>
+            <div className='bouton-container'>
+            <button className='bouton-popup'
                 onClick={() => {
                     // Rotate the object by 90 degrees around all axes
                     const newRotation: [number, number, number] = [
@@ -150,18 +162,17 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     onRotateObject(object.id, newRotation); // Call the handler
                 }}
             >
-                Rotate 90° on All Axes
+                faire pivoter de 90°
             </button>
-            <button
+            <button className='bouton-popup'
                 onClick={toggleRotation}
             >
-                {isRotating ? 'Stop Rotation' : 'Rotate with Mouse'}
+                {isRotating ? 'arrêter la rotation' : 'pivoter avec la souris'}
             </button>
-            <button onClick={onClosePanel}>Close</button>
-            <button onClick={() => onToggleShowDimensions(object.id)}>
-                {showDimensions ? 'Hide Dimensions' : 'Show Dimensions'}
+            </div>
+            <button className='bouton-popup-last-last' onClick={() => onToggleShowDimensions(object.id)}>
+                {showDimensions ? 'masquer les dimensions' : 'afficher les dimensions'}
             </button>
-
         </div>
 
     );

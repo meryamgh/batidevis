@@ -1,4 +1,4 @@
-.controls {
+/**.controls {
     position: absolute;
     bottom: 20px;
     right: 20px;
@@ -6,7 +6,7 @@
     padding: 10px;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
+}**/
 
 button {
     padding: 10px 20px;
@@ -25,4 +25,142 @@ button {
 .move-button {
     background-color: #007bff;
     color: #fff;
+}
+
+.modif {
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.5px;
+    color : #2D3C54;
+    margin-bottom: 5px;
+    margin-top : 5px;
+}
+
+.title_popup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.texte {
+    text-align: justify
+}
+
+.object-panel {
+    padding: 10px;
+}
+
+.bouton-popup {
+    margin: 0px;
+    background-color: #B0846A;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    border: 0.5px solid #2D3C54;
+    font-size: 14px;
+    display: flex;
+    user-select: none;
+    width: 130px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 5px;
+    margin-top: 10px;
+}
+
+.bouton-popup:hover {
+    box-shadow: 0px 6px 15px rgba(45, 60, 84, 0.6);
+    transform: scale(1.05);
+    background-color: #946B54;
+}
+
+.bouton-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.bouton-close {
+    border-radius: 100%;
+    padding: 5px 8px;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    background-color: #5C5C5C;
+    color: white;
+    text-shadow: 0.5px 0.5px 1.5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    user-select: none;
+    font-size: 10px;
+}
+
+.bouton-close:hover {
+    background-color: #3A3A3A;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+    user-select : none;
+}
+
+.close {
+    display: flex;
+    justify-content: flex-end;
+    margin-top : -10px;
+    margin-right : -20px;
+}
+
+.bouton-popup-last-last {
+    margin: 0px;
+    background-color: #B0846A;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    border: 0.5px solid #2D3C54;
+    font-size: 14px;
+    display: flex;
+    user-select: none;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 5px;
+    margin-top: 10px;
+}
+
+.bouton-popup-last-last:hover {
+    box-shadow: 0px 6px 15px rgba(45, 60, 84, 0.6);
+    transform: scale(1.05);
+    background-color: #946B54;
+}
+
+.titre-label {
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    font-size: 14px;
+}
+
+.selection {
+    width: 200px;
+    right: 0;
+    position: absolute;
+    margin-bottom: 10px;
+}
+
+.container-label {
+    position: relative;
 }

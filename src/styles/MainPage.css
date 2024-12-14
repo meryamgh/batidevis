@@ -1,21 +1,11 @@
-/* Main container style */
-#container {
-    display: flex;
-    height: 100vh;
-}
-
-/* Left panel style */
-#left-panel {
-    flex: 1 1 50%;
-    min-width: 200px;
-    overflow: hidden;
+.container {
+    position: relative; /* Nécessaire pour positionner des éléments à l'intérieur */
+    cursor: default; /* Définit un curseur standard */
 }
 
 /* Dragger style for resizing panels */
 #dragger {
-    width: 10px;
-    cursor: col-resize;
-    background: #ddd;
+    pointer-events: none;
 }
 
 /* Right panel style for the quote */
@@ -24,7 +14,6 @@
     min-width: 200px;
     overflow-y: auto;
     padding: 10px;
-    background-color: #f8f8f8;
 }
 
 #right-panel h2 {
@@ -111,6 +100,7 @@
 #container {
     display: flex;
     height: 100vh;
+    user-select : none;
 }
 
 /* Left Panel Styles */
@@ -118,6 +108,7 @@
     flex: 1 1 50%;
     min-width: 200px;
     overflow: hidden;
+    user-select : none;
 }
 
 /* Floating Panel Styles */
@@ -135,6 +126,7 @@
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     cursor: move;
+    user-select : none;
 }
 
 /* Dragger Styles */
@@ -142,6 +134,7 @@
     width: 10px;
     cursor: col-resize;
     background: #ddd;
+    user-select : none;
 }
 
 /* Right Panel Styles */
@@ -150,40 +143,178 @@
     min-width: 200px;
     overflow-y: auto;
     padding: 10px;
-    background-color: #f8f8f8;
+    background-color: white;
+    user-select : none;
 }
-
-/* Full Quote Button Styles */
-.full-quote-button {
-    padding: 10px 20px;
-    margin-top: 20px;
-    background-color: #007BFF;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-
 
 #container {
     display: flex;
     height: 100vh;
+    user-select : none;
 }
 
- 
 .dragger {
-    width: 5px;
-    cursor: col-resize;
-    background-color: #ccc;
+    width: 0;
+    pointer-events: none;
+    cursor: default; 
+    background: transparent;
+    user-select : none;
 }
 
 .full-quote-button {
     margin-top: 10px;
     padding: 10px;
-    background-color: #007BFF;
+    background-color: #B0846A;
     color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    border: 0.5px solid #2D3C54;
+    font-size: 15px;
+    display: flex;
+    user-select: none;
+}
+
+.full-quote-button:hover {
+    box-shadow: 0px 6px 15px rgba(45, 60, 84, 0.6);
+    transform: scale(1.05);
+    background-color: #946B54;
+    user-select : none;
+}
+
+.parent-container {
+    display: flex;
+    justify-content: center;
+    user-select : none;
+}
+
+.title {
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.5px;
+    color : #2D3C54;
+    margin-left: 10px;
+    margin-bottom: 7px;
+    margin-top : 40px;
+    user-select : none;
+}
+
+.hr {
+    background-color: #737373;
+    box-shadow: 0px 0.25px 0.5px rgba(0, 0, 0, 0.1);
+    user-select : none;
+}
+
+.right-panel {
+    position: relative;
+    padding-top: 20px;
+    background-color: white;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    user-select : none;
+}
+
+.top-right-image {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 70px;
+    height: auto;
+    z-index: 10;
+    user-select : none;
+}
+
+.vue3D {
+    background-color: #5C5C5C;
+    color: white;
+    width: 60px;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: 0.5px 0.5px 1.5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    user-select: none;
+}
+
+.vue3D:hover {
+    background-color: #3A3A3A;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+    transform: scale(1.01);
+    user-select : none;
+}
+
+#left-panel {
+    flex: 1 1 50%;
+    min-width: 200px;
+    overflow: hidden;
+    display: flex;
+    user-select : none;
+}
+
+.banner {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 50px;
+    margin-bottom: 10px;
+    padding: 0 10px;
+    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #F9F9F9;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1); /* Ombre douce en bas */
+    border-bottom: 1px solid #E0E0E0; /* Optionnel : Ligne subtile de séparation */
+    user-select : none;
+}
+
+.banner button {
+    margin-right: 15px;
+    margin-bottom: 15px;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #3A4D6E;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+    border: 0.5px solid #2D3C54;
+    font-size: 15px;
+    display: flex;
+    user-select: none;
+}
+
+.banner button:hover {
+    box-shadow: 0px 6px 15px rgba(45, 60, 84, 0.6);
+    transform: scale(1.05);
+    background-color: #2D3C54;
+    user-select : none;
+}
+
+.banner button:disabled {
+    background-color: #ccc; 
+    color: #777; 
+    cursor: not-allowed; 
+    box-shadow: none; 
+    text-shadow : none;
+    user-select : none;
 }
