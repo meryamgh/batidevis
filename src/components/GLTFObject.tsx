@@ -16,8 +16,7 @@ type GLTFObjectProps = {
     onClick: () => void;
     texture: string;
     price: number;
-    updateQuotePrice: (id:string, price: number) => void;
-    //details: string;
+    updateQuotePrice: (id:string, price: number, scale : [number, number, number]) => void;
     showDimensions: boolean; 
 };
 
@@ -33,7 +32,6 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     texture,
     price,
     updateQuotePrice,
-  //  details,
     showDimensions,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
@@ -100,7 +98,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 const newGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
                 mesh.geometry.dispose();
                 mesh.geometry = newGeometry;
-                updateDimensionHelpers();
+                
             } else {
                 console.log("defaultScaleRef.current", defaultScaleRef.current);
                 console.log("scale", scale);
@@ -111,10 +109,10 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
                 mesh.scale.set(x, y, z);
                 mesh.updateMatrixWorld(true);
-                updateDimensionHelpers();
             }
+            updateDimensionHelpers();
             price = calculatePrice(scale);
-            updateQuotePrice(id, price);
+            updateQuotePrice(id, price, scale);
             console.log(`Le prix mis à jour est de ${price  } €`);
         }
     }, [scale]); 
@@ -208,6 +206,12 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     };
 
     useEffect(() => {
+        if (scene && meshRef.current) {
+            updateDimensionHelpers();
+        }
+    }, [showDimensions]);
+
+    useEffect(() => {
         if (meshRef.current && rotation) {
             console.log("la rotation est : ",rotation)
             meshRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
@@ -225,6 +229,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 }
             });
         }
+        
     }, [scene, texture]);
 
     return (

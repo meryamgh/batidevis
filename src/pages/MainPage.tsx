@@ -321,11 +321,11 @@ const MainPage: React.FC = () => {
         }
     }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject]);
 
-    const updateQuotePrice = (id: string, newPrice: number) => {
+    const updateQuotePrice = (id: string, newPrice: number, newScale : [number, number, number]) => {
         console.log("update quote price");
         setQuote((prevQuote) =>
             prevQuote.map((item) =>
-                item.id === id ? { ...item, price: newPrice } : item
+                item.id === id ? { ...item, price: newPrice, scale : newScale } : item
             )
         );
     };
@@ -384,7 +384,7 @@ const MainPage: React.FC = () => {
                     <ul>
                         {quote.map((item) => (
                             <li key={item.id}>
-                                {item.details}: {item.price} €
+                                {item.details} {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} €
                             </li>
                         ))}
                     </ul>
