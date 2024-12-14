@@ -40,11 +40,14 @@ const FullQuote: React.FC = () => {
     };
 
     return (
+      <div>
+        <button onClick={handleBack}>
+                Retour maquette
+        </button>
         <div className="container">
         <header>
           <div className="logo-info">
             <img src={"img/logo.png"} />
-            {/* <h1>Devo</h1> */}
           </div>
           <div className="devo-info">
             <h2>Axe Metal</h2>
@@ -164,7 +167,7 @@ const FullQuote: React.FC = () => {
             <p>
               Mention "Reçu avant l'exécution des travaux, bon pour accord", date et
               signature :
-            </p><br/><br/>
+            </p><br/>
             <p>...... / ...... / ............</p>
           </div>
         </div>
@@ -173,11 +176,9 @@ const FullQuote: React.FC = () => {
         <footer>
          <p>Les marchandises vendues reste notre propriété, jusqu’au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
         </footer>
-
-        <button onClick={handleBack} >
-                Retour maquette
-        </button>
       </div>
+      </div>
+      
     )
 
 

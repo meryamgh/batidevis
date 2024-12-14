@@ -8,11 +8,13 @@ body {
 }
 
 .container {
-    width: 80%;
+    width: 794px;
+    height: 1123px; 
     margin: 20px auto;
     background: #fff;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-size: 12px;
 }
 
 header, .infoclient-infodevis, .condition-total {
@@ -71,7 +73,7 @@ table th, table td {
     color: #ffffff;
 }
 .size_description{
-    width: 60%;
+    width: 50%;
 }
 .size_description_price{
     width: 25vh;
