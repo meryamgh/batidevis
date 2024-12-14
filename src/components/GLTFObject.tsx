@@ -17,7 +17,7 @@ type GLTFObjectProps = {
     texture: string;
     price: number;
     updateQuotePrice: (id:string, price: number) => void;
-    details: string;
+    //details: string;
     showDimensions: boolean; 
 };
 
@@ -33,7 +33,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     texture,
     price,
     updateQuotePrice,
-    details,
+  //  details,
     showDimensions,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);

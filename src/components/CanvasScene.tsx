@@ -408,7 +408,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     texture={obj.texture}
                     price={obj.price}
                     updateQuotePrice={updateQuotePrice}
-                    details={obj.details}
+                 //   details={obj.details}
                     rotation={obj.rotation}
                     onUpdatePosition={onUpdatePosition}
                     isMovable={isMoving === obj.id}

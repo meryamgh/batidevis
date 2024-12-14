@@ -136,7 +136,7 @@ const MainPage: React.FC = () => {
 
         let isDragging = false;
 
-        const startDragging = (e: MouseEvent) => {
+        const startDragging = () => {
             isDragging = true;
             document.body.style.cursor = 'col-resize';
             dragger.style.pointerEvents = 'none'; // Assure que le dragger reste fonctionnel
