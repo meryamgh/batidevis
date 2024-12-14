@@ -315,7 +315,6 @@ const MainPage: React.FC = () => {
                     }}
                     onRotateObject={handleRotateObject}
                     onToggleShowDimensions={handleToggleShowDimensions}
-                    showDimensions={!!showDimensions[id]}
                 />
             );
         }

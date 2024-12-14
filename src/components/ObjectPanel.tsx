@@ -10,8 +10,7 @@ type ObjectPanelProps = {
     onMoveObject: () => void;
     onClosePanel: () => void;
     onRotateObject: (id: string, newRotation: [number, number, number]) => void;
-    onToggleShowDimensions: (id: string) => void; // Prop pour basculer l'affichage des dimensions
-    showDimensions: boolean;
+    onToggleShowDimensions: (id: string) => void; 
 };
 
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
@@ -23,7 +22,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     onClosePanel,
     onRotateObject,
     onToggleShowDimensions,
-    showDimensions,
 }) => {
     const [width, setWidth] = useState(object.scale[0]);
     const [height, setHeight] = useState(object.scale[1]);
@@ -31,7 +29,12 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [texture, setTexture] = useState(object.texture);
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
+    const [showDimensions, setShowDimensions] = useState(false);
 
+    const toggleDimensions = () => {
+        onToggleShowDimensions(object.id);  
+        setShowDimensions(!showDimensions);
+    };
 
     // Ensure the local state stays in sync with the incoming props
     useEffect(() => {
@@ -182,7 +185,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     {isRotating ? 'arrêter la rotation' : 'pivoter avec la souris'}
                 </button>
             </div>
-            <button className='bouton-popup-last-last' onClick={() => onToggleShowDimensions(object.id)}>
+            <button className='bouton-popup-last-last' onClick={() => toggleDimensions()}>
                 {showDimensions ? 'masquer les dimensions' : 'afficher les dimensions'}
             </button>
         </div>
