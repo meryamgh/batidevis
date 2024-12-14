@@ -92,7 +92,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             <p className='texte'>{object.details}</p>
             <div className='container-label'>
             <label className='titre-label'>texture</label>
-            <select className = 'selection'
+            <select
                 value={object.texture}
                 onChange={(e) => onUpdateTexture(object.id, e.target.value)}
             >

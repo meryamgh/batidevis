@@ -1,14 +1,7 @@
-.container {
-    position: relative; /* Nécessaire pour positionner des éléments à l'intérieur */
-    cursor: default; /* Définit un curseur standard */
-}
-
-/* Dragger style for resizing panels */
 #dragger {
     pointer-events: none;
 }
 
-/* Right panel style for the quote */
 #right-panel {
     flex: 1 1 50%;
     min-width: 200px;
@@ -30,7 +23,6 @@
     cursor: pointer;
 }
 
-/* Floating panel style */
 #floating-panel {
     display: none;
     position: absolute;
@@ -93,17 +85,12 @@
     background-color: green;
 }
 
-
-/* styles/MainPage.css */
-
-/* General container styles */
 #container {
     display: flex;
     height: 100vh;
     user-select : none;
 }
 
-/* Left Panel Styles */
 .left-panel {
     flex: 1 1 50%;
     min-width: 200px;
@@ -111,7 +98,6 @@
     user-select : none;
 }
 
-/* Floating Panel Styles */
 .floating-panel {
     display: none;
     position: absolute;
@@ -129,7 +115,6 @@
     user-select : none;
 }
 
-/* Dragger Styles */
 .dragger {
     width: 10px;
     cursor: col-resize;
@@ -137,7 +122,6 @@
     user-select : none;
 }
 
-/* Right Panel Styles */
 .right-panel {
     flex: 1 1 50%;
     min-width: 200px;
@@ -277,8 +261,8 @@
     top: 0;
     z-index: 1000;
     background-color: #F9F9F9;
-    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1); /* Ombre douce en bas */
-    border-bottom: 1px solid #E0E0E0; /* Optionnel : Ligne subtile de séparation */
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1); 
+    border-bottom: 1px solid #E0E0E0; 
     user-select : none;
 }
 

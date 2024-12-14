@@ -403,7 +403,7 @@ const MainPage: React.FC = () => {
                 </div>
         
                 {/* Contenu principal */}
-                <div id="container" className="container">
+                <div id="container" className="container-essaie">
                     <div ref={leftPanelRef} className="left-panel">
                         <div
                             id="floating-panel"
