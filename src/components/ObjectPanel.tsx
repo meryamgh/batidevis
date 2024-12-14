@@ -92,16 +92,16 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             <p className='texte'>{object.details}</p>
             <div className='container-label'>
             <label className='titre-label'>texture</label>
-            <select
+            <select className='selection-select'
                 value={object.texture}
                 onChange={(e) => onUpdateTexture(object.id, e.target.value)}
             >
                 <option value="textures/Cube_BaseColor.png">Cube_BaseColor.png</option>
                 <option value="textures/concrete_texture.jpg">concrete_texture.jpg</option>
             </select>
-            <br />
+            <br/><br/>
             <label className='titre-label'>largeur</label>
-            <input
+            <input className='selection'
                 type="number"
                 step="0.1"
                 value={width}
@@ -113,9 +113,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 }}
                 onBlur={() => handleUpdateScale(width, height, depth)}
             />
-            <br />
+            <br/><br/>
             <label className='titre-label'>hauteur</label>
-            <input
+            <input className='selection'
                 type="number"
                 step="0.1"
                 value={height}
@@ -127,9 +127,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 }}
                 onBlur={() => handleUpdateScale(width, height, depth)}
             />
-            <br />
+            <br /><br/>
             <label className='titre-label'>profondeur</label>
-            <input
+            <input className='selection'
                 type="number"
                 step="0.1"
                 value={depth}

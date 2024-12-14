@@ -33,7 +33,7 @@ const MainPage: React.FC = () => {
     const [showDimensions, setShowDimensions] = useState<{ [key: string]: boolean }>({});
     const [is2DView, setIs2DView] = useState(false);
 
-   // const [currentWall, setCurrentWall] = useState<THREE.Line | null>(null);
+    // const [currentWall, setCurrentWall] = useState<THREE.Line | null>(null);
     const [creatingWallMode, setCreatingWallMode] = useState(false);
     const [walls2D, setWalls2D] = useState<THREE.Line[]>([]);
     //const [wallStart, setWallStart] = useState<THREE.Vector3 | null>(null);
@@ -48,7 +48,7 @@ const MainPage: React.FC = () => {
     };
 
     const handleAddWall2D = (start: THREE.Vector3, end: THREE.Vector3) => {
-        
+
         const wallHeight = 6;
         const wallWidth = 0.2;
         const wallLength = start.distanceTo(end);
@@ -69,7 +69,7 @@ const MainPage: React.FC = () => {
             url: '',
             price: wallPrice,
             details: 'Mur',
-            position: [midPoint.x/2, 0, midPoint.z/2],
+            position: [midPoint.x / 2, 0, midPoint.z / 2],
             gltf: wallMesh,
             rotation: [0, -angle, 0],
             texture: 'textures/Cube_BaseColor.png',
@@ -94,7 +94,7 @@ const MainPage: React.FC = () => {
         plane.position.y = 0; // S'assurer que le plan est à y=0
         groundPlaneRef.current = plane;
     }, []);
-    
+
 
 
     useEffect(() => {
@@ -331,70 +331,73 @@ const MainPage: React.FC = () => {
     };
 
     return (
-            <div id="page">
-                {/* Bannière fixe en haut */}
-                <div className="banner">
-                    <button onClick={() => setCreatingWallMode(!creatingWallMode)} disabled={!is2DView}>
-                        {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
-                    </button>
-                    <button onClick={() => handleAddObject('/wall_with_door.gltf')} className="bouton">
-                        mur avec ouverture pour porte
-                    </button>
-                    <button onClick={() => handleAddObject('/porte_fenetre.gltf')} className="bouton">
-                        porte-fenêtre
-                    </button>
+        <div id="page">
+            {/* Bannière fixe en haut */}
+            <div className="banner">
+                <button onClick={() => setCreatingWallMode(!creatingWallMode)} disabled={!is2DView}>
+                    {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
+                </button>
+                <button onClick={() => handleAddObject('/wall_with_door.gltf')} className="bouton">
+                    mur avec ouverture pour porte
+                </button>
+                <button onClick={() => handleAddObject('/porte_fenetre.gltf')} className="bouton">
+                    porte-fenêtre
+                </button>
+            </div>
+
+            {/* Contenu principal */}
+            <div id="container" className="container-essaie">
+                <div ref={leftPanelRef} className="left-panel">
+                    <div
+                        id="floating-panel"
+                        className="floating-panel"
+                        onMouseDown={(e) => startDraggingPanel(e)}
+                    ></div>
+
+                    <CanvasScene
+                        objects={objects}
+                        onClick={handleObjectClick}
+                        onUpdatePosition={handleUpdatePosition}
+                        isMoving={isMoving}
+                        setIsMoving={setIsMoving}
+                        orbitControlsRef={orbitControlsRef}
+                        setCamera={setCamera}
+                        showDimensions={showDimensions}
+                        is2DView={is2DView}
+                        walls2D={walls2D}
+                        updateQuotePrice={updateQuotePrice}
+                        groundPlane={groundPlaneRef.current}
+                        handleAddWall2D={handleAddWall2D}
+                        creatingWallMode={creatingWallMode}
+                    />
                 </div>
-        
-                {/* Contenu principal */}
-                <div id="container" className="container-essaie">
-                    <div ref={leftPanelRef} className="left-panel">
-                        <div
-                            id="floating-panel"
-                            className="floating-panel"
-                            onMouseDown={(e) => startDraggingPanel(e)}
-                        ></div>
-        
-                        <CanvasScene
-                            objects={objects}
-                            onClick={handleObjectClick}
-                            onUpdatePosition={handleUpdatePosition}
-                            isMoving={isMoving}
-                            setIsMoving={setIsMoving}
-                            orbitControlsRef={orbitControlsRef}
-                            setCamera={setCamera}
-                            showDimensions={showDimensions}
-                            is2DView={is2DView}
-                            walls2D={walls2D}
-                            groundPlane={groundPlaneRef.current}
-                        />
-                    </div>
-        
-                    <button onClick={toggleView} className="vue3D">
-                        {is2DView ? 'vue 3D' : 'vue 2D'}
-                    </button>
-        
-                    <div ref={draggerRef} className="dragger"></div>
-                    <div ref={rightPanelRef} className="right-panel">
-                        <img src={logo} alt="Top Right" className="top-right-image" />
-                        <h2 className="title">devis</h2>
-                        <hr className="hr"/>
-                        <ul>
-                            {quote.map((item) => (
-                                <li key={item.id}>
-                                    {item.details}: {item.price} €
-                                </li>
-                            ))}
-                        </ul>
-                        <p>Total: {quote.reduce((sum, item) => sum + item.price, 0)} €</p>
-                        <div className="parent-container">
-                            <button onClick={navigateToFullQuote} className="full-quote-button">
-                                consulter le devis complet
-                            </button>
-                        </div>
+
+                <button onClick={toggleView} className="vue3D">
+                    {is2DView ? 'vue 3D' : 'vue 2D'}
+                </button>
+
+                <div ref={draggerRef} className="dragger"></div>
+                <div ref={rightPanelRef} className="right-panel">
+                    <img src={logo} alt="Top Right" className="top-right-image" />
+                    <h2 className="title">devis</h2>
+                    <hr className="hr" />
+                    <ul>
+                        {quote.map((item) => (
+                            <li key={item.id}>
+                                {item.details}: {item.price} €
+                            </li>
+                        ))}
+                    </ul>
+                    <p>Total: {quote.reduce((sum, item) => sum + item.price, 0)} €</p>
+                    <div className="parent-container">
+                        <button onClick={navigateToFullQuote} className="full-quote-button">
+                            consulter le devis complet
+                        </button>
                     </div>
                 </div>
             </div>
-        );
+        </div>
+    );
 };
 
 export default MainPage;
