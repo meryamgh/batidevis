@@ -43,16 +43,17 @@ const FullQuote: React.FC = () => {
         <div className="container">
         <header>
           <div className="logo-info">
-            <h1>Devo</h1>
+            <img src={"img/logo.png"} />
+            {/* <h1>Devo</h1> */}
           </div>
           <div className="devo-info">
-            <h2>Entreprise test</h2>
+            <h2>Axe Metal</h2>
             <p>
-              M. Test Test
+              Chen Emma
               <br />
-              10 Rue de la République
+              73 Rue Rateau
               <br />
-              69001 Lyon, France
+              93120 La Courneuve, France
               <br />
               SIREN : 000.000.000.000
             </p>
@@ -87,7 +88,7 @@ const FullQuote: React.FC = () => {
         </div>
         <table>
           <thead>
-            <tr>
+            <tr className='blue'>
               <th>N°</th>
               <th>DÉSIGNATION</th>
               <th>QTÉ</th>
@@ -107,9 +108,8 @@ const FullQuote: React.FC = () => {
             </tr>
             <tr>
               <td>2</td>
-              <td>
-                Fourniture et pose d'une fenêtre oscillo-battante, grand vitrage,
-                vantail droit...
+              <td className='size_description'>
+              Fourniture et pose d'une fenêtre oscillo-battante, grand vitrage, vantail droit, 650 (ht) x 1000 mm (lg), 2 vantaux, bois exotique, triple vitrage, compris présentation, calage, fixation, calfeutrage et quincaillerie alu anodisée.
               </td>
               <td>1,00 mm</td>
               <td>1 000,00 €</td>
@@ -137,27 +137,43 @@ const FullQuote: React.FC = () => {
             Méthodes de paiement acceptées : Chèque, Espèces.</p>
         </div>
         <div className="totals">
-          <p>Total net HT : 3 100,00 €</p>
-          <p>TVA 20,00 % : 620,00 €</p>
-          <p>
-            <strong>Total TTC : 3 720,00 €</strong>
-          </p>
-          <p>
-            <strong>NET À PAYER : 3 720,00 €</strong>
-          </p>
+        <table>
+          <tr>
+            <td className='size_description_price'><strong>Total net HT</strong></td>
+            <td className='size_price'><strong>3 100,00 €</strong></td>
+          </tr>
+          <tr>
+            <td>TVA 20,00 %</td>
+            <td>620,00 €</td>
+          </tr>
+          <tr>
+            <td><strong>Total TTC</strong></td>
+            <td><strong>3 720,00 €</strong></td>
+          </tr>
+          <tr className='blue'>
+            <td>NET À PAYER</td>
+            <td>3 720,00 €</td>
+          </tr>
+        </table>
+
         </div>
         </div>
+        <br/>
+        <div className='container-signature'>
+          <div className='signature'>
+            <p>
+              Mention "Reçu avant l'exécution des travaux, bon pour accord", date et
+              signature :
+            </p><br/><br/>
+            <p>...... / ...... / ............</p>
+          </div>
+        </div>
+        <br/>
        
         <footer>
-          <p>
-            Mention "Reçu avant l'exécution des travaux, bon pour accord", date et
-            signature :
-          </p>
-          <p>...... / ...... / ............</p>
+         <p>Les marchandises vendues reste notre propriété, jusqu’au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
         </footer>
       </div>
-
-
     )
 
 {/* <div>
