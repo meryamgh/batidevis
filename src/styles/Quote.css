@@ -27,10 +27,9 @@ header, .infoclient-infodevis, .condition-total {
 
 .logo-info, .devo-info {
     width: 45%;
-    /* background-color: antiquewhite; */
 }
-
-.logo-info, .info-client{
+/* .info-client */
+.logo-info{ 
     display: flex;
     align-items: center;
 }
@@ -51,9 +50,14 @@ h2 {
 img { 
     width:40%
 }
+
+.info-table-devis, .info-table-client{
+    width: 40vh;
+    border:none;
+}
+
 .devis-header {
     text-align: right;
-    margin-bottom: 20px;
 }
 
 table {
@@ -62,7 +66,7 @@ table {
     margin-bottom: 20px;
 }
 
-table th, table td {
+.table-border th, .table-border td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: center;

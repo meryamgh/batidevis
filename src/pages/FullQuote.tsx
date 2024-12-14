@@ -137,7 +137,7 @@ const FullQuote: React.FC = () => {
               <img src={"img/logo.png"} alt="Logo" />
             </div>
             <div className="devo-info">
-              <h2>Axe Metal</h2>
+              <h2>DEVO</h2>
               <p>
                 Chen Emma
                 <br />
@@ -151,33 +151,54 @@ const FullQuote: React.FC = () => {
           </header>
           <div className="infoclient-infodevis">
             <section className="info-client">
-              <p>
-                20 Rue Leblanc
-                <br />
-                75015 Paris, France
-                <br />
-                Tél : 07 68 01 26 95
-                <br />
-                Email : Devo@gmail.com
-              </p>
+            <h2>Société Bâtiment</h2><br/>
+              <div>
+                <table className='info-table-client'>
+                  <tr>
+                    <td>Adresse</td>
+                    <td>20 rue le blanc</td>
+                  </tr>
+                  <tr>
+                    <td>Code Postal</td>
+                    <td>75013 Paris</td>
+                  </tr>
+                  <tr>
+                    <td>Tel</td>
+                    <td>0678891223</td>
+                  </tr>
+                  <tr>
+                    <td>Email</td>
+                    <td>sociétébatiment@gmail.com</td>
+                  </tr>
+                </table>
+              </div>
             </section>
             <section className="devis-header">
-              <h2>Devis</h2>
-              <p>
-                N° D202400001
-                <br />
-                En date du : 05/10/2024
-                <br />
-                Valable jusqu'au : 04/12/2024
-                <br />
-                Début des travaux : 05/10/2024
-                <br />
-                Durée estimée à : 1 jour
-              </p>
+              <h2>Devis n° : 123</h2><br/>
+              <div>
+                <table className='info-table-devis'>
+                  <tr>
+                    <td>En date du</td>
+                    <td>05/10/2024</td>
+                  </tr>
+                  <tr>
+                    <td>Valable jusqu'au</td>
+                    <td>04/12/2024</td>
+                  </tr>
+                  <tr>
+                    <td>Début des travaux</td>
+                    <td>05/10/2024</td>
+                  </tr>
+                  <tr>
+                    <td>Durée estimée à</td>
+                    <td>1 jour</td>
+                  </tr>
+                </table>
+              </div>
             </section>
           </div>
 
-          <table>
+          <table className='table-border'>
             <thead>
               <tr className='blue'>
                 <th>N°</th>
@@ -254,7 +275,7 @@ const FullQuote: React.FC = () => {
             <div className="payment-info">
               <p><strong>Conditions de paiement :</strong></p>
               <p>
-                Acompte = {editingAcompte ? (
+                Acompte {editingAcompte ? (
                   <input
                     type="number"
                     value={acompteEditValue}
@@ -268,7 +289,7 @@ const FullQuote: React.FC = () => {
                   <span onClick={handleAcompteClick} style={{cursor:'pointer',textDecoration:'underline'}}>
                     {(acompteRate * 100).toFixed(2)}%
                   </span>
-                )} du total TTC il est de {acompte.toFixed(2)} € TTC à la signature
+                )} du total TTC = {acompte.toFixed(2)} € TTC à la signature
                 <br/>
                 Reste à facturer : {resteAPayer.toFixed(2)} € TTC
                 <br/>
@@ -276,7 +297,7 @@ const FullQuote: React.FC = () => {
               </p>
             </div>
             <div className="totals">
-              <table>
+              <table className='table-border'>
                 <tbody>
                   <tr>
                     <td className='size_description_price'><strong>Total net HT</strong></td>
