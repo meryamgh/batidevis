@@ -32,15 +32,18 @@ const MainPage: React.FC = () => {
     const [showDimensions, setShowDimensions] = useState<{ [key: string]: boolean }>({});
     const [is2DView, setIs2DView] = useState(false);
 
-    const [currentWall, setCurrentWall] = useState<THREE.Line | null>(null);
+   // const [currentWall, setCurrentWall] = useState<THREE.Line | null>(null);
     const [creatingWallMode, setCreatingWallMode] = useState(false);
     const [walls2D, setWalls2D] = useState<THREE.Line[]>([]);
-    const [wallStart, setWallStart] = useState<THREE.Vector3 | null>(null);
+    //const [wallStart, setWallStart] = useState<THREE.Vector3 | null>(null);
     const lineHelper = useRef<THREE.Line | null>(null);
 
 
     const toggleView = () => {
         setIs2DView((prev) => !prev);
+        if (creatingWallMode) {
+            setCreatingWallMode(false);
+        }
     };
 
     const handleAddWall2D = (start: THREE.Vector3, end: THREE.Vector3) => {
@@ -65,7 +68,7 @@ const MainPage: React.FC = () => {
             url: '',
             price: wallPrice,
             details: 'Mur',
-            position: [midPoint.x, 0, midPoint.z],
+            position: [midPoint.x/2, 0, midPoint.z/2],
             gltf: wallMesh,
             rotation: [0, -angle, 0],
             texture: 'textures/Cube_BaseColor.png',
@@ -179,91 +182,6 @@ const MainPage: React.FC = () => {
     }, []);
 
 
-
-
-    // useEffect(() => {
-    //     const handleMouseClick = (e: MouseEvent) => {
-    //         if (!is2DView || !creatingWallMode || !groundPlaneRef.current) return;
-
-    //         const target = e.target as HTMLElement;
-    //         const rect = target?.getBoundingClientRect();
-
-    //         if (rect && cameraRef.current && groundPlaneRef.current) {
-    //             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    //             const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-    //             mouse.current.set(x, y);
-    //             raycaster.current.setFromCamera(mouse.current, cameraRef.current);
-
-    //             const intersects = raycaster.current.intersectObject(groundPlaneRef.current);
-    //             if (intersects.length > 0) {
-    //                 const point = intersects[0].point.clone();
-    //                 if (!wallStart) {
-    //                     console.log("Wall Start Point Set:", point);
-    //                     setWallStart(point);
-    //                 } else {
-    //                     console.log("Creating Wall - From:", wallStart, "To:", point);
-    //                     handleAddWall2D(wallStart, point);
-    //                     setCreatingWallMode(false);
-    //                     setWallStart(null);
-    //                     setCurrentWall(null);
-    //                 }
-    //             }
-    //         }
-    //     };
-
-    //     const handleMouseMove = (e: MouseEvent) => {
-    //         if (!is2DView || !creatingWallMode || !wallStart) return;
-
-    //         const target = e.target as HTMLElement;
-    //         const rect = target?.getBoundingClientRect();
-
-    //         if (rect && cameraRef.current && groundPlaneRef.current) {
-    //             const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    //             const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-    //             mouse.current.set(x, y);
-    //             raycaster.current.setFromCamera(mouse.current, cameraRef.current);
-
-    //             const intersects = raycaster.current.intersectObject(groundPlaneRef.current);
-    //             if (intersects.length > 0) {
-    //                 const point = intersects[0].point.clone();
-    //                 point.y = 0;
-    //                 console.log("Mouse Move - Intersection Point:", point);
-
-    //                 if (lineHelper.current) {
-    //                     const points = [wallStart, point];
-    //                     const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    //                     lineHelper.current.geometry.dispose();
-    //                     lineHelper.current.geometry = geometry;
-
-    //                     console.log("Updated Line Geometry:", points);
-    //                 } else {
-    //                     const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-    //                     const points = [wallStart, point];
-    //                     const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    //                     const line = new THREE.Line(geometry, material);
-
-    //                     lineHelper.current = line;
-    //                     console.log("Created New Line Helper:", points);
-
-    //                     setCurrentWall(line);
-    //                     setWalls2D((prev: THREE.Line[]) => [...prev, line]);
-    //                 }
-    //             }
-    //         }
-    //     };
-
-    //     window.addEventListener('click', handleMouseClick);
-    //     window.addEventListener('mousemove', handleMouseMove);
-
-    //     return () => {
-    //         window.removeEventListener('click', handleMouseClick);
-    //         window.removeEventListener('mousemove', handleMouseMove);
-    //     };
-    // }, [is2DView, creatingWallMode, wallStart, currentWall]);
-
-
     const setCamera = useCallback((camera: THREE.Camera) => {
         cameraRef.current = camera;
     }, []);
@@ -318,8 +236,8 @@ const MainPage: React.FC = () => {
                 gltf: gltf,
                 rotation: [0, 0, 0],
                 texture: "textures/Cube_BaseColor.png",
-                // scale: [size.x, size.y, size.z],
-                scale: [1, 1, 1],
+                scale: [size.x, size.y, size.z],
+                //scale: [1, 1, 1],
             };
             setObjects((prevObjects) => [...prevObjects, newObject]);
             setQuote((prevQuote) => [...prevQuote, newObject]);
@@ -375,7 +293,7 @@ const MainPage: React.FC = () => {
     const handleObjectClick = useCallback((id: string) => {
         const selectedObject = objects.find((obj) => obj.id === id);
         const panel = document.getElementById('floating-panel');
-
+        setCreatingWallMode(false);
         if (selectedObject && panel) {
             panel.style.display = 'block';
 

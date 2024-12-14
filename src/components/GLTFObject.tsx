@@ -41,6 +41,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     const arrowWidthRef = useRef<THREE.Group | null>(null);
     const arrowHeightRef = useRef<THREE.Group | null>(null);
     const arrowDepthRef = useRef<THREE.Group | null>(null);
+    const defaultScaleRef = useRef([1, 1, 1]);
     //const [price, setPrice] = useState<number>(0); // État pour le prix
 
 
@@ -66,6 +67,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         if (url !== '') {
             const loader = new GLTFLoader();
             loader.load(url, (gltf) => {
+                console.log("gltf.scene.scale", scale);
+                defaultScaleRef.current = [scale[0], scale[1], scale[2]];
                 const clonedScene = gltf.scene.clone();
                 setScene(clonedScene);
             });
@@ -99,7 +102,14 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 mesh.geometry = newGeometry;
                 updateDimensionHelpers();
             } else {
-                mesh.scale.set(scale[0], scale[1], scale[2]);
+                console.log("defaultScaleRef.current", defaultScaleRef.current);
+                console.log("scale", scale);
+
+                const x = 1 + (scale[0] - defaultScaleRef.current[0]);
+                const y = 1 + (scale[1] - defaultScaleRef.current[1]);
+                const z = 1 + (scale[2] - defaultScaleRef.current[2]);
+
+                mesh.scale.set(x, y, z);
                 mesh.updateMatrixWorld(true);
                 updateDimensionHelpers();
             }
@@ -107,7 +117,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             updateQuotePrice(id, price);
             console.log(`Le prix mis à jour est de ${price  } €`);
         }
-    }, [scale, showDimensions]); 
+    }, [scale]); 
     
     
     
