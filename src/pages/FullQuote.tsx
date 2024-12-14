@@ -173,29 +173,14 @@ const FullQuote: React.FC = () => {
         <footer>
          <p>Les marchandises vendues reste notre propriété, jusqu’au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
         </footer>
+
+        <button onClick={handleBack} >
+                Retour maquette
+        </button>
       </div>
     )
 
-{/* <div>
-            <table>
-                <tr>
-                    <h1>
-                        DEVO
-                    </h1>
-                </tr>
-                <tr>
-                    <table>
-                        <tr>Nom de l'entreprise</tr>
-                        <tr>Nom du gérant</tr>
-                        <tr>Adresse</tr>
-                        <tr>Code Postal et Commune</tr>
-                        <tr>Ville</tr>
-                        <tr>SIREN</tr>
-                    </table>
-                </tr>
-            </table>
-        </div> */}
-    
+
     // return (
     //     <div id="conaiter">
     //         <h1>Devis Complet</h1>
