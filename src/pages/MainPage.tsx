@@ -9,7 +9,6 @@ import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelU
 import CanvasScene from '../components/CanvasScene';
 import ObjectPanel from '../components/ObjectPanel';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import logo from '../assets/Logo.png';
 
 const MainPage: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
