@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Quote.css';
 
@@ -35,7 +35,7 @@ const FullQuote: React.FC = () => {
     // On stocke la liste agrégée dans un état local pour permettre l'édition
     const [aggregatedQuote, setAggregatedQuote] = useState<AggregatedQuoteItem[]>(initialAggregated);
 
-    // Paramètres de TVA, Acompte (on passe l'acompte en état pour qu'il soit éditable)
+    // Paramètres de TVA, Acompte
     const tvaRate = 0.20; 
     const [acompteRate, setAcompteRate] = useState<number>(0.30);
 
@@ -126,6 +126,24 @@ const FullQuote: React.FC = () => {
         }
     };
 
+    // Gestion du logo modifiable
+    const [logoSrc, setLogoSrc] = useState<string>("logo.png");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleLogoClick = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const newLogo = e.target.files[0];
+            const objectUrl = URL.createObjectURL(newLogo);
+            setLogoSrc(objectUrl);
+        }
+    };
+
     return (
       <div>
         <button  className='full-quote-button' onClick={handleBack}>
@@ -133,8 +151,15 @@ const FullQuote: React.FC = () => {
         </button>
         <div className="container">
           <header>
-            <div className="logo-info">
-              <img src={"logo.png"} alt="Logo" />
+            <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
+              <img src={logoSrc} alt="Logo" />
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{display:'none'}}
+                onChange={handleLogoChange}
+                accept="image/*"
+              />
             </div>
             <div className="devo-info">
               <h2>DEVO</h2>
@@ -154,6 +179,7 @@ const FullQuote: React.FC = () => {
             <h2>Société Bâtiment</h2><br/>
               <div>
                 <table className='info-table-client'>
+                  <tbody>
                   <tr>
                     <td>Adresse</td>
                     <td>20 rue le blanc</td>
@@ -170,6 +196,7 @@ const FullQuote: React.FC = () => {
                     <td>Email</td>
                     <td>sociétébatiment@gmail.com</td>
                   </tr>
+                  </tbody>
                 </table>
               </div>
             </section>
@@ -177,6 +204,7 @@ const FullQuote: React.FC = () => {
               <h2>Devis n° : 123</h2><br/>
               <div>
                 <table className='info-table-devis'>
+                  <tbody>
                   <tr>
                     <td>En date du</td>
                     <td>05/10/2024</td>
@@ -193,6 +221,7 @@ const FullQuote: React.FC = () => {
                     <td>Durée estimée à</td>
                     <td>1 jour</td>
                   </tr>
+                  </tbody>
                 </table>
               </div>
             </section>
