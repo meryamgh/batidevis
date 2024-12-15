@@ -134,7 +134,7 @@ const FullQuote: React.FC = () => {
         <div className="container">
           <header>
             <div className="logo-info">
-              <img src={"img/logo.png"} alt="Logo" />
+              <img src={"logo.png"} alt="Logo" />
             </div>
             <div className="devo-info">
               <h2>DEVO</h2>
@@ -246,7 +246,7 @@ const FullQuote: React.FC = () => {
                           onKeyDown={handleKeyDown}
                           autoFocus
                         />
-                        : `${item.quantity.toFixed(2)} mm`}
+                        : `${item.quantity.toFixed(2)}`}
                     </td>
                     <td
                       onClick={() => handleCellClick(index, 'price')}

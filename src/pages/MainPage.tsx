@@ -377,7 +377,7 @@ const MainPage: React.FC = () => {
 
                 <div ref={draggerRef} className="dragger"></div>
                 <div ref={rightPanelRef} className="right-panel">
-                    <img src={logo} alt="Top Right" className="top-right-image" />
+                    <img src={"logo.png"} alt="Top Right" className="top-right-image" />
                     <h2 className="title">devis</h2>
                     <hr className="hr" />
                     <ul>
