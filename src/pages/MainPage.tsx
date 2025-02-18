@@ -338,8 +338,23 @@ const MainPage: React.FC = () => {
                 <button onClick={() => handleAddObject('/wall_with_door.gltf')} className="bouton">
                     mur avec ouverture pour porte
                 </button>
+                <button onClick={() => handleAddObject('/window.gltf')} className="bouton">
+                    window
+                </button>
                 <button onClick={() => handleAddObject('/porte_fenetre.gltf')} className="bouton">
                     porte-fenêtre
+                </button>
+                <button onClick={() => handleAddObject('/scene.gltf')} className="bouton">
+                    window sketchfab
+                </button>
+                <button onClick={() => handleAddObject('/Fence_Gate.gltf')} className="bouton">
+                    gate
+                </button>
+                <button onClick={() => handleAddObject('/plaquette_facade.gltf')} className="bouton">
+                    façade meshy
+                </button>
+                <button onClick={() => handleAddObject('/Columns.gltf')} className="bouton">
+                    façade sloyd
                 </button>
             </div>
 
