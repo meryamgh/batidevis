@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Quote.css';
 
@@ -32,14 +32,12 @@ const FullQuote: React.FC = () => {
         return acc;
     }, [] as AggregatedQuoteItem[]);
 
-    // On stocke la liste agrégée dans un état local pour permettre l'édition
     const [aggregatedQuote, setAggregatedQuote] = useState<AggregatedQuoteItem[]>(initialAggregated);
 
-    // Paramètres de TVA, Acompte (on passe l'acompte en état pour qu'il soit éditable)
+    // Paramètres de TVA, Acompte
     const tvaRate = 0.20; 
     const [acompteRate, setAcompteRate] = useState<number>(0.30);
 
-    // Calculs dérivés
     const totalHT = aggregatedQuote.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const totalTVA = totalHT * tvaRate;
     const totalTTC = totalHT + totalTVA;
@@ -50,7 +48,7 @@ const FullQuote: React.FC = () => {
         navigate('/', { state: { quote: initialQuote } }); 
     };
 
-    // Gestion de l'édition des cellules du tableau
+    // Gestion de l'édition des cellules du tableau de produits
     const [editingCell, setEditingCell] = useState<{rowIndex: number; field: 'details' | 'quantity' | 'price'} | null>(null);
     const [editValue, setEditValue] = useState<string>('');
 
@@ -65,25 +63,25 @@ const FullQuote: React.FC = () => {
     };
 
     const handleBlur = () => {
-        saveChanges();
+        saveCellChanges();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            saveChanges();
+            saveCellChanges();
         }
     };
 
-    const saveChanges = () => {
+    const saveCellChanges = () => {
         if (!editingCell) return;
         const {rowIndex, field} = editingCell;
         let newValue: string | number = editValue.trim();
 
-        // Pour les champs numériques (price, quantity), on s'assure que ce soit un nombre non négatif
+        // Pour les champs numériques
         if (field === 'quantity' || field === 'price') {
             let numericVal = parseFloat(newValue);
             if (isNaN(numericVal) || numericVal < 0) {
-                numericVal = 0; // On force à 0 si valeur invalide ou négative
+                numericVal = 0; 
             }
             newValue = numericVal;
         }
@@ -126,73 +124,233 @@ const FullQuote: React.FC = () => {
         }
     };
 
+    // Gestion du logo modifiable
+    const [logoSrc, setLogoSrc] = useState<string>("logo.png");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleLogoClick = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const newLogo = e.target.files[0];
+            const objectUrl = URL.createObjectURL(newLogo);
+            setLogoSrc(objectUrl);
+        }
+    };
+
+    // Liste des champs textuels à rendre modifiables
+    // Informations DEVO
+    const [devoTitle, setDevoTitle] = useState<string>('DEVO');
+    const [devoName, setDevoName] = useState<string>('Chen Emma');
+    const [devoAddress, setDevoAddress] = useState<string>('73 Rue Rateau');
+    const [devoCity, setDevoCity] = useState<string>('93120 La Courneuve, France');
+    const [devoSiren, setDevoSiren] = useState<string>('SIREN : 000.000.000.000');
+
+    // Informations client
+    const [societeBatiment, setSocieteBatiment] = useState<string>('Société Bâtiment');
+    const [clientAdresse, setClientAdresse] = useState<string>('20 rue le blanc');
+    const [clientCodePostal, setClientCodePostal] = useState<string>('75013 Paris');
+    const [clientTel, setClientTel] = useState<string>('0678891223');
+    const [clientEmail, setClientEmail] = useState<string>('sociétébatiment@gmail.com');
+
+    // Informations de devis
+    const [devisNumero, setDevisNumero] = useState<string>('123');
+    const [enDateDu, setEnDateDu] = useState<string>('05/10/2024');
+    const [valableJusquau, setValableJusquau] = useState<string>('04/12/2024');
+    const [debutTravaux, setDebutTravaux] = useState<string>('05/10/2024');
+    const [dureeTravaux, setDureeTravaux] = useState<string>('1 jour');
+
+    // Pour tous ces champs, on va réutiliser un état "editingField" distinct
+    const [editingFieldOutside, setEditingFieldOutside] = useState<string | null>(null);
+    const [editValueOutside, setEditValueOutside] = useState<string>('');
+
+    const handleFieldClick = (fieldName: string, currentValue: string) => {
+        setEditingFieldOutside(fieldName);
+        setEditValueOutside(currentValue);
+    };
+
+    const handleOutsideInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setEditValueOutside(e.target.value);
+    };
+
+    const handleOutsideBlur = () => {
+        saveOutsideChanges();
+    };
+
+    const handleOutsideKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            saveOutsideChanges();
+        }
+    };
+
+    const saveOutsideChanges = () => {
+        if (!editingFieldOutside) return;
+        const newValue = editValueOutside.trim();
+        switch (editingFieldOutside) {
+            case 'devoTitle':
+                setDevoTitle(newValue);
+                break;
+            case 'devoName':
+                setDevoName(newValue);
+                break;
+            case 'devoAddress':
+                setDevoAddress(newValue);
+                break;
+            case 'devoCity':
+                setDevoCity(newValue);
+                break;
+            case 'devoSiren':
+                setDevoSiren(newValue);
+                break;
+            case 'societeBatiment':
+                setSocieteBatiment(newValue);
+                break;
+            case 'clientAdresse':
+                setClientAdresse(newValue);
+                break;
+            case 'clientCodePostal':
+                setClientCodePostal(newValue);
+                break;
+            case 'clientTel':
+                setClientTel(newValue);
+                break;
+            case 'clientEmail':
+                setClientEmail(newValue);
+                break;
+            case 'devisNumero':
+                setDevisNumero(newValue);
+                break;
+            case 'enDateDu':
+                setEnDateDu(newValue);
+                break;
+            case 'valableJusquau':
+                setValableJusquau(newValue);
+                break;
+            case 'debutTravaux':
+                setDebutTravaux(newValue);
+                break;
+            case 'dureeTravaux':
+                setDureeTravaux(newValue);
+                break;
+            default:
+                break;
+        }
+
+        setEditingFieldOutside(null);
+        setEditValueOutside('');
+    };
+
+    const EditableText = ({fieldName, value}: {fieldName: string; value: string}) => {
+        const isEditing = editingFieldOutside === fieldName;
+        return isEditing ? (
+            <input
+                type="text"
+                value={editValueOutside}
+                onChange={handleOutsideInputChange}
+                onBlur={handleOutsideBlur}
+                onKeyDown={handleOutsideKeyDown}
+                autoFocus
+            />
+        ) : (
+            <span onClick={() => handleFieldClick(fieldName, value)} style={{cursor:'pointer', textDecoration:'underline'}}>
+                {value}
+            </span>
+        );
+    };
+
     return (
       <div>
-        <button  className='full-quote-button' onClick={handleBack}>
+        <button className='full-quote-button' onClick={handleBack}>
           retour maquette
         </button>
         <div className="container">
           <header>
-            <div className="logo-info">
-              <img src={"logo.png"} alt="Logo" />
+            <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
+              <img src={logoSrc} alt="Logo" />
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{display:'none'}}
+                onChange={handleLogoChange}
+                accept="image/*"
+              />
             </div>
             <div className="devo-info">
-              <h2>DEVO</h2>
+              <h2>
+                <EditableText fieldName="devoTitle" value={devoTitle} />
+              </h2>
               <p>
-                Chen Emma
-                <br />
-                73 Rue Rateau
-                <br />
-                93120 La Courneuve, France
-                <br />
-                SIREN : 000.000.000.000
+                <EditableText fieldName="devoName" value={devoName} /><br />
+                <EditableText fieldName="devoAddress" value={devoAddress} /><br />
+                <EditableText fieldName="devoCity" value={devoCity} /><br />
+                <EditableText fieldName="devoSiren" value={devoSiren} />
               </p>
             </div>
           </header>
           <div className="infoclient-infodevis">
             <section className="info-client">
-            <h2>Société Bâtiment</h2><br/>
+              <h2>
+                <EditableText fieldName="societeBatiment" value={societeBatiment} />
+              </h2><br/>
               <div>
                 <table className='info-table-client'>
+                  <tbody>
                   <tr>
                     <td>Adresse</td>
-                    <td>20 rue le blanc</td>
+                    <td>
+                      <EditableText fieldName="clientAdresse" value={clientAdresse} />
+                    </td>
                   </tr>
                   <tr>
                     <td>Code Postal</td>
-                    <td>75013 Paris</td>
+                    <td>
+                      <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
+                    </td>
                   </tr>
                   <tr>
                     <td>Tel</td>
-                    <td>0678891223</td>
+                    <td>
+                      <EditableText fieldName="clientTel" value={clientTel} />
+                    </td>
                   </tr>
                   <tr>
                     <td>Email</td>
-                    <td>sociétébatiment@gmail.com</td>
+                    <td>
+                      <EditableText fieldName="clientEmail" value={clientEmail} />
+                    </td>
                   </tr>
+                  </tbody>
                 </table>
               </div>
             </section>
             <section className="devis-header">
-              <h2>Devis n° : 123</h2><br/>
+              <h2>
+                Devis n° : <EditableText fieldName="devisNumero" value={devisNumero} />
+              </h2><br/>
               <div>
                 <table className='info-table-devis'>
+                  <tbody>
                   <tr>
                     <td>En date du</td>
-                    <td>05/10/2024</td>
+                    <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
                   </tr>
                   <tr>
                     <td>Valable jusqu'au</td>
-                    <td>04/12/2024</td>
+                    <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
                   </tr>
                   <tr>
                     <td>Début des travaux</td>
-                    <td>05/10/2024</td>
+                    <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
                   </tr>
                   <tr>
                     <td>Durée estimée à</td>
-                    <td>1 jour</td>
+                    <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
                   </tr>
+                  </tbody>
                 </table>
               </div>
             </section>
