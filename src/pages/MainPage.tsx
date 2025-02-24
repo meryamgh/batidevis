@@ -331,6 +331,17 @@ const MainPage: React.FC = () => {
     return (
         <div id="page">
             {/* Bannière fixe en haut */}
+            <div className="logo">
+                <img src={"logo.png"} alt="Top Right" className="top-right-image" />
+                <span>MAQDEV</span>
+            </div>
+            <nav>
+                <a href="#" className="active">ACCUEIL</a>
+                <a href="#">TARIFS</a>
+                <a href="#">MES DEVIS & FACTURES</a>
+                <a href="#">FAQ</a>
+            </nav>
+            <a href="#" className="btn">CONNEXION/INSCRIPTION</a>
             <div className="banner">
                 <button onClick={() => setCreatingWallMode(!creatingWallMode)} disabled={!is2DView}>
                     {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
