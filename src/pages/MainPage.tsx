@@ -9,6 +9,8 @@ import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelU
 import CanvasScene from '../components/CanvasScene';
 import ObjectPanel from '../components/ObjectPanel';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import GltfList from "./GLTFList.js";
+
 
 const MainPage: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
@@ -17,15 +19,13 @@ const MainPage: React.FC = () => {
     const raycaster = useRef(new THREE.Raycaster());
     //position 2D du curseur
     const mouse = useRef(new THREE.Vector2());
-    const cameraRef = useRef<THREE.Camera | null>(null);
-
+    const cameraRef = useRef<THREE.Camera | null>(null); 
     const orbitControlsRef = useRef<any>(null);
     const groundPlaneRef = useRef<THREE.Mesh | null>(null);
     const rightPanelRef = useRef<HTMLDivElement>(null);
     const leftPanelRef = useRef<HTMLDivElement>(null);
     const draggerRef = useRef<HTMLDivElement>(null);
-    const panelRootRef = useRef<Root | null>(null);
-
+    const panelRootRef = useRef<Root | null>(null); 
     const navigate = useNavigate();
 
     const [isMoving, setIsMoving] = useState<string | null>(null);
@@ -38,11 +38,25 @@ const MainPage: React.FC = () => {
     //const [wallStart, setWallStart] = useState<THREE.Vector3 | null>(null);
     const lineHelper = useRef<THREE.Line | null>(null);
 
+    const [showRoomConfig, setShowRoomConfig] = useState(false);
+    const [roomConfig, setRoomConfig] = useState({
+        width: 10,    // Valeur qui fonctionnait
+        length: 8,    // Valeur qui fonctionnait
+        height: 6     // Valeur qui fonctionnait
+    });
+
+    // Ajouter cet état pour gérer les étages
+    const [currentFloor, setCurrentFloor] = useState(0);
+    const [selectedFloor2D, setSelectedFloor2D] = useState(0);
 
     const toggleView = () => {
         setIs2DView((prev) => !prev);
         if (creatingWallMode) {
             setCreatingWallMode(false);
+        }
+        // Reset selected floor when switching to 2D view
+        if (!is2DView && currentFloor > 0) {
+            setSelectedFloor2D(0);
         }
     };
 
@@ -54,8 +68,7 @@ const MainPage: React.FC = () => {
         const pricePerUnitLength = 10;
         const wallPrice = wallLength * pricePerUnitLength;
         const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallWidth);
-        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
-
+        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 }); 
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
 
         const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
@@ -71,7 +84,7 @@ const MainPage: React.FC = () => {
             position: [midPoint.x / 2, 0, midPoint.z / 2],
             gltf: wallMesh,
             rotation: [0, -angle, 0],
-            texture: 'textures/Cube_BaseColor.png',
+            // texture: 'textures/Cube_BaseColor.png',
             scale: [wallLength, wallHeight, wallWidth],
         };
 
@@ -93,8 +106,6 @@ const MainPage: React.FC = () => {
         plane.position.y = 0; // S'assurer que le plan est à y=0
         groundPlaneRef.current = plane;
     }, []);
-
-
 
     useEffect(() => {
         const handleMouseMoveCallback = (e: MouseEvent) => {
@@ -235,7 +246,7 @@ const MainPage: React.FC = () => {
                 position: [0, 0, 0] as [number, number, number],
                 gltf: gltf,
                 rotation: [0, 0, 0],
-                texture: "textures/Cube_BaseColor.png",
+                // texture: "textures/Cube_BaseColor.png",
                 scale: [size.x, size.y, size.z],
                 //scale: [1, 1, 1],
             };
@@ -291,9 +302,15 @@ const MainPage: React.FC = () => {
     }, [getSerializableQuote, navigate]);
 
     const handleObjectClick = useCallback((id: string) => {
+        // Ne pas ouvrir le panneau si on est en mode 2D
+        if (is2DView) {
+            return;
+        }
+
         const selectedObject = objects.find((obj) => obj.id === id);
         const panel = document.getElementById('floating-panel');
         setCreatingWallMode(false);
+        
         if (selectedObject && panel) {
             panel.style.display = 'block';
 
@@ -317,7 +334,7 @@ const MainPage: React.FC = () => {
                 />
             );
         }
-    }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject]);
+    }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject, is2DView]);
 
     const updateQuotePrice = (id: string, newPrice: number, newScale : [number, number, number]) => {
         console.log("update quote price");
@@ -325,6 +342,278 @@ const MainPage: React.FC = () => {
             prevQuote.map((item) =>
                 item.id === id ? { ...item, price: newPrice, scale : newScale } : item
             )
+        );
+    };
+
+    const generateRoom = useCallback(() => {
+        const wallThickness = 0.2;
+        const floorMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x90EE90, // Vert clair pour le sol du RDC
+            transparent: true,
+            opacity: 0.8
+        });
+        const wallMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xADD8E6, // Bleu clair pour les murs du RDC
+            transparent: true,
+            opacity: 0.7
+        });
+
+        // Créer le sol
+        const floorObject: ObjectData = {
+            id: uuidv4(),
+            url: '',
+            price: 50,
+            details: 'Sol',
+            position: [0, -0.5, 0], // Le sol est exactement au niveau de la scène
+            gltf: new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), floorMaterial),
+            rotation: [0, 0, 0],
+            scale: [roomConfig.width, wallThickness, roomConfig.length],
+        };
+
+        // Créer les murs en commençant au niveau du sol
+        const walls = [
+            // Mur avant
+            {
+                position: [0, 1, roomConfig.length/4],
+                scale: [roomConfig.width, roomConfig.height, wallThickness],
+                rotation: [0, 0, 0]
+            },
+            // Mur arrière
+            {
+                position: [0, 1, -roomConfig.length/4],
+                scale: [roomConfig.width, roomConfig.height, wallThickness],
+                rotation: [0, 0, 0]
+            },
+            // Mur gauche
+            {
+                position: [-roomConfig.width/4, 1, 0],
+                scale: [roomConfig.length, roomConfig.height, wallThickness],
+                rotation: [0, Math.PI/2, 0]
+            },
+            // Mur droit
+            {
+                position: [roomConfig.width/4, 1, 0],
+                scale: [roomConfig.length, roomConfig.height, wallThickness],
+                rotation: [0, Math.PI/2, 0]
+            }
+        ];
+
+        // Ajouter le sol
+        setObjects(prevObjects => [...prevObjects, floorObject]);
+        setQuote(prevQuote => [...prevQuote, {
+            ...floorObject,
+            price: (roomConfig.width * roomConfig.length * 50) // Prix total basé sur la surface
+        }]);
+
+        // Ajouter les murs
+        walls.forEach(wall => {
+            const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+
+            const newWallObject: ObjectData = {
+                id: uuidv4(),
+                url: '',
+                price: 100,
+                details: 'Mur',
+                position: wall.position as [number, number, number],
+                gltf: wallMesh,
+                rotation: wall.rotation as [number, number, number],
+                scale: wall.scale as [number, number, number],
+            };
+
+            setObjects(prevObjects => [...prevObjects, newWallObject]);
+            setQuote(prevQuote => [...prevQuote, newWallObject]);
+        });
+        setShowRoomConfig(false);
+    }, [roomConfig]);
+
+    // Ajouter cette fonction pour créer un nouvel étage
+    const addNewFloor = useCallback(() => {
+        const wallThickness = 0.2;
+        const floorHeight = ((currentFloor * roomConfig.height) + roomConfig.height)/2;
+
+        // Couleurs différentes pour chaque étage
+        const colors = [
+            0xFFB6C1, // Rose clair
+            0xFFE4B5, // Pêche
+            0xE6E6FA, // Lavande
+            0x98FB98  // Vert pâle
+        ];
+
+        const floorMaterial = new THREE.MeshStandardMaterial({ 
+            color: colors[currentFloor % colors.length],
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const wallMaterial = new THREE.MeshStandardMaterial({ 
+            color: colors[(currentFloor + 1) % colors.length],
+            transparent: true,
+            opacity: 0.7
+        });
+
+        const floorObject: ObjectData = {
+            id: uuidv4(),
+            url: '',
+            price: 50,
+            details: `Sol étage ${currentFloor + 1} (Niveau ${currentFloor + 1})`,
+            position: [0, floorHeight - 0.5, 0],
+            gltf: new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), floorMaterial),
+            rotation: [0, 0, 0],
+            scale: [roomConfig.width, wallThickness, roomConfig.length],
+        };
+
+        // Créer les murs avec la même logique que generateRoom
+        const walls = [
+            // Mur avant
+            {
+                position: [0, floorHeight + 1, roomConfig.length/4],
+                scale: [roomConfig.width, roomConfig.height, wallThickness],
+                rotation: [0, 0, 0]
+            },
+            // Mur arrière
+            {
+                position: [0, floorHeight + 1, -roomConfig.length/4],
+                scale: [roomConfig.width, roomConfig.height, wallThickness],
+                rotation: [0, 0, 0]
+            },
+            // Mur gauche
+            {
+                position: [-roomConfig.width/4, floorHeight + 1, 0],
+                scale: [roomConfig.length, roomConfig.height, wallThickness],
+                rotation: [0, Math.PI/2, 0]
+            },
+            // Mur droit
+            {
+                position: [roomConfig.width/4, floorHeight + 1, 0],
+                scale: [roomConfig.length, roomConfig.height, wallThickness],
+                rotation: [0, Math.PI/2, 0]
+            }
+        ];
+
+        // Ajouter le plancher
+        setObjects(prevObjects => [...prevObjects, floorObject]);
+        setQuote(prevQuote => [...prevQuote, {
+            ...floorObject,
+            price: (roomConfig.width * roomConfig.length * 50)
+        }]);
+
+        // Ajouter les murs
+        walls.forEach(wall => {
+            const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+
+            const newWallObject: ObjectData = {
+                id: uuidv4(),
+                url: '',
+                price: 100,
+                details: `Mur étage ${currentFloor + 1} (Niveau ${currentFloor + 1})`,
+                position: wall.position as [number, number, number],
+                gltf: wallMesh,
+                rotation: wall.rotation as [number, number, number],
+                scale: wall.scale as [number, number, number],
+            };
+
+            setObjects(prevObjects => [...prevObjects, newWallObject]);
+            setQuote(prevQuote => [...prevQuote, newWallObject]);
+        });
+
+        setCurrentFloor(prev => prev + 1);
+    }, [currentFloor, roomConfig]);
+
+    const RoomConfigPanel = () => {
+        const surfaceM2 = roomConfig.width * roomConfig.length;
+        
+        return (
+            <div className="room-config-panel" style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'white',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+                zIndex: 1000
+            }}>
+                <h3>Configuration de la pièce</h3>
+                <div>
+                    <label>Largeur (m): </label>
+                    <input 
+                        type="number" 
+                        value={roomConfig.width} 
+                        onChange={(e) => setRoomConfig(prev => ({...prev, width: Number(e.target.value)}))}
+                        min="1"
+                        step="0.5"
+                    />
+                </div>
+                <div>
+                    <label>Longueur (m): </label>
+                    <input 
+                        type="number" 
+                        value={roomConfig.length} 
+                        onChange={(e) => setRoomConfig(prev => ({...prev, length: Number(e.target.value)}))}
+                        min="1"
+                        step="0.5"
+                    />
+                </div>
+                <div>
+                    <label>Hauteur (m): </label>
+                    <input 
+                        type="number" 
+                        value={roomConfig.height} 
+                        onChange={(e) => setRoomConfig(prev => ({...prev, height: Number(e.target.value)}))}
+                        min="1"
+                        step="0.5"
+                    />
+                </div>
+                <div style={{
+                    marginTop: '15px',
+                    padding: '10px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '4px'
+                }}>
+                    <strong>Surface totale:</strong> {surfaceM2.toFixed(2)} m²
+                </div>
+                <div style={{marginTop: '20px'}}>
+                    <button onClick={generateRoom}>Créer la pièce</button>
+                    <button onClick={() => setShowRoomConfig(false)}>Annuler</button>
+                </div>
+            </div>
+        );
+    };
+
+    // Composant pour le sélecteur d'étage en vue 2D
+    const FloorSelector = () => {
+        if (!is2DView || currentFloor === 0) return null;
+
+        return (
+            <div className="floor-selector" style={{
+                position: 'absolute',
+                top: '80px',
+                right: '20px',
+                backgroundColor: 'white',
+                padding: '10px',
+                borderRadius: '5px',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                zIndex: 1000
+            }}>
+                <label style={{ marginRight: '10px' }}>Étage à visualiser:</label>
+                <select 
+                    value={selectedFloor2D}
+                    onChange={(e) => setSelectedFloor2D(Number(e.target.value))}
+                    style={{
+                        padding: '5px',
+                        borderRadius: '3px'
+                    }}
+                >
+                    {Array.from({ length: currentFloor + 1 }, (_, i) => (
+                        <option key={i} value={i}>
+                            {i === 0 ? 'Rez-de-chaussée' : `Étage ${i}`}
+                        </option>
+                    ))}
+                </select>
+            </div>
         );
     };
 
@@ -341,11 +630,23 @@ const MainPage: React.FC = () => {
                 <button onClick={() => handleAddObject('/porte_fenetre.gltf')} className="bouton">
                     porte-fenêtre
                 </button>
+                <button onClick={() => setShowRoomConfig(true)} className="bouton">
+                    Générer une pièce
+                </button>
+                <button 
+                    onClick={addNewFloor} 
+                    className="bouton"
+                    disabled={currentFloor === 0 && objects.length === 0} // Désactivé s'il n'y a pas de rez-de-chaussée
+                >
+                    Ajouter un étage
+                </button>
             </div>
+            <GltfList handleAddObject={handleAddObject} />
 
             {/* Contenu principal */}
             <div id="container" className="container-essaie">
                 <div ref={leftPanelRef} className="left-panel">
+                    <FloorSelector />
                     <div
                         id="floating-panel"
                         className="floating-panel"
@@ -353,7 +654,12 @@ const MainPage: React.FC = () => {
                     ></div>
 
                     <CanvasScene
-                        objects={objects}
+                        objects={objects.filter(obj => {
+                            if (!is2DView) return true;
+                            // En vue 2D, filtrer les objets selon l'étage sélectionné
+                            const objectFloor = Math.floor(obj.position[1] / roomConfig.height);
+                            return objectFloor === selectedFloor2D;
+                        })}
                         onClick={handleObjectClick}
                         onUpdatePosition={handleUpdatePosition}
                         isMoving={isMoving}
@@ -379,10 +685,54 @@ const MainPage: React.FC = () => {
                     <img src={"logo.png"} alt="Top Right" className="top-right-image" />
                     <h2 className="title">devis</h2>
                     <hr className="hr" />
-                    <ul>
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
                         {quote.map((item) => (
-                            <li key={item.id}>
-                                {item.details} {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} €
+                            <li key={item.id} style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '10px',
+                                padding: '8px',
+                                backgroundColor: '#f5f5f5',
+                                borderRadius: '4px'
+                            }}>
+                                <div>
+                                    {item.details} {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} €
+                                </div>
+                                <div>
+                                    <button 
+                                        onClick={() => {
+                                            setObjects(objects.filter(obj => obj.id !== item.id));
+                                            setQuote(quote.filter(q => q.id !== item.id));
+                                        }}
+                                        style={{
+                                            marginRight: '8px',
+                                            padding: '4px 8px',
+                                            backgroundColor: '#ff4444',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Tout supprimer
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setQuote(quote.filter(q => q.id !== item.id));
+                                        }}
+                                        style={{
+                                            padding: '4px 8px',
+                                            backgroundColor: '#ffa500',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Supprimer du devis
+                                    </button>
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -394,6 +744,7 @@ const MainPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {showRoomConfig && <RoomConfigPanel />}
         </div>
     );
 };

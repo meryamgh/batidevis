@@ -100,17 +100,33 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             <p className='texte'>{object.details}</p>
             <div className='container-label'>
                 <label className='titre-label'>texture</label>
-                <select className='selection-select'
-                    value={texture}
-                    onChange={(e) => {
-                        const newTexture = e.target.value;
-                        setTexture(newTexture);  // Met à jour l'état local de la texture
-                        onUpdateTexture(object.id, newTexture); // Notifie le parent de la mise à jour
-                    }}
-                >
-                    <option value="textures/Cube_BaseColor.png">Cube_BaseColor.png</option>
-                    <option value="textures/concrete_texture.jpg">concrete_texture.jpg</option>
-                </select>
+                <div className="texture-selector">
+                    {[
+                        { value: "textures/Cube_BaseColor.png", label: "Cube BaseColor" },
+                        { value: "textures/concrete_texture.jpg", label: "Concrete" },
+                        { value: "textures/Bricks085_1K-PNG_Color.png", label: "Bricks" },
+                        { value: "textures/Wood052_1K-PNG_Color.png", label: "Wood" },
+
+                        { value: "textures/Wood052_1K-PNG_Displacement.png", label: "Cube BaseColor" },
+                        { value: "textures/Wood052_1K-PNG_Roughness.png", label: "Concrete" }
+                    ].map((textureOption) => (
+                        <div 
+                            key={textureOption.value}
+                            className={`texture-option ${texture === textureOption.value ? 'selected' : ''}`}
+                            onClick={() => {
+                                setTexture(textureOption.value);
+                                onUpdateTexture(object.id, textureOption.value);
+                            }}
+                        >
+                            <img 
+                                src={textureOption.value} 
+                                alt={textureOption.label}
+                                className="texture-preview"
+                            />
+                            <span>{textureOption.label}</span>
+                        </div>
+                    ))}
+                </div>
                 <br /><br />
                 <label className='titre-label'>largeur</label>
                 <input className='selection'

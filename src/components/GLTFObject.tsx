@@ -75,6 +75,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
             const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
             console.log("les positions", position);
+            console.log("les scale", scale);
             wallMesh.position.set(...position);
             if(rotation){
                 wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
@@ -96,6 +97,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     
             if (mesh.geometry) {
                 const newGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
+                newGeometry.translate(0, scale[1] / 2, 0);
                 mesh.geometry.dispose();
                 mesh.geometry = newGeometry;
                 
@@ -108,12 +110,17 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 const z = 1 + (scale[2] - defaultScaleRef.current[2]);
 
                 mesh.scale.set(x, y, z);
+                
+                const box = new THREE.Box3().setFromObject(mesh);
+                const height = box.max.y - box.min.y;
+                mesh.position.y = height / 2;
+                
                 mesh.updateMatrixWorld(true);
             }
             updateDimensionHelpers();
             price = calculatePrice(scale);
             updateQuotePrice(id, price, scale);
-            console.log(`Le prix mis à jour est de ${price  } €`);
+            console.log(`Le prix mis à jour est de ${price} €`);
         }
     }, [scale]); 
     
@@ -220,17 +227,32 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
     useEffect(() => {
         if (scene && texture) {
+            console.log("texture", texture);
             const loadedTexture = new THREE.TextureLoader().load(texture);
             loadedTexture.anisotropy = 16;
+            loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
+            loadedTexture.repeat.set(scale[0], scale[1]);
+            
             scene.traverse((child: any) => {
                 if (child.isMesh) {
                     child.material.map = loadedTexture;
                     child.material.needsUpdate = true;
+                    
+                    child.material.side = THREE.DoubleSide;
+                    child.material.roughness = 0.8;
+                    child.material.metalness = 0.2;
+                    
+                    if (child.geometry) {
+                        child.geometry.computeVertexNormals();
+                        child.geometry.computeBoundingSphere();
+                    }
+                    
+                    child.castShadow = true;
+                    child.receiveShadow = true;
                 }
             });
         }
-        
-    }, [scene, texture]);
+    }, [scene, texture, scale]);
 
     return (
         scene && (

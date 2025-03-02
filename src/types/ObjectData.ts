@@ -8,7 +8,10 @@ export type ObjectData = {
     details: string;
     position: [number, number, number];
     gltf : Mesh | GLTF;
-    texture : string;
+    texture ?: string;
     scale : [number, number, number];
     rotation?: [number, number, number];
+    // Points pour le rendu 2D des murs
+    startPoint?: [number, number];
+    endPoint?: [number, number];
 };
