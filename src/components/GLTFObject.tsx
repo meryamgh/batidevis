@@ -40,10 +40,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     const arrowHeightRef = useRef<THREE.Group | null>(null);
     const arrowDepthRef = useRef<THREE.Group | null>(null);
     const defaultScaleRef = useRef([1, 1, 1]);
-    //const [price, setPrice] = useState<number>(0); // État pour le prix
+    const selectedMeshRef = useRef<THREE.Mesh | null>(null);
 
-
-    
     const createTextSprite = (text: string) => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -68,6 +66,14 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 console.log("gltf.scene.scale", scale);
                 defaultScaleRef.current = [scale[0], scale[1], scale[2]];
                 const clonedScene = gltf.scene.clone();
+                
+                // Store the first mesh found for texture application
+                clonedScene.traverse((child: any) => {
+                    if (child.isMesh && !selectedMeshRef.current) {
+                        selectedMeshRef.current = child;
+                    }
+                });
+                
                 setScene(clonedScene);
             });
         } else {
@@ -80,7 +86,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             if(rotation){
                 wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
             }
-            
+            selectedMeshRef.current = wallMesh;
             setScene(wallMesh);
         }
     }, [url]);
@@ -227,7 +233,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
     useEffect(() => {
         if (scene && texture) {
-            console.log("texture", texture);
+            console.log("Applying texture:", texture);
             const loadedTexture = new THREE.TextureLoader().load(texture);
             loadedTexture.anisotropy = 16;
             loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
@@ -235,9 +241,13 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             
             scene.traverse((child: any) => {
                 if (child.isMesh) {
+                    // Create a new material if it doesn't exist
+                    if (!child.material) {
+                        child.material = new THREE.MeshStandardMaterial();
+                    }
+                    
                     child.material.map = loadedTexture;
                     child.material.needsUpdate = true;
-                    
                     child.material.side = THREE.DoubleSide;
                     child.material.roughness = 0.8;
                     child.material.metalness = 0.2;
@@ -277,6 +287,18 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                     ref={meshRef}
                     onClick={(event: any) => {
                         event.stopPropagation();
+                        console.log('Objet cliqué:', {
+                            id: id,
+                            type: url ? 'Modèle 3D' : 'Mur',
+                            details: {
+                                position: position,
+                                scale: scale,
+                                rotation: rotation || [0, 0, 0],
+                                mesh: event.object,
+                                material: event.object.material,
+                                geometry: event.object.geometry
+                            }
+                        });
                         onClick();
                     }}
                 />

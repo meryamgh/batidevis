@@ -49,12 +49,14 @@ const MainPage: React.FC = () => {
     const [currentFloor, setCurrentFloor] = useState(0);
     const [selectedFloor2D, setSelectedFloor2D] = useState(0);
 
+    const [customTextures, setCustomTextures] = useState<Record<string, string>>({});
+
     const toggleView = () => {
         setIs2DView((prev) => !prev);
         if (creatingWallMode) {
             setCreatingWallMode(false);
         }
-        // Reset selected floor when switching to 2D view
+        // Reset selected floor when switching to 2D
         if (!is2DView && currentFloor > 0) {
             setSelectedFloor2D(0);
         }
@@ -317,13 +319,13 @@ const MainPage: React.FC = () => {
             if (!panelRootRef.current) {
                 panelRootRef.current = createRoot(panel);
             }
-
             panelRootRef.current.render(
                 <ObjectPanel
                     object={selectedObject}
                     onUpdateTexture={handleUpdateTexture}
                     onUpdateScale={handleUpdateScale}
                     onRemoveObject={handleRemoveObject}
+                    customTextures={customTextures}
                     onMoveObject={() => setIsMoving(id)}
                     onClosePanel={() => {
                         closePanel();
@@ -334,7 +336,7 @@ const MainPage: React.FC = () => {
                 />
             );
         }
-    }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject, is2DView]);
+    }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject, is2DView, customTextures]);
 
     const updateQuotePrice = (id: string, newPrice: number, newScale : [number, number, number]) => {
         console.log("update quote price");
@@ -348,23 +350,23 @@ const MainPage: React.FC = () => {
     const generateRoom = useCallback(() => {
         const wallThickness = 0.2;
         const floorMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x90EE90, // Vert clair pour le sol du RDC
+            color: 0x90EE90,
             transparent: true,
             opacity: 0.8
         });
         const wallMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xADD8E6, // Bleu clair pour les murs du RDC
+            color: 0xADD8E6,
             transparent: true,
             opacity: 0.7
         });
 
-        // Créer le sol
+        // Créer le sol au niveau le plus bas (y = 0)
         const floorObject: ObjectData = {
             id: uuidv4(),
             url: '',
             price: 50,
-            details: 'Sol',
-            position: [0, -0.5, 0], // Le sol est exactement au niveau de la scène
+            details: 'Sol (Rez-de-chaussée)',
+            position: [0, wallThickness/2, 0], // Ajuster la position Y pour l'épaisseur du sol
             gltf: new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), floorMaterial),
             rotation: [0, 0, 0],
             scale: [roomConfig.width, wallThickness, roomConfig.length],
@@ -374,124 +376,31 @@ const MainPage: React.FC = () => {
         const walls = [
             // Mur avant
             {
-                position: [0, 1, roomConfig.length/4],
+                position: [0, roomConfig.height/2, roomConfig.length/4],
                 scale: [roomConfig.width, roomConfig.height, wallThickness],
                 rotation: [0, 0, 0]
             },
             // Mur arrière
             {
-                position: [0, 1, -roomConfig.length/4],
+                position: [0, roomConfig.height/2, -roomConfig.length/4],
                 scale: [roomConfig.width, roomConfig.height, wallThickness],
                 rotation: [0, 0, 0]
             },
             // Mur gauche
             {
-                position: [-roomConfig.width/4, 1, 0],
+                position: [-roomConfig.width/4, roomConfig.height/2, 0],
                 scale: [roomConfig.length, roomConfig.height, wallThickness],
                 rotation: [0, Math.PI/2, 0]
             },
             // Mur droit
             {
-                position: [roomConfig.width/4, 1, 0],
+                position: [roomConfig.width/4, roomConfig.height/2, 0],
                 scale: [roomConfig.length, roomConfig.height, wallThickness],
                 rotation: [0, Math.PI/2, 0]
             }
         ];
 
         // Ajouter le sol
-        setObjects(prevObjects => [...prevObjects, floorObject]);
-        setQuote(prevQuote => [...prevQuote, {
-            ...floorObject,
-            price: (roomConfig.width * roomConfig.length * 50) // Prix total basé sur la surface
-        }]);
-
-        // Ajouter les murs
-        walls.forEach(wall => {
-            const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
-            const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-
-            const newWallObject: ObjectData = {
-                id: uuidv4(),
-                url: '',
-                price: 100,
-                details: 'Mur',
-                position: wall.position as [number, number, number],
-                gltf: wallMesh,
-                rotation: wall.rotation as [number, number, number],
-                scale: wall.scale as [number, number, number],
-            };
-
-            setObjects(prevObjects => [...prevObjects, newWallObject]);
-            setQuote(prevQuote => [...prevQuote, newWallObject]);
-        });
-        setShowRoomConfig(false);
-    }, [roomConfig]);
-
-    // Ajouter cette fonction pour créer un nouvel étage
-    const addNewFloor = useCallback(() => {
-        const wallThickness = 0.2;
-        const floorHeight = ((currentFloor * roomConfig.height) + roomConfig.height)/2;
-
-        // Couleurs différentes pour chaque étage
-        const colors = [
-            0xFFB6C1, // Rose clair
-            0xFFE4B5, // Pêche
-            0xE6E6FA, // Lavande
-            0x98FB98  // Vert pâle
-        ];
-
-        const floorMaterial = new THREE.MeshStandardMaterial({ 
-            color: colors[currentFloor % colors.length],
-            transparent: true,
-            opacity: 0.8
-        });
-
-        const wallMaterial = new THREE.MeshStandardMaterial({ 
-            color: colors[(currentFloor + 1) % colors.length],
-            transparent: true,
-            opacity: 0.7
-        });
-
-        const floorObject: ObjectData = {
-            id: uuidv4(),
-            url: '',
-            price: 50,
-            details: `Sol étage ${currentFloor + 1} (Niveau ${currentFloor + 1})`,
-            position: [0, floorHeight - 0.5, 0],
-            gltf: new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), floorMaterial),
-            rotation: [0, 0, 0],
-            scale: [roomConfig.width, wallThickness, roomConfig.length],
-        };
-
-        // Créer les murs avec la même logique que generateRoom
-        const walls = [
-            // Mur avant
-            {
-                position: [0, floorHeight + 1, roomConfig.length/4],
-                scale: [roomConfig.width, roomConfig.height, wallThickness],
-                rotation: [0, 0, 0]
-            },
-            // Mur arrière
-            {
-                position: [0, floorHeight + 1, -roomConfig.length/4],
-                scale: [roomConfig.width, roomConfig.height, wallThickness],
-                rotation: [0, 0, 0]
-            },
-            // Mur gauche
-            {
-                position: [-roomConfig.width/4, floorHeight + 1, 0],
-                scale: [roomConfig.length, roomConfig.height, wallThickness],
-                rotation: [0, Math.PI/2, 0]
-            },
-            // Mur droit
-            {
-                position: [roomConfig.width/4, floorHeight + 1, 0],
-                scale: [roomConfig.length, roomConfig.height, wallThickness],
-                rotation: [0, Math.PI/2, 0]
-            }
-        ];
-
-        // Ajouter le plancher
         setObjects(prevObjects => [...prevObjects, floorObject]);
         setQuote(prevQuote => [...prevQuote, {
             ...floorObject,
@@ -507,8 +416,12 @@ const MainPage: React.FC = () => {
                 id: uuidv4(),
                 url: '',
                 price: 100,
-                details: `Mur étage ${currentFloor + 1} (Niveau ${currentFloor + 1})`,
-                position: wall.position as [number, number, number],
+                details: 'Mur (Rez-de-chaussée)',
+                position: [
+                    wall.position[0],
+                    (wall.position[1] + wallThickness/2)/2, // Ajuster la position Y pour commencer au niveau du sol
+                    wall.position[2]
+                ],
                 gltf: wallMesh,
                 rotation: wall.rotation as [number, number, number],
                 scale: wall.scale as [number, number, number],
@@ -518,7 +431,108 @@ const MainPage: React.FC = () => {
             setQuote(prevQuote => [...prevQuote, newWallObject]);
         });
 
-        setCurrentFloor(prev => prev + 1);
+        setCurrentFloor(0);
+        setShowRoomConfig(false);
+    }, [roomConfig]);
+
+    // Ajouter cette fonction pour créer un nouvel étage
+    const addNewFloor = useCallback(() => {
+        const wallThickness = 0.2;
+        const nextFloorNumber = currentFloor + 1;
+        const floorHeight = nextFloorNumber * roomConfig.height;
+
+        // Couleurs différentes pour chaque étage
+        const colors = [
+            0xFFB6C1, // Rose clair
+            0xFFE4B5, // Pêche
+            0xE6E6FA, // Lavande
+            0x98FB98  // Vert pâle
+        ];
+
+        const floorMaterial = new THREE.MeshStandardMaterial({ 
+            color: colors[nextFloorNumber % colors.length],
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const wallMaterial = new THREE.MeshStandardMaterial({ 
+            color: colors[(nextFloorNumber + 1) % colors.length],
+            transparent: true,
+            opacity: 0.7
+        });
+
+        // Créer le sol de l'étage
+        const floorObject: ObjectData = {
+            id: uuidv4(),
+            url: '',
+            price: 50,
+            details: `Sol (Étage ${nextFloorNumber})`,
+            position: [0, (floorHeight + wallThickness/2)/2, 0], // Ajuster la position Y pour l'épaisseur du sol
+            gltf: new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), floorMaterial),
+            rotation: [0, 0, 0],
+            scale: [roomConfig.width, wallThickness, roomConfig.length],
+        };
+
+        // Créer les murs de l'étage
+        const walls = [
+            // Mur avant
+            {
+                position: [0, (floorHeight + roomConfig.height/2)/2, roomConfig.length/4],
+                scale: [roomConfig.width, roomConfig.height, wallThickness],
+                rotation: [0, 0, 0]
+            },
+            // Mur arrière
+            {
+                position: [0, (floorHeight + roomConfig.height/2)/2, -roomConfig.length/4],
+                scale: [roomConfig.width, roomConfig.height, wallThickness],
+                rotation: [0, 0, 0]
+            },
+            // Mur gauche
+            {
+                position: [-roomConfig.width/4, (floorHeight + roomConfig.height/2)/2, 0],
+                scale: [roomConfig.length, roomConfig.height, wallThickness],
+                rotation: [0, Math.PI/2, 0]
+            },
+            // Mur droit
+            {
+                position: [roomConfig.width/4, (floorHeight + roomConfig.height/2)/2, 0],
+                scale: [roomConfig.length, roomConfig.height, wallThickness],
+                rotation: [0, Math.PI/2, 0]
+            }
+        ];
+
+        // Ajouter le sol
+        setObjects(prevObjects => [...prevObjects, floorObject]);
+        setQuote(prevQuote => [...prevQuote, {
+            ...floorObject,
+            price: (roomConfig.width * roomConfig.length * 50)
+        }]);
+
+        // Ajouter les murs
+        walls.forEach(wall => {
+            const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+
+            const newWallObject: ObjectData = {
+                id: uuidv4(),
+                url: '',
+                price: 100,
+                details: `Mur (Étage ${nextFloorNumber})`,
+                position: [
+                    wall.position[0],
+                    wall.position[1] + wallThickness/2, // Ajuster la position Y pour commencer au niveau du sol de l'étage
+                    wall.position[2]
+                ],
+                gltf: wallMesh,
+                rotation: wall.rotation as [number, number, number],
+                scale: wall.scale as [number, number, number],
+            };
+
+            setObjects(prevObjects => [...prevObjects, newWallObject]);
+            setQuote(prevQuote => [...prevQuote, newWallObject]);
+        });
+
+        setCurrentFloor(nextFloorNumber);
     }, [currentFloor, roomConfig]);
 
     const RoomConfigPanel = () => {
@@ -617,6 +631,32 @@ const MainPage: React.FC = () => {
         );
     };
 
+    // Add texture upload handler
+    const handleTextureUpload = useCallback(async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('http://127.0.0.1:5000/upload_texture', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const textureUrl = `http://127.0.0.1:5000/textures/${data.filename}`;
+                setCustomTextures(prev => ({
+                    ...prev,
+                    [file.name]: textureUrl
+                }));
+            } else {
+                console.error('Texture upload failed');
+            }
+        } catch (error) {
+            console.error('Error uploading texture:', error);
+        }
+    }, []);
+
     return (
         <div id="page">
             {/* Bannière fixe en haut */}
@@ -656,9 +696,27 @@ const MainPage: React.FC = () => {
                     <CanvasScene
                         objects={objects.filter(obj => {
                             if (!is2DView) return true;
+                            
                             // En vue 2D, filtrer les objets selon l'étage sélectionné
-                            const objectFloor = Math.floor(obj.position[1] / roomConfig.height);
-                            return objectFloor === selectedFloor2D;
+                            const objectHeight = obj.position[1] * 2; // Multiplier par 2 pour compenser la division
+                            
+                            if (selectedFloor2D === 0) {
+                                // Pour le rez-de-chaussée
+                                return objectHeight <= roomConfig.height;
+                            } else {
+                                // Pour les étages supérieurs
+                                const floorStart = selectedFloor2D * roomConfig.height;
+                                const floorEnd = (selectedFloor2D + 1) * roomConfig.height;
+                                
+                                // Vérifier si l'objet appartient à cet étage
+                                const isInFloor = objectHeight > floorStart && objectHeight <= floorEnd;
+                                
+                                // Vérifier si c'est un sol d'étage (qui a une position légèrement décalée)
+                                const isFloor = obj.details.includes('Sol') && 
+                                              obj.details.includes(`Étage ${selectedFloor2D}`);
+                                
+                                return isInFloor || isFloor;
+                            }
                         })}
                         onClick={handleObjectClick}
                         onUpdatePosition={handleUpdatePosition}

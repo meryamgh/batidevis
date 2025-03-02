@@ -1,13 +1,14 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 
 interface CharacterProps {
     isEnabled: boolean;
     onPositionUpdate?: (position: THREE.Vector3, rotation: THREE.Euler) => void;
+    onRotationUpdate?: (handler: (direction: 'up' | 'down' | 'left' | 'right') => void) => void;
 }
 
-const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate }) => {
+const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRotationUpdate }) => {
     const characterRef = useRef<THREE.Group>(null);
     const rotationRef = useRef<THREE.Euler>(new THREE.Euler(0, 0, 0));
     const moveDirection = useRef<{ forward: boolean; backward: boolean; left: boolean; right: boolean }>({
@@ -20,6 +21,36 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate }) =>
     const speed = 0.1;
     const characterHeight = 1.7; // Hauteur moyenne d'une personne
     const mouseSensitivity = 0.002;
+    const rotationSpeed = 0.2;
+    const { camera } = useThree();
+
+    const handleRotation = (direction: 'up' | 'down' | 'left' | 'right') => {
+        switch (direction) {
+            case 'up':
+                rotationRef.current.x = Math.max(-Math.PI / 3, rotationRef.current.x - rotationSpeed);
+                break;
+            case 'down':
+                rotationRef.current.x = Math.min(Math.PI / 3, rotationRef.current.x + rotationSpeed);
+                break;
+            case 'left':
+                rotationRef.current.y += rotationSpeed;
+                break;
+            case 'right':
+                rotationRef.current.y -= rotationSpeed;
+                break;
+        }
+        if (onPositionUpdate) {
+            const newPosition = characterRef.current?.position.clone() || new THREE.Vector3();
+            newPosition.y = characterHeight;
+            onPositionUpdate(newPosition, rotationRef.current);
+        }
+    };
+
+    useEffect(() => {
+        if (onRotationUpdate) {
+            onRotationUpdate(handleRotation);
+        }
+    }, [onRotationUpdate]);
 
     useEffect(() => {
         if (!isEnabled) return;
@@ -42,16 +73,26 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate }) =>
             isMousePressed.current = false;
         };
 
+        const handleWheel = (e: WheelEvent) => {
+            if (!isEnabled) return;
+            const perspCamera = camera as THREE.PerspectiveCamera;
+            // Ajuster le FOV avec la molette de la souris
+            perspCamera.fov = Math.max(30, Math.min(90, perspCamera.fov + e.deltaY * 0.05));
+            perspCamera.updateProjectionMatrix();
+        };
+
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mousedown', handleMouseDown);
         window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('wheel', handleWheel);
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mousedown', handleMouseDown);
             window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('wheel', handleWheel);
         };
-    }, [isEnabled]);
+    }, [isEnabled, camera]);
 
     useEffect(() => {
         if (!isEnabled) return;

@@ -11,6 +11,7 @@ type ObjectPanelProps = {
     onClosePanel: () => void;
     onRotateObject: (id: string, newRotation: [number, number, number]) => void;
     onToggleShowDimensions: (id: string) => void; 
+    customTextures: Record<string, string>;
 };
 
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
@@ -22,6 +23,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     onClosePanel,
     onRotateObject,
     onToggleShowDimensions,
+    customTextures,
 }) => {
     const [width, setWidth] = useState(object.scale[0]);
     const [height, setHeight] = useState(object.scale[1]);
@@ -106,9 +108,12 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         { value: "textures/concrete_texture.jpg", label: "Concrete" },
                         { value: "textures/Bricks085_1K-PNG_Color.png", label: "Bricks" },
                         { value: "textures/Wood052_1K-PNG_Color.png", label: "Wood" },
-
-                        { value: "textures/Wood052_1K-PNG_Displacement.png", label: "Cube BaseColor" },
-                        { value: "textures/Wood052_1K-PNG_Roughness.png", label: "Concrete" }
+                        { value: "textures/Wood052_1K-PNG_Displacement.png", label: "Wood Displacement" },
+                        { value: "textures/Wood052_1K-PNG_Roughness.png", label: "Wood Roughness" },
+                        ...Object.entries(customTextures).map(([name, url]) => ({
+                            value: url,
+                            label: name.replace(/\.[^/.]+$/, "") // Enlève l'extension du fichier
+                        }))
                     ].map((textureOption) => (
                         <div 
                             key={textureOption.value}

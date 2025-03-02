@@ -132,12 +132,6 @@
     "materials": [
         {
             "pbrMetallicRoughness": {
-                "baseColorFactor": [
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0
-                ],
                 "baseColorTexture": {
                     "index": 0
                 }
