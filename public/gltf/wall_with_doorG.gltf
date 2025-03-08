@@ -1,0 +1,162 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5125,
+      "normalized": false,
+      "count": 198,
+      "type": "SCALAR",
+      "max": [
+        29.0
+      ],
+      "min": [
+        0.0
+      ]
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 30,
+      "type": "VEC3",
+      "max": [
+        2.0,
+        1.25,
+        0.125
+      ],
+      "min": [
+        -2.0,
+        -1.25,
+        -0.125
+      ]
+    }
+  ],
+  "asset": {
+    "generator": "pygltflib@v1.16.2",
+    "version": "2.0",
+    "extras": {
+      "header": "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "processed": true,
+      "file_path": "C:\\Users\\merya\\AppData\\Local\\Temp\\tmpabjj9p4y.stl",
+      "file_name": "tmpabjj9p4y.stl",
+      "price": 643.6630588234,
+      "color": "#0000FF",
+      "texture": "concrete_texture.jpg",
+      "details": "Percement d'une ouverture pour porte-fen\u00eatre 120 x 215 ht dans mur \u00e9p. < 0.25 m en agglom\u00e9r\u00e9s b\u00e9ton. Non compris, linteau, tableaux, appuis ou seuil, \u00e9chafaudage, enl\u00e8vement et \u00e9vacuation des mat\u00e9riaux en d\u00e9charge."
+    }
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 792
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 0,
+      "byteLength": 360
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "gltf_buffer_0.bin",
+      "byteLength": 792
+    },
+    {
+      "uri": "gltf_buffer_1.bin",
+      "byteLength": 360
+    }
+  ],
+  "materials": [
+    {
+      "extras": {
+        "texture": "concrete_texture.jpg"
+      },
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "baseColorTexture": {
+          "index": 0
+        }
+      },
+      "emissiveFactor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "alphaMode": "OPAQUE",
+      "alphaCutoff": 0.5,
+      "doubleSided": false,
+      "name": "Concrete"
+    }
+  ],
+  "images": [
+    {
+      "uri": "concrete_texture.jpg"
+    }
+  ],
+  "textures": [
+    {
+      "source": 0
+    }
+  ],
+  "meshes": [
+    {
+      "extras": {
+        "header": "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "processed": true,
+        "file_path": "C:\\Users\\merya\\AppData\\Local\\Temp\\tmpabjj9p4y.stl",
+        "file_name": "tmpabjj9p4y.stl",
+        "price": 643.6630588234,
+        "color": "#0000FF",
+        "texture": "concrete_texture.jpg",
+        "details": "Percement d'une ouverture pour porte-fen\u00eatre 120 x 215 ht dans mur \u00e9p. < 0.25 m en agglom\u00e9r\u00e9s b\u00e9ton. Non compris, linteau, tableaux, appuis ou seuil, \u00e9chafaudage, enl\u00e8vement et \u00e9vacuation des mat\u00e9riaux en d\u00e9charge."
+      },
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1
+          },
+          "indices": 0,
+          "mode": 4
+        }
+      ],
+      "name": "tmpabjj9p4y.stl"
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "name": "world"
+    },
+    {
+      "mesh": 0,
+      "name": "tmpabjj9p4y.stl"
+    },
+    {
+      "extras": {
+        "price": 643.6630588234,
+        "color": "#0000FF",
+        "texture": "concrete_texture.jpg",
+        "details": "Percement d'une ouverture pour porte-fen\u00eatre 120 x 215 ht dans mur \u00e9p. < 0.25 m en agglom\u00e9r\u00e9s b\u00e9ton. Non compris, linteau, tableaux, appuis ou seuil, \u00e9chafaudage, enl\u00e8vement et \u00e9vacuation des mat\u00e9riaux en d\u00e9charge."
+      },
+      "name": "WallWithDoor"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
