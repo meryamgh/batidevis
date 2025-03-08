@@ -9,14 +9,14 @@ import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelU
 import CanvasScene from '../components/CanvasScene';
 import ObjectPanel from '../components/ObjectPanel';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import ObjectSelector from '../components/objects/ObjectSelector';
+import GltfList from "../services/GLTFList.js";
 import RoomConfig from '../components/room/RoomConfig';
 import FloorSelector from '../components/room/FloorSelector';
 import RoomControls from '../components/controls/RoomControls';
 import { generateRoom, addNewFloor, handleAddWall2D } from '../components/room/RoomLogic';
 import '../styles/Controls.css';
 
-const MainPage: React.FC = () => {
+const MainPageOld: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
     const [quote, setQuote] = useState<ObjectData[]>([]);
     //détecte ou le user clique sur la scene
@@ -328,7 +328,6 @@ const MainPage: React.FC = () => {
                     object={selectedObject}
                     onUpdateTexture={handleUpdateTexture}
                     onUpdateScale={handleUpdateScale}
-                    onUpdatePosition={handleUpdatePosition}
                     onRemoveObject={handleRemoveObject}
                     customTextures={customTextures}
                     onMoveObject={() => setIsMoving(id)}
@@ -341,7 +340,7 @@ const MainPage: React.FC = () => {
                 />
             );
         }
-    }, [objects, handleUpdateTexture, handleUpdateScale, handleUpdatePosition, handleRemoveObject, is2DView, customTextures, handleRotateObject, handleToggleShowDimensions]);
+    }, [objects, handleUpdateTexture, handleUpdateScale, handleRemoveObject, is2DView, customTextures]);
 
     const updateQuotePrice = (id: string, newPrice: number, newScale : [number, number, number]) => {
         console.log("update quote price");
@@ -657,12 +656,12 @@ const MainPage: React.FC = () => {
                 <button 
                     onClick={addNewFloor} 
                     className="bouton"
-                    disabled={currentFloor === 0 && objects.length === 0}
+                    disabled={currentFloor === 0 && objects.length === 0} // Désactivé s'il n'y a pas de rez-de-chaussée
                 >
                     Ajouter un étage
                 </button>
-                <ObjectSelector handleAddObject={handleAddObject} />
             </div>
+            <GltfList handleAddObject={handleAddObject} />
 
             {/* Contenu principal */}
             <div id="container" className="container-essaie">
@@ -788,4 +787,4 @@ const MainPage: React.FC = () => {
     );
 };
 
-export default MainPage;
+export default MainPageOld;
