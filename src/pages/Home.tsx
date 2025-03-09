@@ -39,7 +39,7 @@ const Home: React.FC = () => {
         <div className="home-container">
             <div className="video-background">
                 <video autoPlay muted loop playsInline className="background-video">
-                    <source src="/assets/Vidéo sans titre.mp4" type="video/mp4" />
+                    <source src="/assets/Video_Home.mp4" type="video/mp4" />
                 </video>
                 <div className="video-overlay" style={{
                     opacity: Math.min(scrollPosition / 1000, 0.8)
@@ -47,18 +47,19 @@ const Home: React.FC = () => {
             </div>
 
             <header className="dynamic-header" style={{
-                backgroundColor: `rgba(0, 0, 0, ${Math.min(scrollPosition / 500, 0.9)})`
+                backgroundColor: `rgba(0, 0, 0, ${Math.min(scrollPosition / 500, 0.9)})`,
+                boxShadow: `0 10px 17px rgba(0, 0, 0, 0.46)`
             }}>
                 <nav className="nav-container">
                     <div className="logo" data-aos="fade-right">
-                        <img src="/assets/logo.png" alt="Devo Logo" className="logo-img" />
+                        <img src="/assets/logo.svg" alt="Devo Logo" className="logo-img" />
                     </div>
                     <div className="nav-links" data-aos="fade-left">
-                        <a href="/" className="nav-link active">Accueil</a>
-                        <a href="/services" className="nav-link">Services</a>
-                        <a href="/about" className="nav-link">À propos</a>
-                        <a href="/contact" className="nav-link">Contact</a>
-                        <button className="cta-button glow-effect">Commencer</button>
+                        <a href="/" className="nav-link active">ACCUEIL</a>
+                        <a href="/Maquette" className="nav-link">MAQUETTE</a>
+                        <a href="/Tarifs" className="nav-link">TARIFS</a>
+                        <a href="/Devis" className="nav-link">MES DEVIS & FACTURES</a>
+                        <button className="button_connexion">CONNEXION / INSCRIPTION</button>
                     </div>
                 </nav>
             </header>
@@ -68,12 +69,16 @@ const Home: React.FC = () => {
                     <div className="hero-content-wrapper">
                         <div className="hero-content" style={parallaxStyle}>
                             <h1 className="animated-title" data-aos="zoom-in">
-                                <span className="gradient-text">Innovez</span>
+                                <span className="gradient-text">PASSEZ DU PLAN AU DEVIS EN QUELQUES SECONDES</span>
                                 <br />
-                                avec Devo
+                                <p className="batidevis">AVEC BATIDEVIS</p>
                             </h1>
                             <p className="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
-                                Transformez vos idées en réalité
+                            <span className="cercle">○</span> un outil intuitif pensé pour les artisants du btp
+                            <br></br><br></br>
+                            <span className="cercle">○</span> vos devis et factures générés en un clic depuis votre maquette 3D
+                            <br></br><br></br>
+                            <span className="cercle">○</span> gagnez du temps et concentrez-vous sur vos chantiers !
                             </p>
                             <div className="interactive-buttons" data-aos="fade-up" data-aos-delay="400">
                                 <button className="primary-btn pulse-effect">
@@ -88,103 +93,106 @@ const Home: React.FC = () => {
                     </div>
                 </section>
 
-                <section className="features-section">
-                    <h2 className="section-title" data-aos="fade-up">Nos Services</h2>
-                    <div className="features-grid">
-                        {[
-                            { icon: 'rocket', title: 'Innovation', desc: 'Solutions créatives pour votre succès' },
-                            { icon: 'shield-alt', title: 'Sécurité', desc: 'Protection maximale de vos données' },
-                            { icon: 'chart-line', title: 'Performance', desc: 'Optimisation continue des résultats' }
-                        ].map((feature, index) => (
-                            <div key={index} 
-                                 className="feature-card" 
-                                 data-aos="fade-up"
-                                 data-aos-delay={index * 100}
-                                 style={{
-                                     transform: `perspective(1000px) rotateY(${
-                                         (mousePosition.x - window.innerWidth / 2) / 50
-                                     }deg) rotateX(${
-                                         (mousePosition.y - window.innerHeight / 2) / 50
-                                     }deg)`
-                                 }}>
-                                <div className="card-content">
-                                    <i className={`fas fa-${feature.icon} feature-icon`}></i>
-                                    <h3>{feature.title}</h3>
-                                    <p>{feature.desc}</p>
-                                    <div className="card-hover">
-                                        <span>Explorer →</span>
+                <section className="dynamic-showcase">
+                <span className="title_showcase"> POURQUOI BATIDEVIS ? </span>
+                    <div className="showcase-container">
+                        <div className="showcase-slider">
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_4K_1.png" alt="Simplicité" />
+                                    <div className="slide-info">
+                                        <h3>Simplicité</h3>
+                                        <p>Concevez une maquette détaillée de manière intuitive</p>
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </section>
-
-                <section className="vision-section" data-aos="fade-up">
-                    <div className="vision-content" style={{
-                        transform: `translate3d(0, ${scrollPosition / 4}px, 0)`
-                    }}>
-                        <h2>Notre Vision</h2>
-                        <p>Créer un futur où la technologie enrichit chaque aspect de notre vie</p>
-                    </div>
-                    <div className="vision-particles">
-                        {Array.from({ length: 20 }).map((_, i) => (
-                            <div key={i} 
-                                 className="particle"
-                                 style={{
-                                     transform: `translate(${Math.sin(scrollPosition / 100 + i) * 50}px, ${Math.cos(scrollPosition / 100 + i) * 50}px)`
-                                 }}
-                            ></div>
-                        ))}
-                    </div>
-                </section>
-
-                <section className="cta-section" data-aos="fade-up">
-                    <div className="cta-content">
-                        <h2>Prêt à commencer votre voyage ?</h2>
-                        <p>Rejoignez-nous dès aujourd'hui et transformez votre vision en réalité.</p>
-                        <button className="cta-button-large pulse-effect">
-                            <span className="btn-text">Commencer maintenant</span>
-                            <span className="btn-icon">→</span>
-                        </button>
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_4K_2.jpg" alt="Automatisation" />
+                                    <div className="slide-info">
+                                        <h3>Automatisation</h3>
+                                        <p> Générez automatiquement vos devis et factures à partir de votre maquette</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_4K_4.png" alt="Professionnalisme" />
+                                    <div className="slide-info">
+                                        <h3>Professionnalisme</h3>
+                                        <p>Renforcez l'image de votre entreprise par une présentation claire de la prestation final</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_4K_3.png" alt="Gain_Temps" />
+                                    <div className="slide-info">
+                                        <h3>Gain de temps</h3>
+                                        <p>Répondez presque instantanément aux demandes de devis ou factures</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_4K_1.png" alt="Simplicité" />
+                                    <div className="slide-info">
+                                        <h3>Simplicité</h3>
+                                        <p>Concevez une maquette détaillée de manière intuitive</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_4K_2.jpg" alt="Automatisation" />
+                                    <div className="slide-info">
+                                        <h3>Automatisation</h3>
+                                        <p> Générez automatiquement vos devis et factures à partir de votre maquette</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </main>
+            <br></br><br></br><br></br>
 
             <footer className="footer">
-                <div className="footer-waves">
-                    <div className="wave wave1"></div>
-                    <div className="wave wave2"></div>
-                    <div className="wave wave3"></div>
-                </div>
                 <div className="footer-content">
-                    <div className="footer-section" data-aos="fade-up">
-                        <h4>Devo</h4>
-                        <p>Innovation et excellence</p>
-                    </div>
-                    <div className="footer-section" data-aos="fade-up" data-aos-delay="100">
-                        <h4>Liens rapides</h4>
-                        <a href="/services">Services</a>
-                        <a href="/about">À propos</a>
-                        <a href="/contact">Contact</a>
-                    </div>
-                    <div className="footer-section" data-aos="fade-up" data-aos-delay="200">
-                        <h4>Suivez-nous</h4>
-                        <div className="social-links">
-                            <a href="#" className="social-link" aria-label="Twitter">
-                                <i className="fab fa-twitter"></i>
-                            </a>
-                            <a href="#" className="social-link" aria-label="LinkedIn">
-                                <i className="fab fa-linkedin"></i>
-                            </a>
-                            <a href="#" className="social-link" aria-label="GitHub">
-                                <i className="fab fa-github"></i>
-                            </a>
+                    <div className="footer-main">
+                        <div className="footer-brand">
+                            <img src="/assets/logo.svg" alt="BatiDevis Logo" className="footer-logo" />
+                            <p>La solution innovante pour vos devis et factures dans le BTP</p>
+                        </div>
+                        <div className="footer-links">
+                            <div className="footer-column">
+                                <h4>Navigation</h4>
+                                <a href="/">Accueil</a>
+                                <a href="/fonctionnalites">Fonctionnalités</a>
+                                <a href="/tarifs">Tarifs</a>
+                                <a href="/contact">Contact</a>
+                            </div>
+                            <div className="footer-column">
+                                <h4>Légal</h4>
+                                <a href="/mentions-legales">Mentions légales</a>
+                                <a href="/cgv">CGV</a>
+                                <a href="/confidentialite">Confidentialité</a>
+                            </div>
+                            <div className="footer-column">
+                                <h4>Contact</h4>
+                                <p><i className="fas fa-phone"></i> 01 23 45 67 89</p>
+                                <p><i className="fas fa-envelope"></i> contact@batidevis.fr</p>
+                                <div className="social-links">
+                                    <a href="#" className="social-link"><i className="fab fa-linkedin"></i></a>
+                                    <a href="#" className="social-link"><i className="fab fa-twitter"></i></a>
+                                    <a href="#" className="social-link"><i className="fab fa-facebook"></i></a>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="footer-bottom">
-                    <p>&copy; {new Date().getFullYear()} Devo. Tous droits réservés.</p>
+                    <div className="footer-bottom">
+                        <p>&copy; {new Date().getFullYear()} BatiDevis. Tous droits réservés.</p>
+                    </div>
                 </div>
             </footer>
         </div>
