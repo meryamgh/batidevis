@@ -112,6 +112,8 @@ export const useBlueprint = ({
             gltf: wallMesh,
             rotation: [0, -angle, 0],
             scale: [wallLength, wallHeight, wallWidth],
+            texture: '', // Ajouter une propriété texture vide pour permettre l'application de textures
+            color: '#87CEEB' // Ajouter une couleur par défaut
         };
 
         setObjects((prevObjects: ObjectData[]) => [...prevObjects, newWallObject]);
@@ -308,6 +310,8 @@ export const useBlueprint = ({
                 gltf: wallMesh,
                 rotation: wall.rotation as [number, number, number],
                 scale: wall.scale as [number, number, number],
+                texture: '', // Ajouter une propriété texture vide pour permettre l'application de textures
+                color: '#87CEEB' // Ajouter une couleur par défaut
             };
             
             setObjects(prevObjects => [...prevObjects, newWallObject]);

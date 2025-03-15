@@ -40,6 +40,8 @@ const MaquettePage: React.FC = () => {
     const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
     // Nouvel état pour contrôler la visibilité du panneau de devis
     const [showQuotePanel, setShowQuotePanel] = useState(true);
+    // État pour stocker la largeur du panneau de devis
+    const [quotePanelWidth, setQuotePanelWidth] = useState(300);
 
     // États pour le mode Blueprint
     const [blueprintPoints, setBlueprintPoints] = useState<THREE.Vector3[]>([]);
@@ -74,6 +76,7 @@ const MaquettePage: React.FC = () => {
  
     const [currentFloor, setCurrentFloor] = useState(0);
     const [selectedFloor2D, setSelectedFloor2D] = useState(0);
+    const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
 
     const [customTextures] = useState<Record<string, string>>({});
 
@@ -220,8 +223,8 @@ const MaquettePage: React.FC = () => {
             if (leftPanelRef.current) {
                 leftPanelRef.current.style.width = '250px';
             }
-            if (rightPanelRef.current) {
-                rightPanelRef.current.style.width = '300px';
+            if (rightPanelRef.current && showQuotePanel) {
+                rightPanelRef.current.style.width = `${quotePanelWidth}px`;
             }
             
             // Re-enable orbit controls zooming
@@ -231,8 +234,9 @@ const MaquettePage: React.FC = () => {
                 orbitControlsRef.current.maxDistance = 1000;
             }
         }
-    }, [viewMode, objects, focusedObjectId]);
+    }, [viewMode, objects, focusedObjectId, showQuotePanel, quotePanelWidth]);
 
+    // Effet pour gérer le redimensionnement du panneau de devis
     useEffect(() => {
         const dragger = draggerRef.current;
         const leftPanel = leftPanelRef.current;
@@ -241,51 +245,72 @@ const MaquettePage: React.FC = () => {
         if (!dragger || !leftPanel || !rightPanel) return;
 
         let isDragging = false;
+        let startX = 0;
+        let startRightWidth = 0;
 
-        const startDragging = () => {
+        const handleMouseDown = (e: MouseEvent) => {
             isDragging = true;
+            startX = e.clientX;
+            startRightWidth = rightPanel.offsetWidth;
+            
+            // Appliquer des styles pendant le redimensionnement
             document.body.style.cursor = 'col-resize';
-            dragger.style.pointerEvents = 'none'; // Assure que le dragger reste fonctionnel
+            document.body.style.userSelect = 'none';
+            dragger.classList.add('dragger-active');
         };
 
-        const stopDragging = () => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDragging) return;
+            
+            // Calculer la différence de position
+            const deltaX = e.clientX - startX;
+            
+            // Calculer la nouvelle largeur avec des limites
+            // Quand on déplace vers la gauche, deltaX est négatif, donc la largeur diminue
+            // Quand on déplace vers la droite, deltaX est positif, donc la largeur augmente
+            const newWidth = Math.max(200, Math.min(600, startRightWidth - deltaX));
+            
+            // Appliquer la nouvelle largeur
+            rightPanel.style.width = `${newWidth}px`;
+            setQuotePanelWidth(newWidth);
+        };
+
+        const handleMouseUp = () => {
             if (isDragging) {
                 isDragging = false;
                 document.body.style.cursor = 'default';
-                dragger.style.pointerEvents = 'auto'; // Réactiver les événements sur le dragger
+                document.body.style.userSelect = '';
+                dragger.classList.remove('dragger-active');
             }
         };
 
-        const handleDragging = (e: MouseEvent) => {
-            if (!isDragging) return;
-
-            const containerWidth = leftPanel.parentElement?.offsetWidth || 0;
-            const dragPosition = e.clientX;
-
-            const minRightPanelWidth = 400;
-            const draggerWidth = 10; // Largeur du dragger (ou sa zone active)
-
-            // Calculer la nouvelle largeur pour le panneau gauche
-            const newLeftWidth = Math.min(
-                Math.max(200, dragPosition - leftPanel.offsetLeft), // Limite gauche
-                containerWidth - minRightPanelWidth - draggerWidth // Limite droite
-            );
-
-            // Appliquer les nouvelles largeurs
-            leftPanel.style.flex = `0 0 ${newLeftWidth}px`;
-            rightPanel.style.flex = `1 1 ${containerWidth - newLeftWidth - draggerWidth}px`;
-        };
-
-        dragger.addEventListener('mousedown', startDragging);
-        document.addEventListener('mouseup', stopDragging);
-        document.addEventListener('mousemove', handleDragging);
+        // Ajouter les écouteurs d'événements
+        dragger.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
 
         return () => {
-            dragger.removeEventListener('mousedown', startDragging);
-            document.removeEventListener('mouseup', stopDragging);
-            document.removeEventListener('mousemove', handleDragging);
+            // Nettoyer les écouteurs d'événements
+            dragger.removeEventListener('mousedown', handleMouseDown);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, []);
+    }, [showQuotePanel]);
+
+    // Effet pour mettre à jour la visibilité du panneau de devis
+    useEffect(() => {
+        const rightPanel = rightPanelRef.current;
+        
+        if (rightPanel) {
+            if (showQuotePanel) {
+                rightPanel.style.width = `${quotePanelWidth}px`;
+                rightPanel.style.display = 'block';
+            } else {
+                rightPanel.style.width = '0';
+                rightPanel.style.display = 'none';
+            }
+        }
+    }, [showQuotePanel, quotePanelWidth]);
 
     const setCamera = useCallback((camera: THREE.Camera) => {
         cameraRef.current = camera;
@@ -298,6 +323,9 @@ const MaquettePage: React.FC = () => {
         const panel = document.getElementById('floating-panel');
         setCreatingWallMode(false);
         
+        // Mettre à jour l'objet sélectionné
+        setSelectedObjectId(selectedObject.id);
+        
         if (panel) {
             panel.style.display = 'block';
 
@@ -308,6 +336,7 @@ const MaquettePage: React.FC = () => {
                 <ObjectPanel
                     object={selectedObject}
                     onUpdateTexture={objectsUtils.handleUpdateTexture}
+                    onUpdateColor={objectsUtils.handleUpdateColor}
                     onUpdateScale={objectsUtils.handleUpdateScale}
                     onUpdatePosition={objectsUtils.handleUpdatePosition}
                     onRemoveObject={objectsUtils.handleRemoveObject}
@@ -316,6 +345,7 @@ const MaquettePage: React.FC = () => {
                     onClosePanel={() => {
                         closePanel();
                         setIsMoving(null);
+                        setSelectedObjectId(null); // Réinitialiser l'objet sélectionné
                     }}
                     onRotateObject={objectsUtils.handleRotateObject}
                     onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
@@ -362,7 +392,7 @@ const MaquettePage: React.FC = () => {
             />
 
             {/* Contenu principal */}
-            <div id="container" className="container-essaie">
+            <div id="container">
                 <div ref={leftPanelRef} className={`left-panel ${!showQuotePanel ? 'left-panel-expanded' : ''}`}>
                     <FloorSelector 
                         currentFloor={currentFloor}
@@ -381,7 +411,7 @@ const MaquettePage: React.FC = () => {
                             if (!is2DView) return true;
                             
                             // En vue 2D, filtrer les objets selon l'étage sélectionné
-                            const objectHeight = obj.position[1] * 2; // Multiplier par 2 pour compenser la division
+                            const objectHeight = obj.position[1] * 2;
                             
                             if (selectedFloor2D === 0) {
                                 // Pour le rez-de-chaussée
@@ -412,6 +442,7 @@ const MaquettePage: React.FC = () => {
                         isBlueprintView={isBlueprintView}
                         isObjectOnlyView={isObjectOnlyView}
                         focusedObjectId={focusedObjectId}
+                        selectedObjectId={selectedObjectId}
                         walls2D={walls2D}
                         updateQuotePrice={objectsUtils.updateQuotePrice}
                         groundPlane={groundPlaneRef.current}
@@ -428,8 +459,16 @@ const MaquettePage: React.FC = () => {
                             
                 {showQuotePanel && (
                     <>
-                        <div ref={draggerRef} className="dragger"></div>
-                        <div ref={rightPanelRef} className="right-panel">
+                        <div 
+                            ref={draggerRef} 
+                            className="dragger"
+                            title="Cliquez et glissez pour redimensionner le panneau de devis"
+                        ></div>
+                        <div 
+                            ref={rightPanelRef} 
+                            className="right-panel"
+                            style={{ width: `${quotePanelWidth}px` }}
+                        >
                             <QuotePanel 
                                 quote={quote} 
                                 setObjects={setObjects} 

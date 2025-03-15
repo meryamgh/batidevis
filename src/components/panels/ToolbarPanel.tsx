@@ -44,9 +44,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   return (
     <div className="banner">
-      <button onClick={() => setCreatingWallMode(!creatingWallMode)} disabled={!is2DView}>
-        {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
-      </button>
+      {is2DView && (
+        <button onClick={() => setCreatingWallMode(!creatingWallMode)}>
+          {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
+        </button>
+      )}
 
       <select 
         value={viewMode}
@@ -89,13 +91,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
       <button onClick={() => setShowRoomConfig(true)} className="bouton">
         Générer une pièce
       </button>
-      <button 
-        onClick={addNewFloor} 
-        className="bouton"
-        disabled={currentFloor === 0 && objects.length === 0}
-      >
-        Ajouter un étage
-      </button>
+      
+      {(currentFloor > 0 || objects.length > 0) && (
+        <button 
+          onClick={addNewFloor} 
+          className="bouton"
+        >
+          Ajouter un étage
+        </button>
+      )}
+      
       <button
         onClick={toggleQuotePanel}
         className="bouton"

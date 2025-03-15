@@ -7,7 +7,7 @@ import { ObjectData } from '../types/ObjectData';
 const WALL_THICKNESS = 0.2;
 const FLOOR_PRICE_PER_SQUARE_METER = 50;
 const WALL_PRICE = 100;
-const WALL_POSITION_DIVISOR = 4.08;
+const WALL_POSITION_DIVISOR = 4;
 // Définition des couleurs avec des valeurs hexadécimales plus vives
 const FLOOR_COLORS = [
   '#90EE90', // Vert clair (rez-de-chaussée)
@@ -146,7 +146,8 @@ export const useFloors = ({
         gltf: wallMesh,
         rotation: wall.rotation as [number, number, number],
         scale: wall.scale as [number, number, number],
-        color: WALL_COLORS[0] // Ajouter la couleur comme propriété
+        color: WALL_COLORS[0], // Ajouter la couleur comme propriété
+        texture: '' // Ajouter une propriété texture vide pour permettre l'application de textures
       };
 
       setObjects(prevObjects => [...prevObjects, newWallObject]);
@@ -246,7 +247,8 @@ export const useFloors = ({
         gltf: wallMesh,
         rotation: wall.rotation as [number, number, number],
         scale: wall.scale as [number, number, number],
-        color: wallColor // Ajouter la couleur comme propriété
+        color: wallColor, // Ajouter la couleur comme propriété
+        texture: '' // Ajouter une propriété texture vide pour permettre l'application de textures
       };
 
       setObjects(prevObjects => [...prevObjects, newWallObject]);

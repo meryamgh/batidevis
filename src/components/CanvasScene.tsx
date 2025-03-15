@@ -27,6 +27,7 @@ type CanvasSceneProps = {
     isBlueprintView: boolean;
     isObjectOnlyView?: boolean;
     focusedObjectId?: string | null;
+    selectedObjectId?: string | null;
     walls2D: THREE.Line[];
     groundPlane: THREE.Mesh | null;
     handleAddWall2D: (start: THREE.Vector3, end: THREE.Vector3) => void;
@@ -54,6 +55,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     isBlueprintView,
     isObjectOnlyView,
     focusedObjectId,
+    selectedObjectId,
     walls2D,
     groundPlane,
     handleAddWall2D,
@@ -458,6 +460,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         onClick={() => onClick(obj.id)}
                         showDimensions={!!showDimensions[obj.id]}
                         color={obj.color}
+                        isSelected={selectedObjectId === obj.id}
                     />
                 ))}
 

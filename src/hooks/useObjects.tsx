@@ -25,6 +25,7 @@ interface UseObjectsReturn {
   handleRemoveObject: (id: string) => void;
   handleUpdatePosition: (id: string, position: [number, number, number]) => void;
   handleUpdateTexture: (id: string, newTexture: string) => void;
+  handleUpdateColor: (id: string, newColor: string) => void;
   handleUpdateScale: (id: string, newScale: [number, number, number]) => void;
   handleRotateObject: (id: string, newRotation: [number, number, number]) => [string, [number, number, number]];
   handleToggleShowDimensions: (id: string) => void;
@@ -70,6 +71,7 @@ export const useObjects = ({
         gltf: gltf,
         rotation: [0, 0, 0],
         scale: [size.x, size.y, size.z],
+        color: '#FFFFFF',
       };
       setObjects((prevObjects) => [...prevObjects, newObject]);
       setQuote((prevQuote) => [...prevQuote, newObject]);
@@ -94,6 +96,14 @@ export const useObjects = ({
     setObjects((prevObjects) =>
       prevObjects.map((obj) =>
         obj.id === id ? { ...obj, texture: newTexture } : obj
+      )
+    );
+  }, [setObjects]);
+
+  const handleUpdateColor = useCallback((id: string, newColor: string) => {
+    setObjects((prevObjects) =>
+      prevObjects.map((obj) =>
+        obj.id === id ? { ...obj, color: newColor } : obj
       )
     );
   }, [setObjects]);
@@ -176,6 +186,7 @@ export const useObjects = ({
     handleRemoveObject,
     handleUpdatePosition,
     handleUpdateTexture,
+    handleUpdateColor,
     handleUpdateScale,
     handleRotateObject,
     handleToggleShowDimensions,

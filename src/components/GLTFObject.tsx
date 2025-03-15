@@ -19,6 +19,7 @@ type GLTFObjectProps = {
     updateQuotePrice: (id:string, price: number, scale : [number, number, number]) => void;
     showDimensions: boolean; 
     color?: string;
+    isSelected?: boolean;
 };
 
 const GLTFObject: React.FC<GLTFObjectProps> = ({
@@ -35,6 +36,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     updateQuotePrice,
     showDimensions,
     color,
+    isSelected = false,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
     const [scene, setScene] = useState<THREE.Group | THREE.Mesh | null>(null);
@@ -73,6 +75,15 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 clonedScene.traverse((child: any) => {
                     if (child.isMesh && !selectedMeshRef.current) {
                         selectedMeshRef.current = child;
+                    }
+                    
+                    // Appliquer la couleur à tous les meshes si elle est définie
+                    if (child.isMesh && color) {
+                        if (!child.material) {
+                            child.material = new THREE.MeshStandardMaterial();
+                        }
+                        child.material.color = new THREE.Color(color);
+                        child.material.needsUpdate = true;
                     }
                 });
                 
@@ -255,11 +266,22 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         child.material = new THREE.MeshStandardMaterial();
                     }
                     
+                    // Sauvegarder la couleur actuelle
+                    const currentColor = child.material.color ? child.material.color.clone() : new THREE.Color(color || '#FFFFFF');
+                    
                     child.material.map = loadedTexture;
                     child.material.needsUpdate = true;
                     child.material.side = THREE.DoubleSide;
                     child.material.roughness = 0.8;
                     child.material.metalness = 0.2;
+                    
+                    // Restaurer la couleur après avoir appliqué la texture
+                    child.material.color = currentColor;
+                    
+                    // Appliquer la couleur si elle est définie
+                    if (color) {
+                        child.material.color = new THREE.Color(color);
+                    }
                     
                     if (child.geometry) {
                         child.geometry.computeVertexNormals();
@@ -270,11 +292,37 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                     child.receiveShadow = true;
                 }
             });
+            
+            // Si c'est un mur (pas d'URL), appliquer directement la texture au mesh
+            if (!url && scene instanceof THREE.Mesh && scene.material) {
+                // Vérifier si le matériau est un tableau ou un seul matériau
+                const material = Array.isArray(scene.material) ? scene.material[0] : scene.material;
+                
+                // Vérifier si c'est un MeshStandardMaterial
+                if (material instanceof THREE.MeshStandardMaterial) {
+                    // Sauvegarder la couleur actuelle
+                    const currentColor = material.color ? material.color.clone() : new THREE.Color(color || '#FFFFFF');
+                    
+                    material.map = loadedTexture;
+                    material.needsUpdate = true;
+                    material.side = THREE.DoubleSide;
+                    material.roughness = 0.8;
+                    material.metalness = 0.2;
+                    
+                    // Restaurer la couleur après avoir appliqué la texture
+                    material.color = currentColor;
+                    
+                    // Conserver la couleur d'origine mais avec la texture
+                    if (color) {
+                        material.color = new THREE.Color(color);
+                    }
+                }
+            }
         }
-    }, [scene, texture, scale]);
+    }, [scene, texture, scale, url, color]);
 
     useEffect(() => {
-        if (scene && color && !url) {
+        if (scene && color) {
             console.log("Updating color to:", color);
             scene.traverse((child: any) => {
                 if (child.isMesh) {
@@ -285,7 +333,97 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 }
             });
         }
-    }, [scene, color, url]);
+    }, [scene, color]);
+
+    useEffect(() => {
+        if (scene) {
+            // Appliquer un effet visuel pour mettre en évidence l'objet sélectionné
+            scene.traverse((child: any) => {
+                if (child.isMesh) {
+                    if (isSelected) {
+                        // Si l'objet est sélectionné, ajouter un effet d'émission
+                        if (!child.material.emissive) {
+                            // Si le matériau n'a pas de propriété emissive, c'est probablement un MeshBasicMaterial
+                            // Convertir en MeshStandardMaterial
+                            const oldMaterial = child.material;
+                            const newMaterial = new THREE.MeshStandardMaterial({
+                                color: oldMaterial.color,
+                                map: oldMaterial.map,
+                                transparent: oldMaterial.transparent,
+                                opacity: oldMaterial.opacity,
+                                side: oldMaterial.side
+                            });
+                            child.material = newMaterial;
+                        }
+                        
+                        // Ajouter un effet d'émission beaucoup plus intense pour mettre en évidence l'objet
+                        child.material.emissive = new THREE.Color(0x00ffff); // Couleur cyan brillante
+                        child.material.emissiveIntensity = 1.0; // Intensité plus élevée
+                        
+                        // Augmenter la brillance et réduire la rugosité pour un effet plus brillant
+                        child.material.metalness = 0.8;
+                        child.material.roughness = 0.1;
+                        
+                        // Ajouter un léger effet de transparence pour un aspect plus lumineux
+                        child.material.transparent = true;
+                        child.material.opacity = 0.9;
+                        
+                        child.material.needsUpdate = true;
+                        
+                        // Créer un contour lumineux autour de l'objet sélectionné
+                        if (!child.userData.outlineMesh) {
+                            // Créer une copie légèrement plus grande de la géométrie pour le contour
+                            const outlineGeometry = child.geometry.clone();
+                            const outlineMaterial = new THREE.MeshBasicMaterial({
+                                color: 0x00ffff, // Couleur cyan pour le contour
+                                side: THREE.BackSide, // Afficher seulement l'arrière pour créer un contour
+                                transparent: true,
+                                opacity: 0.7
+                            });
+                            
+                            const outlineMesh = new THREE.Mesh(outlineGeometry, outlineMaterial);
+                            outlineMesh.scale.multiplyScalar(1.05); // Légèrement plus grand que l'objet original
+                            outlineMesh.position.copy(child.position);
+                            outlineMesh.rotation.copy(child.rotation);
+                            outlineMesh.quaternion.copy(child.quaternion);
+                            
+                            child.parent.add(outlineMesh);
+                            child.userData.outlineMesh = outlineMesh;
+                        }
+                    } else {
+                        // Si l'objet n'est pas sélectionné, réinitialiser l'effet d'émission
+                        if (child.material.emissive) {
+                            child.material.emissive = new THREE.Color(0x000000);
+                            child.material.emissiveIntensity = 0;
+                            
+                            // Restaurer les propriétés du matériau
+                            child.material.metalness = 0.2;
+                            child.material.roughness = 0.8;
+                            
+                            // Restaurer l'opacité si elle a été modifiée
+                            if (child.material.transparent) {
+                                // Si c'est un mur, garder la transparence
+                                if (!url) {
+                                    child.material.opacity = 0.8;
+                                } else {
+                                    child.material.transparent = false;
+                                    child.material.opacity = 1.0;
+                                }
+                            }
+                            
+                            child.material.needsUpdate = true;
+                        }
+                        
+                        // Supprimer le contour s'il existe
+                        if (child.userData.outlineMesh) {
+                            child.parent.remove(child.userData.outlineMesh);
+                            child.userData.outlineMesh = null;
+                        }
+                    }
+                }
+            });
+        }
+    }, [scene, isSelected, url]);
 
     return (
         scene && (

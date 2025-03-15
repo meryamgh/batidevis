@@ -6,6 +6,7 @@ import { useTextures } from '../../services/TextureService';
 type ObjectPanelProps = {
     object: ObjectData;
     onUpdateTexture: (id: string, newTexture: string) => void;
+    onUpdateColor: (id: string, newColor: string) => void;
     onUpdateScale: (id: string, newScale: [number, number, number]) => void;
     onUpdatePosition: (id: string, position: [number, number, number]) => void;
     onRemoveObject: (id: string) => void;
@@ -20,6 +21,7 @@ type ObjectPanelProps = {
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
     object,
     onUpdateTexture,
+    onUpdateColor,
     onUpdateScale,
     onUpdatePosition,
     onRemoveObject,
@@ -34,6 +36,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [height, setHeight] = useState(object.scale[1]);
     const [depth, setDepth] = useState(object.scale[2]);
     const [texture, setTexture] = useState(object.texture);
+    const [color, setColor] = useState(object.color || '#FFFFFF');
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
     const [showDimensions, setShowDimensions] = useState(false);
@@ -152,6 +155,12 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         onUpdateTexture(object.id, textureUrl);
     };
 
+    // Fonction pour appliquer une couleur
+    const applyColor = (colorValue: string) => {
+        setColor(colorValue);
+        onUpdateColor(object.id, colorValue);
+    };
+
     // Fonction pour gérer les erreurs de chargement d'image
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
         const target = e.target as HTMLImageElement;
@@ -224,7 +233,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 </div>
             )}
 
-            {!isRoomComponent && (
+            {(!isRoomComponent || isWall) && (
                 <>
                     <div className="panel-section">
                         <h3 className="section-title">Dimensions</h3>
@@ -407,6 +416,29 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                     )}
                                 </>
                             )}
+                        </div>
+                    </div>
+
+                    <div className="panel-section">
+                        <h3 className="section-title">Couleur</h3>
+                        <div className="color-selector">
+                            <div className="color-preview" style={{ backgroundColor: color }}></div>
+                            <input
+                                type="color"
+                                value={color}
+                                onChange={(e) => applyColor(e.target.value)}
+                                className="color-picker"
+                            />
+                            <div className="color-presets">
+                                {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFFFFF', '#000000'].map((presetColor) => (
+                                    <div
+                                        key={presetColor}
+                                        className={`color-preset ${color === presetColor ? 'selected' : ''}`}
+                                        style={{ backgroundColor: presetColor }}
+                                        onClick={() => applyColor(presetColor)}
+                                    ></div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </>
