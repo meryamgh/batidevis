@@ -6,6 +6,12 @@ import '../styles/Home.css';
 const Home: React.FC = () => {
     const [scrollPosition, setScrollPosition] = useState(0);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isReverse, setIsReverse] = useState(false);
+    const totalSlides = 5;
+    const slidesPerView = 3;
+    const maxSlideIndex = totalSlides - slidesPerView;
+    const sliderRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         AOS.init({
@@ -25,21 +31,54 @@ const Home: React.FC = () => {
         window.addEventListener('scroll', handleScroll);
         window.addEventListener('mousemove', handleMouseMove);
 
+        const interval = setInterval(() => {
+            if (!isReverse) {
+                if (currentSlide < maxSlideIndex) {
+                    setCurrentSlide(prev => prev + 1);
+                } else {
+                    setIsReverse(true);
+                    setCurrentSlide(prev => prev - 1);
+                }
+            } else {
+                if (currentSlide > 0) {
+                    setCurrentSlide(prev => prev - 1);
+                } else {
+                    setIsReverse(false);
+                    setCurrentSlide(prev => prev + 1);
+                }
+            }
+        }, 3000);
+
         return () => {
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('mousemove', handleMouseMove);
+            clearInterval(interval);
         };
-    }, []);
+    }, [currentSlide, isReverse, maxSlideIndex]);
 
     const parallaxStyle = {
         transform: `translate3d(${mousePosition.x / 50}px, ${mousePosition.y / 50}px, 0)`
+    };
+
+    const prevSlide = () => {
+        if (currentSlide > 0) {
+            setCurrentSlide(currentSlide - 1);
+            setIsReverse(true);
+        }
+    };
+
+    const nextSlide = () => {
+        if (currentSlide < maxSlideIndex) {
+            setCurrentSlide(currentSlide + 1);
+            setIsReverse(false);
+        }
     };
 
     return (
         <div className="home-container">
             <div className="video-background">
                 <video autoPlay muted loop playsInline className="background-video">
-                    <source src="/assets/Video_Home.mp4" type="video/mp4" />
+                    <source src="/Vid.mp4" type="video/mp4" />
                 </video>
                 <div className="video-overlay" style={{
                     opacity: Math.min(scrollPosition / 1000, 0.8)
@@ -73,6 +112,7 @@ const Home: React.FC = () => {
                                 <br />
                                 <p className="batidevis">AVEC BATIDEVIS</p>
                             </h1>
+                            <br></br><br></br><br></br>
                             <p className="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
                             <span className="cercle">○</span> un outil intuitif pensé pour les artisants du btp
                             <br></br><br></br>
@@ -94,61 +134,126 @@ const Home: React.FC = () => {
                 </section>
 
                 <section className="dynamic-showcase">
-                <span className="title_showcase"> POURQUOI BATIDEVIS ? </span>
+                    <span className="title_showcase">La maquette 3D : un outil clé pour vos chantiers</span>
                     <div className="showcase-container">
-                        <div className="showcase-slider">
+                        <div className="showcase-slider" ref={sliderRef} style={{ transform: `translateX(-${currentSlide * 33.333}%)` }}>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_4K_1.png" alt="Simplicité" />
+                                    <img src="/assets/Image_interieur.jpg" alt="Aménagement intérieur" />
                                     <div className="slide-info">
-                                        <h3>Simplicité</h3>
-                                        <p>Concevez une maquette détaillée de manière intuitive</p>
+                                        <h3>Second oeuvre et finitions</h3>
+                                        <p>Prévisualisez vos finitions et aménagements intérieurs</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_4K_2.jpg" alt="Automatisation" />
+                                    <img src="/assets/Image_exterieur.jpg" alt="Aménagements extérieurs" />
                                     <div className="slide-info">
-                                        <h3>Automatisation</h3>
-                                        <p> Générez automatiquement vos devis et factures à partir de votre maquette</p>
+                                        <h3>Aménagements extérieurs</h3>
+                                        <p>Modélisez vos espaces extérieurs avec précision</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_4K_4.png" alt="Professionnalisme" />
+                                    <img src="/assets/Image_interieur_3.jpg" alt="Structure et Gros Œuvre" />
                                     <div className="slide-info">
-                                        <h3>Professionnalisme</h3>
-                                        <p>Renforcez l'image de votre entreprise par une présentation claire de la prestation final</p>
+                                        <h3>Structure et gros oeuvre</h3>
+                                        <p>Visualisez la structure et le gros œuvre avant construction</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_4K_3.png" alt="Gain_Temps" />
+                                    <img src="/assets/Image_interieur_2.jpg" alt="Charpente et Couverture" />
                                     <div className="slide-info">
-                                        <h3>Gain de temps</h3>
-                                        <p>Répondez presque instantanément aux demandes de devis ou factures</p>
+                                        <h3>Charpente et couverture</h3>
+                                        <p>Concevez et ajustez votre charpente et couverture</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_4K_1.png" alt="Simplicité" />
+                                    <img src="/assets/Image_interieur.jpg" alt="Terrassement et Infrastructures" />
                                     <div className="slide-info">
-                                        <h3>Simplicité</h3>
-                                        <p>Concevez une maquette détaillée de manière intuitive</p>
+                                        <h3>Terrassement et infrastructures</h3>
+                                        <p>Optimisez vos travaux de sol et fondations</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="showcase-slide">
-                                <div className="slide-content">
-                                    <img src="/assets/Image_4K_2.jpg" alt="Automatisation" />
-                                    <div className="slide-info">
-                                        <h3>Automatisation</h3>
-                                        <p> Générez automatiquement vos devis et factures à partir de votre maquette</p>
+                        </div>
+                        <button 
+                            className={`control-btn prev-btn ${currentSlide === 0 ? 'disabled' : ''}`}
+                            onClick={prevSlide}
+                            disabled={currentSlide === 0}
+                        >&lt;</button>
+                        <button 
+                            className={`control-btn next-btn ${currentSlide === maxSlideIndex ? 'disabled' : ''}`}
+                            onClick={nextSlide}
+                            disabled={currentSlide === maxSlideIndex}
+                        >&gt;</button>
+                    </div>
+                </section>
+
+                <section className="pricing-showcase">
+                    <span className="title_showcase">NOS FORFAITS</span>
+                    <div className="pricing-container">
+                        <div className="pricing-grid">
+                            <div className="pricing-card">
+                                <br></br>
+                                <div className="pricing-content">
+                                    <h3>BASIQUE</h3>
+                                    <div className="price">
+                                        <span className="amount">1,99€</span>
+                                        <span className="period"> /mois</span><br></br><br></br>
+                                        <span className="period_2">Essai gratuit 1 mois du forfait standard</span>
                                     </div>
+                                    <ul className="features-list">
+                                        <li> Génération de devis et de facture</li>
+                                        <li> Signature électronique</li>
+                                        <li> Acomptes et avoirs</li>
+                                        <li> Relance par e-mail uniquement</li>
+                                    </ul>
+                                    <button className="pricing-btn">Choisir l'offre</button>
+                                </div>
+                            </div>
+
+                            <div className="pricing-card featured">
+                                <div className="pricing-content">
+                                    <div className="popular-tag">Plus populaire</div>
+                                    <br></br>
+                                    <h3>STANDARD</h3>
+                                    <div className="price">
+                                        <span className="amount">49,99€</span>
+                                        <span className="period">/mois</span><br></br><br></br> 
+                                        <span className="period_2">Essai gratuit 1 mois</span>
+                                    </div>
+                                    <ul className="features-list">
+                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
+                                        <li>Sélection de tous les objets 3D</li>
+                                        <li>Bibliothèque personnalisée d’objets 3D</li>
+                                        <li>Suivi comptable</li>
+                                        <li>Catalogue fournisseur</li>
+                                        <li>Utilisation de l’IA pour générer les objets 3D</li>
+                                    </ul>
+                                    <button className="pricing-btn">Choisir l'offre</button>
+                                </div>
+                        
+                            </div>
+
+                            <div className="pricing-card">
+                                <div className="pricing-content">
+                                    <h3>PREMIUM</h3>
+                                    <div className="price">
+                                        <span className="amount">549,99€</span>
+                                        <span className="period">/mois</span>
+                                    </div>
+                                    <ul className="features-list">
+                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
+                                        <li>Prise en charge de tous les créations de devis et facture par BatiDevis</li>
+                                    </ul>
+                                    <button className="pricing-btn">Choisir l'offre</button>
                                 </div>
                             </div>
                         </div>
