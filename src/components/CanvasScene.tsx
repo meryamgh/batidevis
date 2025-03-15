@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { OrbitControls, TransformControls, FlyControls } from '@react-three/drei';
 import GLTFObject from './GLTFObject';
 import Character from './Character';
 import { ObjectData } from '../types/ObjectData';
@@ -17,10 +17,19 @@ type CanvasSceneProps = {
     updateQuotePrice: (id: string, price: number, scale : [number, number, number]) => void;
     showDimensions: { [key: string]: boolean };
     is2DView: boolean;
+    isBlueprintView: boolean;
+    isObjectOnlyView?: boolean;
+    focusedObjectId?: string | null;
     walls2D: THREE.Line[];
     groundPlane: THREE.Mesh | null;
     handleAddWall2D: (start: THREE.Vector3, end: THREE.Vector3) => void;
     creatingWallMode: boolean;
+    blueprintPoints?: THREE.Vector3[];
+    blueprintLines?: {start: THREE.Vector3, end: THREE.Vector3, id: string, length: number}[];
+    tempPoint?: THREE.Vector3 | null;
+    handleBlueprintClick?: (point: THREE.Vector3) => void;
+    updateRectanglePreview?: (start: THREE.Vector3, end: THREE.Vector3) => void;
+    rectangleStartPoint?: THREE.Vector3 | null;
 };
 const CameraProvider: React.FC<{ 
     setCamera: (camera: THREE.Camera) => void; 
@@ -29,13 +38,43 @@ const CameraProvider: React.FC<{
     firstPersonPosition?: THREE.Vector3;
     firstPersonRotation?: THREE.Euler;
     zoom2D: number;
-}> = ({ setCamera, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, zoom2D }) => {
-    const { camera } = useThree();
+    isObjectOnlyView?: boolean;
+    focusedObject?: ObjectData | null;
+}> = ({ setCamera, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, zoom2D, isObjectOnlyView, focusedObject }) => {
+    const { camera, scene } = useThree();
 
     useEffect(() => {
         if (firstPersonView && firstPersonPosition && firstPersonRotation) {
             camera.position.copy(firstPersonPosition);
             camera.rotation.copy(firstPersonRotation);
+        } else if (isObjectOnlyView && focusedObject) {
+            // Focus on the selected object
+            const objectPosition = new THREE.Vector3(
+                focusedObject.position[0],
+                focusedObject.position[1],
+                focusedObject.position[2]
+            );
+            
+            // Calculate object size based on scale
+            const objectSize = Math.max(
+                focusedObject.scale[0],
+                focusedObject.scale[1],
+                focusedObject.scale[2]
+            );
+            
+            // Position the camera at a distance proportional to the object size
+            const distance = objectSize * 5;
+            camera.position.set(
+                objectPosition.x + distance,
+                objectPosition.y + distance / 2,
+                objectPosition.z + distance
+            );
+            
+            // Look at the object
+            camera.lookAt(objectPosition);
+            
+            // Set a narrower field of view for a more focused look
+            (camera as THREE.PerspectiveCamera).fov = 30;
         } else if (is2DView) {
             camera.position.set(0, zoom2D, 0);
             camera.lookAt(0, 0, 0);
@@ -46,7 +85,7 @@ const CameraProvider: React.FC<{
         }
         camera.updateProjectionMatrix();
         setCamera(camera);
-    }, [camera, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, setCamera, zoom2D]);
+    }, [camera, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, setCamera, zoom2D, isObjectOnlyView, focusedObject]);
 
     return null;
 };
@@ -315,10 +354,19 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     updateQuotePrice,
     showDimensions,
     is2DView,
+    isBlueprintView,
+    isObjectOnlyView,
+    focusedObjectId,
     walls2D,
     groundPlane,
     handleAddWall2D,
     creatingWallMode,
+    blueprintPoints,
+    blueprintLines,
+    tempPoint,
+    handleBlueprintClick,
+    updateRectanglePreview,
+    rectangleStartPoint,
 }) => {
     const [firstPersonView, setFirstPersonView] = useState(false);
     const [characterPosition, setCharacterPosition] = useState<THREE.Vector3 | undefined>();
@@ -326,10 +374,74 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     const rotateCharacterRef = useRef<((direction: 'up' | 'down' | 'left' | 'right') => void) | null>(null);
     const [showAllDimensions, setShowAllDimensions] = useState(false);
     const [zoom2D, setZoom2D] = useState(100);
+    const [navigationMode, setNavigationMode] = useState<'orbit' | 'move'>('orbit');
+    const targetPositionRef = useRef<THREE.Vector3 | null>(null);
+    const cameraPositionRef = useRef<THREE.Vector3 | null>(null);
+    const isMovingToTargetRef = useRef(false);
+
+    // Disable first person view when in ObjectOnly mode or when switching views
+    useEffect(() => {
+        if (isObjectOnlyView || is2DView) {
+            setFirstPersonView(false);
+        }
+    }, [isObjectOnlyView, is2DView]);
+
+    // Fonction pour créer une représentation blueprint d'un objet
+    const createBlueprintRepresentation = (obj: ObjectData) => {
+        // Si c'est un mur, on le représente par une ligne épaisse
+        if (obj.details.includes('Mur')) {
+            const position = new THREE.Vector3(...obj.position);
+            const scale = new THREE.Vector3(...obj.scale);
+            const rotation = obj.rotation ? new THREE.Euler(...obj.rotation) : new THREE.Euler(0, 0, 0);
+            
+            // Calculer les points de début et de fin du mur
+            const direction = new THREE.Vector3(Math.sin(rotation.y), 0, Math.cos(rotation.y));
+            const halfLength = scale.x / 2;
+            const start = position.clone().sub(direction.clone().multiplyScalar(halfLength));
+            const end = position.clone().add(direction.clone().multiplyScalar(halfLength));
+            
+            return (
+                <line key={obj.id}>
+                    <bufferGeometry attach="geometry">
+                        <bufferAttribute
+                            attach="position"
+                            array={new Float32Array([start.x, 0.1, start.z, end.x, 0.1, end.z])}
+                            count={2}
+                            itemSize={3}
+                        />
+                    </bufferGeometry>
+                    <lineBasicMaterial attach="material" color="#0066cc" linewidth={3} />
+                </line>
+            );
+        }
+        
+        // Pour les autres objets, on les représente par un rectangle
+        const position = new THREE.Vector3(...obj.position);
+        const scale = new THREE.Vector3(...obj.scale);
+        const rotation = obj.rotation ? new THREE.Euler(...obj.rotation) : new THREE.Euler(0, 0, 0);
+        
+        return (
+            <mesh 
+                key={obj.id}
+                position={[position.x, 0.1, position.z]}
+                rotation={[0, rotation.y, 0]}
+                onClick={() => onClick(obj.id)}
+            >
+                <boxGeometry args={[scale.x, 0.01, scale.z]} />
+                <meshBasicMaterial color="#0066cc" wireframe={true} />
+            </mesh>
+        );
+    };
 
     const handleKeyPress = (e: KeyboardEvent) => {
-        if (e.key === 'v' || e.key === 'V') {
+        // Only allow toggling first person view when not in ObjectOnly mode
+        if ((e.key === 'v' || e.key === 'V') && !isObjectOnlyView && !is2DView) {
             setFirstPersonView(!firstPersonView);
+        }
+        
+        // Toggle between orbit and move navigation modes with 'n' key
+        if ((e.key === 'n' || e.key === 'N') && !isObjectOnlyView && !is2DView && !firstPersonView) {
+            setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit');
         }
     };
 
@@ -413,6 +525,768 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
             });
         }, [scene, objects, is2DView, showAllDimensions]);
 
+        return null;
+    };
+
+    // Composant pour afficher une flèche entre deux points
+    const ArrowLine = ({ start, end, color = "#0066cc", arrowSize = 0.3 }: { start: THREE.Vector3, end: THREE.Vector3, color?: string, arrowSize?: number }) => {
+        const direction = new THREE.Vector3().subVectors(end, start).normalize();
+        const length = start.distanceTo(end);
+        const arrowPosition = new THREE.Vector3().addVectors(start, direction.clone().multiplyScalar(length - arrowSize));
+        
+        // Calculer les points pour la pointe de flèche
+        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize().multiplyScalar(arrowSize / 2);
+        const arrowLeft = new THREE.Vector3().addVectors(arrowPosition, perpendicular);
+        const arrowRight = new THREE.Vector3().subVectors(arrowPosition, perpendicular);
+        
+        return (
+            <group>
+                {/* Ligne principale */}
+                <line>
+                    <bufferGeometry attach="geometry">
+                        <bufferAttribute
+                            attach="position"
+                            array={new Float32Array([start.x, 0.1, start.z, end.x, 0.1, end.z])}
+                            count={2}
+                            itemSize={3}
+                        />
+                    </bufferGeometry>
+                    <lineBasicMaterial attach="material" color={color} linewidth={2} />
+                </line>
+                
+                {/* Pointe de flèche */}
+                <line>
+                    <bufferGeometry attach="geometry">
+                        <bufferAttribute
+                            attach="position"
+                            array={new Float32Array([
+                                arrowLeft.x, 0.1, arrowLeft.z,
+                                end.x, 0.1, end.z,
+                                arrowRight.x, 0.1, arrowRight.z
+                            ])}
+                            count={3}
+                            itemSize={3}
+                        />
+                    </bufferGeometry>
+                    <lineBasicMaterial attach="material" color={color} linewidth={2} />
+                </line>
+            </group>
+        );
+    };
+
+    // Composant pour afficher une pièce
+    const RoomOutline = ({ points, color = "#0066cc" }: { points: THREE.Vector3[], color?: string }) => {
+        // Créer un tableau plat de coordonnées pour tous les points
+        const vertices = new Float32Array(points.length * 3);
+        points.forEach((point, i) => {
+            vertices[i * 3] = point.x;
+            vertices[i * 3 + 1] = 0.1;
+            vertices[i * 3 + 2] = point.z;
+        });
+        
+        return (
+            <group>
+                {/* Contour de la pièce */}
+                <lineLoop>
+                    <bufferGeometry attach="geometry">
+                        <bufferAttribute
+                            attach="position"
+                            array={vertices}
+                            count={points.length}
+                            itemSize={3}
+                        />
+                    </bufferGeometry>
+                    <lineBasicMaterial attach="material" color={color} linewidth={2} />
+                </lineLoop>
+                
+                {/* Flèches pour chaque segment */}
+                {points.map((point, i) => {
+                    const nextPoint = points[(i + 1) % points.length];
+                    return (
+                        <ArrowLine 
+                            key={i} 
+                            start={point} 
+                            end={nextPoint} 
+                            color={color}
+                        />
+                    );
+                })}
+            </group>
+        );
+    };
+
+    // Composant pour afficher la taille d'une ligne
+    const LineMeasurement = ({ start, end, length }: { start: THREE.Vector3, end: THREE.Vector3, length: number }) => {
+        // Calculer le point milieu de la ligne
+        const midPoint = new THREE.Vector3().addVectors(
+            new THREE.Vector3(start.x, 0.1, start.z),
+            new THREE.Vector3(end.x, 0.1, end.z)
+        ).multiplyScalar(0.5);
+        
+        // Calculer la direction perpendiculaire à la ligne
+        const direction = new THREE.Vector3().subVectors(
+            new THREE.Vector3(end.x, 0.1, end.z),
+            new THREE.Vector3(start.x, 0.1, start.z)
+        ).normalize();
+        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize().multiplyScalar(0.7);
+        
+        // Position du texte
+        const textPosition = new THREE.Vector3().addVectors(midPoint, perpendicular);
+        
+        // Créer une texture pour le texte
+        const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+        
+        useEffect(() => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                canvas.width = 256;
+                canvas.height = 128;
+                
+                // Fond avec bordure
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#0066cc';
+                ctx.lineWidth = 6;
+                ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+                
+                // Texte plus grand et plus visible
+                ctx.fillStyle = '#0066cc';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${length.toFixed(2)}m`, canvas.width / 2, canvas.height / 2);
+                
+                const newTexture = new THREE.CanvasTexture(canvas);
+                setTexture(newTexture);
+            }
+            
+            return () => {
+                if (texture) {
+                    texture.dispose();
+                }
+            };
+        }, [length]);
+        
+        if (!texture) return null;
+        
+        return (
+            <sprite position={[textPosition.x, 0.2, textPosition.z]} scale={[2, 1, 1]}>
+                <spriteMaterial attach="material" transparent={true} map={texture} />
+            </sprite>
+        );
+    };
+
+    // Fonction pour vérifier si un angle est aligné sur des angles spécifiques
+    const isAngleAligned = (angle: number, tolerance: number = 0.5): boolean => {
+        // Convertir l'angle en degrés et le normaliser entre 0 et 360
+        const degrees = ((angle * 180 / Math.PI) % 360 + 360) % 360;
+        
+        // Angles spécifiques à vérifier (en degrés)
+        const targetAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+        
+        // Vérifier si l'angle est proche d'un des angles cibles
+        return targetAngles.some(targetAngle => 
+            Math.abs(degrees - targetAngle) < tolerance || 
+            Math.abs(degrees - targetAngle - 360) < tolerance
+        );
+    };
+
+    // Gestionnaire de clics pour le mode Blueprint
+    const BlueprintClickHandler = () => {
+        const { camera, scene } = useThree();
+        const raycasterRef = useRef(new THREE.Raycaster());
+        const mouseRef = useRef(new THREE.Vector2());
+        const [mousePosition, setMousePosition] = useState<THREE.Vector3 | null>(null);
+        const lineRef = useRef<THREE.Mesh | null>(null);
+        const spriteRef = useRef<THREE.Sprite | null>(null);
+        const [isAligned, setIsAligned] = useState(false);
+        
+        // Références pour les lignes de prévisualisation du rectangle
+        const rectanglePreviewLinesRef = useRef<THREE.Mesh[]>([]);
+        const rectanglePreviewSpriteRef = useRef<THREE.Sprite | null>(null);
+        
+        // Créer une ligne en pointillé entre le point temporaire et la position de la souris
+        useEffect(() => {
+            if (isBlueprintView && tempPoint && mousePosition) {
+                // Calculer l'angle entre le point temporaire et la position de la souris
+                const direction = new THREE.Vector3().subVectors(
+                    new THREE.Vector3(mousePosition.x, 0, mousePosition.z),
+                    new THREE.Vector3(tempPoint.x, 0, tempPoint.z)
+                ).normalize();
+                const angle = Math.atan2(direction.z, direction.x);
+                
+                // Vérifier si l'angle est aligné
+                const aligned = isAngleAligned(angle);
+                setIsAligned(aligned);
+                
+                // Supprimer l'ancienne ligne si elle existe
+                if (lineRef.current) {
+                    scene.remove(lineRef.current);
+                    if (lineRef.current.geometry) lineRef.current.geometry.dispose();
+                    if (lineRef.current.material) {
+                        if (Array.isArray(lineRef.current.material)) {
+                            lineRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            lineRef.current.material.dispose();
+                        }
+                    }
+                }
+                
+                // Supprimer l'ancien sprite s'il existe
+                if (spriteRef.current) {
+                    scene.remove(spriteRef.current);
+                    if (spriteRef.current.material) {
+                        if (Array.isArray(spriteRef.current.material)) {
+                            spriteRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            spriteRef.current.material.dispose();
+                        }
+                    }
+                }
+                
+                // Créer un tube épais au lieu d'une simple ligne
+                const path = new THREE.LineCurve3(
+                    new THREE.Vector3(tempPoint.x, 0.1, tempPoint.z),
+                    new THREE.Vector3(mousePosition.x, 0.1, mousePosition.z)
+                );
+                const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.2, 12, false);
+                
+                // Créer un matériau avec la couleur appropriée (vert si aligné, rouge sinon)
+                const tubeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: aligned ? 0x00cc00 : 0xff3333,
+                    transparent: true,
+                    opacity: 0.7,
+                });
+                
+                const line = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                scene.add(line);
+                lineRef.current = line;
+                
+                // Afficher la longueur de la ligne en cours de création
+                const length = tempPoint.distanceTo(mousePosition);
+                
+                // Créer un canvas pour le texte
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                if (context) {
+                    canvas.width = 256;
+                    canvas.height = 128;
+                    
+                    // Fond avec bordure
+                    context.fillStyle = '#ffffff';
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    context.strokeStyle = aligned ? '#00cc00' : '#ff3333';
+                    context.lineWidth = 6;
+                    context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+                    
+                    // Texte avec la couleur appropriée
+                    context.fillStyle = aligned ? '#00cc00' : '#ff3333';
+                    context.font = 'bold 48px Arial';
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    
+                    // Afficher la longueur et l'angle si aligné
+                    if (aligned) {
+                        const degrees = ((angle * 180 / Math.PI) % 360 + 360) % 360;
+                        context.fillText(`${length.toFixed(2)}m - ${Math.round(degrees)}°`, canvas.width / 2, canvas.height / 2);
+                    } else {
+                        context.fillText(`${length.toFixed(2)}m`, canvas.width / 2, canvas.height / 2);
+                    }
+                    
+                    // Créer une texture et un sprite
+                    const texture = new THREE.CanvasTexture(canvas);
+                    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                    const sprite = new THREE.Sprite(spriteMaterial);
+                    
+                    // Calculer la position du sprite
+                    const midPoint = new THREE.Vector3().addVectors(
+                        new THREE.Vector3(tempPoint.x, 0.1, tempPoint.z),
+                        new THREE.Vector3(mousePosition.x, 0.1, mousePosition.z)
+                    ).multiplyScalar(0.5);
+                    
+                    // Calculer la direction perpendiculaire à la ligne
+                    const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize().multiplyScalar(0.7);
+                    
+                    // Position du texte
+                    const textPosition = new THREE.Vector3().addVectors(midPoint, perpendicular);
+                    
+                    sprite.position.set(textPosition.x, 0.2, textPosition.z);
+                    sprite.scale.set(2, 1, 1);
+                    scene.add(sprite);
+                    spriteRef.current = sprite;
+                }
+            } else {
+                // Si le point temporaire n'existe plus, supprimer la ligne et le sprite
+                if (lineRef.current) {
+                    scene.remove(lineRef.current);
+                    if (lineRef.current.geometry) lineRef.current.geometry.dispose();
+                    if (lineRef.current.material) {
+                        if (Array.isArray(lineRef.current.material)) {
+                            lineRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            lineRef.current.material.dispose();
+                        }
+                    }
+                    lineRef.current = null;
+                }
+                
+                if (spriteRef.current) {
+                    scene.remove(spriteRef.current);
+                    if (spriteRef.current.material) {
+                        if (Array.isArray(spriteRef.current.material)) {
+                            spriteRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            spriteRef.current.material.dispose();
+                        }
+                    }
+                    spriteRef.current = null;
+                }
+            }
+            
+            return () => {
+                // Nettoyer la ligne et le sprite lors du démontage
+                if (lineRef.current) {
+                    scene.remove(lineRef.current);
+                    if (lineRef.current.geometry) lineRef.current.geometry.dispose();
+                    if (lineRef.current.material) {
+                        if (Array.isArray(lineRef.current.material)) {
+                            lineRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            lineRef.current.material.dispose();
+                        }
+                    }
+                    lineRef.current = null;
+                }
+                
+                if (spriteRef.current) {
+                    scene.remove(spriteRef.current);
+                    if (spriteRef.current.material) {
+                        if (Array.isArray(spriteRef.current.material)) {
+                            spriteRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            spriteRef.current.material.dispose();
+                        }
+                    }
+                    spriteRef.current = null;
+                }
+            };
+        }, [isBlueprintView, tempPoint, mousePosition, scene]);
+        
+        // Effet pour gérer la prévisualisation du rectangle
+        useEffect(() => {
+            // Nettoyer les lignes de prévisualisation existantes à chaque rendu
+            const cleanupPreviews = () => {
+                // Nettoyer les lignes de prévisualisation
+                rectanglePreviewLinesRef.current.forEach(line => {
+                    scene.remove(line);
+                    if (line.geometry) line.geometry.dispose();
+                    if (line.material) {
+                        if (Array.isArray(line.material)) {
+                            line.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            line.material.dispose();
+                        }
+                    }
+                });
+                rectanglePreviewLinesRef.current = [];
+                
+                // Nettoyer le sprite
+                if (rectanglePreviewSpriteRef.current) {
+                    scene.remove(rectanglePreviewSpriteRef.current);
+                    if (rectanglePreviewSpriteRef.current.material) {
+                        if (Array.isArray(rectanglePreviewSpriteRef.current.material)) {
+                            rectanglePreviewSpriteRef.current.material.forEach((m: THREE.Material) => m.dispose());
+                        } else {
+                            rectanglePreviewSpriteRef.current.material.dispose();
+                        }
+                    }
+                    rectanglePreviewSpriteRef.current = null;
+                }
+            };
+
+            // Toujours nettoyer les prévisualisations existantes
+            cleanupPreviews();
+            
+            // Si les conditions ne sont pas remplies, ne pas créer de nouvelle prévisualisation
+            if (!isBlueprintView || !groundPlane || !rectangleStartPoint || !mousePosition) {
+                return;
+            }
+            
+            // Créer les quatre coins du rectangle
+            const x1 = rectangleStartPoint.x;
+            const z1 = rectangleStartPoint.z;
+            const x2 = mousePosition.x;
+            const z2 = mousePosition.z;
+            
+            const corner1 = new THREE.Vector3(x1, 0.1, z1);
+            const corner2 = new THREE.Vector3(x2, 0.1, z1);
+            const corner3 = new THREE.Vector3(x2, 0.1, z2);
+            const corner4 = new THREE.Vector3(x1, 0.1, z2);
+            
+            // Créer les quatre lignes
+            const lines = [
+                { start: corner1, end: corner2 },
+                { start: corner2, end: corner3 },
+                { start: corner3, end: corner4 },
+                { start: corner4, end: corner1 }
+            ];
+            
+            // Calculer les dimensions du rectangle
+            const width = Math.abs(x2 - x1);
+            const length = Math.abs(z2 - z1);
+            
+            // Créer les lignes de prévisualisation
+            lines.forEach(line => {
+                const path = new THREE.LineCurve3(
+                    new THREE.Vector3(line.start.x, 0.1, line.start.z),
+                    new THREE.Vector3(line.end.x, 0.1, line.end.z)
+                );
+                const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.2, 12, false);
+                const tubeMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0x4CAF50,
+                    transparent: true,
+                    opacity: 0.7,
+                });
+                
+                const tubeLine = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                scene.add(tubeLine);
+                rectanglePreviewLinesRef.current.push(tubeLine);
+            });
+            
+            // Créer un sprite pour afficher les dimensions
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            if (context) {
+                canvas.width = 256;
+                canvas.height = 128;
+                
+                // Fond avec bordure
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.strokeStyle = '#4CAF50';
+                context.lineWidth = 6;
+                context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+                
+                // Texte
+                context.fillStyle = '#4CAF50';
+                context.font = 'bold 36px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(`${width.toFixed(2)}m × ${length.toFixed(2)}m`, canvas.width / 2, canvas.height / 2);
+                
+                // Créer une texture et un sprite
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                
+                // Position du sprite au centre du rectangle
+                const center = new THREE.Vector3(
+                    (corner1.x + corner3.x) / 2,
+                    0.2,
+                    (corner1.z + corner3.z) / 2
+                );
+                
+                sprite.position.copy(center);
+                sprite.scale.set(2, 1, 1);
+                scene.add(sprite);
+                rectanglePreviewSpriteRef.current = sprite;
+            }
+            
+            // Mettre à jour l'état de prévisualisation du rectangle dans le composant parent
+            if (updateRectanglePreview) {
+                updateRectanglePreview(rectangleStartPoint, mousePosition);
+            }
+            
+            // Nettoyer les prévisualisations lors du démontage du composant
+            return cleanupPreviews;
+            
+        }, [isBlueprintView, rectangleStartPoint, mousePosition, scene, groundPlane, updateRectanglePreview]);
+        
+        useEffect(() => {
+            if (!isBlueprintView || !groundPlane) return;
+            
+            const handleMouseMove = (e: MouseEvent) => {
+                const canvas = e.target as HTMLElement;
+                const canvasBounds = canvas.getBoundingClientRect();
+                const x = ((e.clientX - canvasBounds.left) / canvasBounds.width) * 2 - 1;
+                const y = -((e.clientY - canvasBounds.top) / canvasBounds.height) * 2 + 1;
+                
+                mouseRef.current.set(x, y);
+                raycasterRef.current.setFromCamera(mouseRef.current, camera);
+                
+                const intersects = raycasterRef.current.intersectObject(groundPlane);
+                
+                if (intersects.length > 0) {
+                    const point = intersects[0].point.clone();
+                    point.y = 0.1; // Légèrement au-dessus du sol
+                    setMousePosition(point);
+                }
+            };
+            
+            const handleClick = (e: MouseEvent) => {
+                const canvas = e.target as HTMLElement;
+                const canvasBounds = canvas.getBoundingClientRect();
+                const x = ((e.clientX - canvasBounds.left) / canvasBounds.width) * 2 - 1;
+                const y = -((e.clientY - canvasBounds.top) / canvasBounds.height) * 2 + 1;
+                
+                mouseRef.current.set(x, y);
+                raycasterRef.current.setFromCamera(mouseRef.current, camera);
+                
+                const intersects = raycasterRef.current.intersectObject(groundPlane);
+                
+                if (intersects.length > 0) {
+                    const point = intersects[0].point.clone();
+                    point.y = 0.1; // Légèrement au-dessus du sol
+                    
+                    console.log("Blueprint click at:", point);
+                    
+                    if (handleBlueprintClick) {
+                        handleBlueprintClick(point);
+                    }
+                }
+            };
+            
+            const canvas = document.querySelector('canvas');
+            if (canvas) {
+                canvas.addEventListener('click', handleClick);
+                canvas.addEventListener('mousemove', handleMouseMove);
+                
+                return () => {
+                    canvas.removeEventListener('click', handleClick);
+                    canvas.removeEventListener('mousemove', handleMouseMove);
+                };
+            }
+            
+            return undefined;
+        }, [isBlueprintView, groundPlane, camera, scene, handleBlueprintClick]);
+        
+        return null;
+    };
+
+    // Ajouter un composant pour afficher le mode de navigation actuel
+    const NavigationModeIndicator = () => {
+        if (is2DView || isObjectOnlyView || firstPersonView) return null;
+        
+        return (
+            <div className="navigation-mode-indicator">
+                <div>
+                    Mode: {navigationMode === 'orbit' ? 'Orbite (rotation autour de la maquette)' : 'Déplacement horizontal'}
+                </div>
+                <button
+                    onClick={() => setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit')}
+                    className="navigation-mode-button"
+                >
+                    Changer de mode (N)
+                </button>
+                <div className="navigation-instructions">
+                    {navigationMode === 'orbit' ? (
+                        <>
+                            <div>• Clic gauche + déplacer: Rotation</div>
+                            <div>• Clic droit + déplacer: Pan</div>
+                            <div>• Molette: Zoom</div>
+                        </>
+                    ) : (
+                        <>
+                            <div>• Clic sur la map: Se déplacer</div>
+                            <div>• Échap: Libérer la souris</div>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // Fonction pour gérer le clic sur la scène en mode déplacement
+    const handleSceneClick = useCallback((event: THREE.Intersection) => {
+        if (navigationMode !== 'move' || firstPersonView || is2DView || isObjectOnlyView) return;
+        
+        // Si nous avons un point d'intersection
+        if (event.point) {
+            // Définir le point cible pour le déplacement
+            targetPositionRef.current = event.point.clone();
+            // Conserver la hauteur actuelle de la caméra
+            if (cameraPositionRef.current) {
+                targetPositionRef.current.y = cameraPositionRef.current.y;
+            }
+            isMovingToTargetRef.current = true;
+        }
+    }, [navigationMode, firstPersonView, is2DView, isObjectOnlyView]);
+
+    // Animation du déplacement de la caméra
+    const animateCameraMovement = useCallback((camera: THREE.Camera) => {
+        if (!isMovingToTargetRef.current || !targetPositionRef.current || !cameraPositionRef.current) return;
+        
+        // Calculer la direction et la distance
+        const direction = new THREE.Vector3().subVectors(targetPositionRef.current, cameraPositionRef.current);
+        const distance = direction.length();
+        
+        // Si on est assez proche de la cible, arrêter l'animation
+        if (distance < 0.1) {
+            isMovingToTargetRef.current = false;
+            return;
+        }
+        
+        // Normaliser la direction et définir la vitesse
+        direction.normalize();
+        const speed = Math.min(distance * 0.05, 0.5); // Vitesse proportionnelle à la distance
+        
+        // Mettre à jour la position de la caméra
+        cameraPositionRef.current.add(direction.multiplyScalar(speed));
+        
+        // Appliquer la nouvelle position à la caméra
+        camera.position.copy(cameraPositionRef.current);
+    }, []);
+
+    // Remplacer FlyControls par un gestionnaire de clic personnalisé
+    const MoveControls = () => {
+        const { camera, scene, raycaster, pointer, gl } = useThree();
+        
+        // Stocker la position actuelle de la caméra
+        useEffect(() => {
+            if (!cameraPositionRef.current) {
+                cameraPositionRef.current = camera.position.clone();
+            }
+        }, [camera]);
+        
+        // Hook pour mettre à jour la position de la caméra à chaque frame
+        useFrame(() => {
+            // Stocker la position actuelle de la caméra
+            if (!cameraPositionRef.current) {
+                cameraPositionRef.current = camera.position.clone();
+            } else {
+                cameraPositionRef.current.copy(camera.position);
+            }
+            
+            // Animer le déplacement de la caméra si nécessaire
+            if (navigationMode === 'move' && !firstPersonView && !is2DView && !isObjectOnlyView) {
+                animateCameraMovement(camera);
+            }
+        });
+        
+        useEffect(() => {
+            // Variables pour le drag and drop
+            let isDragging = false;
+            let lastMouseX = 0;
+            let lastMouseY = 0;
+            
+            const handleMouseDown = (event: MouseEvent) => {
+                if (navigationMode !== 'move' || firstPersonView || is2DView || isObjectOnlyView) return;
+                
+                isDragging = true;
+                lastMouseX = event.clientX;
+                lastMouseY = event.clientY;
+                
+                // Désactiver les contrôles d'orbite pendant le déplacement
+                if (orbitControlsRef.current) {
+                    orbitControlsRef.current.enabled = false;
+                }
+                
+                // Arrêter tout déplacement automatique en cours
+                isMovingToTargetRef.current = false;
+            };
+            
+            const handleMouseMove = (event: MouseEvent) => {
+                if (!isDragging || navigationMode !== 'move' || firstPersonView || is2DView || isObjectOnlyView) return;
+                
+                // Calculer le déplacement de la souris
+                const deltaX = event.clientX - lastMouseX;
+                const deltaY = event.clientY - lastMouseY;
+                
+                // Mettre à jour les dernières positions
+                lastMouseX = event.clientX;
+                lastMouseY = event.clientY;
+                
+                // Calculer la direction de déplacement dans l'espace 3D
+                // On utilise la direction de la caméra pour déterminer le déplacement avant/arrière
+                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                forward.y = 0; // Garder le déplacement horizontal
+                forward.normalize();
+                
+                // Calculer la direction perpendiculaire pour le déplacement latéral
+                const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                right.y = 0; // Garder le déplacement horizontal
+                right.normalize();
+                
+                // Facteur de vitesse
+                const speed = 0.05;
+                
+                // Appliquer le déplacement dans la direction OPPOSÉE au mouvement de la souris
+                // (comme si on "tirait" la carte)
+                camera.position.add(forward.multiplyScalar(deltaY * speed));
+                camera.position.add(right.multiplyScalar(deltaX * speed));
+                
+                // Mettre à jour la position de référence
+                if (cameraPositionRef.current) {
+                    cameraPositionRef.current.copy(camera.position);
+                }
+            };
+            
+            const handleMouseUp = () => {
+                if (isDragging) {
+                    isDragging = false;
+                    
+                    // Réactiver les contrôles d'orbite
+                    if (orbitControlsRef.current) {
+                        orbitControlsRef.current.enabled = true;
+                        
+                        // Important: mettre à jour le target des contrôles d'orbite
+                        // pour qu'il soit relatif à la nouvelle position de la caméra
+                        if (cameraPositionRef.current) {
+                            // Calculer un nouveau point cible devant la caméra
+                            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                            const target = cameraPositionRef.current.clone().add(forward.multiplyScalar(10));
+                            orbitControlsRef.current.target.copy(target);
+                        }
+                    }
+                }
+            };
+            
+            const handleClick = (event: MouseEvent) => {
+                if (navigationMode !== 'move' || firstPersonView || is2DView || isObjectOnlyView || isDragging) return;
+                
+                // Calculer les coordonnées normalisées de la souris
+                pointer.x = (event.clientX / gl.domElement.clientWidth) * 2 - 1;
+                pointer.y = -(event.clientY / gl.domElement.clientHeight) * 2 + 1;
+                
+                // Mettre à jour le raycaster
+                raycaster.setFromCamera(pointer, camera);
+                
+                // Trouver les intersections avec la scène
+                const intersects = raycaster.intersectObjects(scene.children, true);
+                
+                if (intersects.length > 0) {
+                    // Trouver la première intersection avec le sol ou un objet
+                    const intersection = intersects.find(i => 
+                        i.object === groundPlane || 
+                        (i.object.userData && i.object.userData.isFloor)
+                    );
+                    
+                    if (intersection) {
+                        handleSceneClick(intersection);
+                    }
+                }
+            };
+            
+            // Ajouter les écouteurs d'événements
+            gl.domElement.addEventListener('mousedown', handleMouseDown);
+            gl.domElement.addEventListener('mousemove', handleMouseMove);
+            gl.domElement.addEventListener('mouseup', handleMouseUp);
+            gl.domElement.addEventListener('click', handleClick);
+            
+            // Ajouter un écouteur pour le cas où la souris sort de la fenêtre
+            window.addEventListener('mouseup', handleMouseUp);
+            
+            // Nettoyer les écouteurs d'événements
+            return () => {
+                gl.domElement.removeEventListener('mousedown', handleMouseDown);
+                gl.domElement.removeEventListener('mousemove', handleMouseMove);
+                gl.domElement.removeEventListener('mouseup', handleMouseUp);
+                gl.domElement.removeEventListener('click', handleClick);
+                window.removeEventListener('mouseup', handleMouseUp);
+            };
+        }, [camera, scene, raycaster, pointer, gl, navigationMode, firstPersonView, is2DView, isObjectOnlyView]);
+        
         return null;
     };
 
@@ -598,6 +1472,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     </div>
                 </>
             )}
+            <NavigationModeIndicator />
             <Canvas 
                 onClick={() => setIsMoving(null)}
                 shadows
@@ -613,6 +1488,8 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     firstPersonPosition={characterPosition}
                     firstPersonRotation={characterRotation}
                     zoom2D={zoom2D}
+                    isObjectOnlyView={isObjectOnlyView}
+                    focusedObject={focusedObjectId ? objects.find(o => o.id === focusedObjectId) || null : null}
                 />
                 {!firstPersonView && (
                     <RaycasterHandler
@@ -635,21 +1512,62 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                 <pointLight position={[10, -10, 10]} intensity={2.5} />
                 <hemisphereLight groundColor={'#b9b9b9'} intensity={2.0} />
                 
-                {!firstPersonView && (
-                    <OrbitControls ref={orbitControlsRef} enabled={!is2DView} />
+                {!firstPersonView && !is2DView && navigationMode === 'orbit' && (
+                    <OrbitControls 
+                        ref={orbitControlsRef} 
+                        enabled={!is2DView || isObjectOnlyView} 
+                        minDistance={isObjectOnlyView ? 2 : 1}
+                        maxDistance={isObjectOnlyView ? 20 : 1000}
+                        enableZoom={!isObjectOnlyView}
+                        enablePan={!isObjectOnlyView}
+                        rotateSpeed={isObjectOnlyView ? 0.5 : 1}
+                        autoRotate={isObjectOnlyView}
+                        autoRotateSpeed={isObjectOnlyView ? 1 : 0}
+                    />
+                )}
+                
+                {!firstPersonView && !is2DView && navigationMode === 'move' && (
+                    <>
+                        <OrbitControls 
+                            ref={orbitControlsRef}
+                            enableRotate={true}
+                            enableZoom={true}
+                            enablePan={false}
+                            minPolarAngle={0}
+                            maxPolarAngle={Math.PI / 2 - 0.1} // Limiter la rotation verticale
+                        />
+                        <MoveControls />
+                    </>
                 )}
 
-                {groundPlane && <primitive object={groundPlane} />}
-                {is2DView && <gridHelper args={[50, 50]} position={[0, 0, 0]} />}
+                {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode Blueprint ou ObjectOnly */}
+                {groundPlane && !isBlueprintView && !isObjectOnlyView && <primitive object={groundPlane} />}
+                
+                {/* Afficher la grille en mode 2D ou Blueprint, pas en mode ObjectOnly */}
+                {is2DView && !isObjectOnlyView && (
+                    <gridHelper 
+                        args={[50, 50]} 
+                        position={[0, 0.05, 0]} 
+                        // Couleur différente pour le mode Blueprint
+                        userData={{ color: isBlueprintView ? '#1a3f5c' : '#444444' }}
+                    />
+                )}
 
-                {!is2DView && !firstPersonView && (
-                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
-                        <planeGeometry args={[50, 50]} />
-                        <meshStandardMaterial color="lightgray" />
+                {/* Fond bleu clair pour le mode Blueprint */}
+                {isBlueprintView && !isObjectOnlyView && (
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+                        <planeGeometry args={[100, 100]} />
+                        <meshBasicMaterial color="#e6f2ff" />
                     </mesh>
                 )}
+                
+                {/* Fond neutre pour le mode ObjectOnly */}
+                {isObjectOnlyView && (
+                    <color attach="background" args={["#f5f5f5"]} />
+                )}
 
-                {objects.map((obj) => (
+                {/* Afficher les objets normalement en mode 3D ou 2D */}
+                {!isBlueprintView && objects.map((obj) => (
                     <GLTFObject
                         key={obj.id}
                         id={obj.id}
@@ -668,11 +1586,52 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     />
                 ))}
 
-                {is2DView && walls2D.map((line, index) => (
-                    <primitive key={index} object={line} />
+                {/* Afficher les représentations blueprint en mode Blueprint */}
+                {isBlueprintView && objects.map(createBlueprintRepresentation)}
+
+                {/* Afficher les lignes Blueprint avec leur taille */}
+                {isBlueprintView && walls2D.map((line, index) => (
+                    <primitive key={`blueprint-line-${index}`} object={line} />
+                ))}
+                
+                {/* Afficher les mesures des lignes */}
+                {isBlueprintView && blueprintLines && blueprintLines.map(line => (
+                    <LineMeasurement 
+                        key={`measure-${line.id}`}
+                        start={line.start}
+                        end={line.end}
+                        length={line.length}
+                    />
                 ))}
 
-                {!is2DView && (
+                {/* Afficher le point temporaire */}
+                {isBlueprintView && tempPoint && (
+                    <mesh position={[tempPoint.x, 0.1, tempPoint.z]}>
+                        <sphereGeometry args={[0.2, 16, 16]} />
+                        <meshBasicMaterial color="#ff3333" />
+                    </mesh>
+                )}
+                
+                {/* Afficher tous les points existants */}
+                {isBlueprintView && blueprintPoints && blueprintPoints.length > 0 && (
+                    <group>
+                        {blueprintPoints.map((point, index) => (
+                            <mesh 
+                                key={`point-${index}`}
+                                position={[point.x, 0.1, point.z]}
+                            >
+                                <sphereGeometry args={[0.15, 16, 16]} />
+                                <meshBasicMaterial color="#0066cc" />
+                            </mesh>
+                        ))}
+                    </group>
+                )}
+
+                {is2DView && !isBlueprintView && walls2D.map((line, index) => (
+                    <primitive key={`2d-line-${index}`} object={line} />
+                ))}
+
+                {!is2DView && !isObjectOnlyView && (
                     <Character 
                         isEnabled={firstPersonView} 
                         onPositionUpdate={handleCharacterUpdate}
@@ -681,6 +1640,9 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         }}
                     />
                 )}
+                
+                {/* Gestionnaire de clics pour le mode Blueprint */}
+                {isBlueprintView && <BlueprintClickHandler />}
             </Canvas>
         </>
     );

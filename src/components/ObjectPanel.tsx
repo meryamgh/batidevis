@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ObjectData } from '../types/ObjectData';
 import '../styles/Controls.css';
+import { useTextures } from '../services/TextureService';
 
 type ObjectPanelProps = {
     object: ObjectData;
@@ -38,6 +39,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [curvature, setCurvature] = useState(0);
     const [stretch, setStretch] = useState(1);
     const [selectedAxis, setSelectedAxis] = useState<'x' | 'y' | 'z'>('y');
+    
+    // Utilisation du hook personnalisé pour récupérer les textures
+    const { textures: apiTextures, isLoading: isLoadingTextures, error: texturesError } = useTextures();
 
     const toggleDimensions = () => {
         onToggleShowDimensions(object.id);
@@ -106,6 +110,27 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     // Empêcher la propagation des événements pour les contrôles de type range
     const handleRangeMouseDown = (e: React.MouseEvent) => {
         e.stopPropagation();
+    };
+
+    // Styles pour le séparateur de textures
+    const textureDividerStyle = {
+        width: '100%',
+        height: '1px',
+        backgroundColor: '#ccc',
+        margin: '10px 0',
+    };
+
+    // Fonction pour appliquer une texture
+    const applyTexture = (textureUrl: string) => {
+        setTexture(textureUrl);
+        onUpdateTexture(object.id, textureUrl);
+    };
+
+    // Fonction pour gérer les erreurs de chargement d'image
+    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        const target = e.target as HTMLImageElement;
+        target.src = "textures/Cube_BaseColor.png"; 
+        target.onerror = null; // Éviter les boucles infinies
     };
 
     return (
@@ -240,35 +265,69 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             {/* Section Texture */}
             <div className="panel-section">
                 <h3 className="section-title">Texture</h3>
+                
                 <div className="texture-selector">
-                    {[
-                        { value: "textures/Cube_BaseColor.png", label: "Cube BaseColor" },
-                        { value: "textures/concrete_texture.jpg", label: "Concrete" },
-                        { value: "textures/Bricks085_1K-PNG_Color.png", label: "Bricks" },
-                        { value: "textures/Wood052_1K-PNG_Color.png", label: "Wood" },
-                        { value: "textures/Wood052_1K-PNG_Displacement.png", label: "Wood Displacement" },
-                        { value: "textures/Wood052_1K-PNG_Roughness.png", label: "Wood Roughness" },
-                        ...Object.entries(customTextures).map(([name, url]) => ({
-                            value: url,
-                            label: name.replace(/\.[^/.]+$/, "")
-                        }))
-                    ].map((textureOption) => (
-                        <div 
-                            key={textureOption.value}
-                            className={`texture-option ${texture === textureOption.value ? 'selected' : ''}`}
-                            onClick={() => {
-                                setTexture(textureOption.value);
-                                onUpdateTexture(object.id, textureOption.value);
-                            }}
-                        >
-                            <img 
-                                src={textureOption.value} 
-                                alt={textureOption.label}
-                                className="texture-preview"
-                            />
-                            <span>{textureOption.label}</span>
+                    {isLoadingTextures ? (
+                        <p className="texture-loading">Chargement des textures...</p>
+                    ) : texturesError ? (
+                        <div className="texture-error">
+                            <p>Erreur lors du chargement des textures API</p>
+                            <p className="error-details">{texturesError}</p>
+                            <p>Les textures par défaut sont toujours disponibles.</p>
                         </div>
-                    ))}
+                    ) : (
+                        <>
+                            <div className="texture-grid">
+                               
+                                
+                                {/* Textures personnalisées */}
+                                {Object.entries(customTextures).map(([name, url]) => (
+                                    <div 
+                                        key={url}
+                                        className={`texture-option ${texture === url ? 'selected' : ''}`}
+                                        onClick={() => applyTexture(url)}
+                                    >
+                                        <img 
+                                            src={url} 
+                                            alt={name}
+                                            className="texture-preview"
+                                            onError={handleImageError}
+                                        />
+                                        <span>{name.replace(/\.[^/.]+$/, "")}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Textures de l'API */}
+                            {apiTextures.length > 0 ? (
+                                <>
+                                    <div style={textureDividerStyle}></div>
+                                    <h4>Textures API</h4>
+                                    <div className="texture-grid">
+                                        {apiTextures.map((textureItem, index) => (
+                                            <div 
+                                                key={`api-${index}`}
+                                                className={`texture-option ${texture === textureItem.fullUrl ? 'selected' : ''}`}
+                                                onClick={() => applyTexture(textureItem.fullUrl)}
+                                            >
+                                                <img 
+                                                    src={textureItem.fullUrl} 
+                                                    alt={textureItem.name}
+                                                    className="texture-preview"
+                                                    onError={handleImageError}
+                                                />
+                                                <span>{textureItem.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : !texturesError && (
+                                <div className="texture-info">
+                                    <p>Aucune texture disponible depuis l'API.</p>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
 
