@@ -5,16 +5,16 @@ import * as THREE from 'three';
 import '../styles/MaquettePage.css';
 import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelUtils';
 import CanvasScene from '../components/CanvasScene';
-import ObjectPanel from '../components/ObjectPanel'; 
+import ObjectPanel from '../components/panels/ObjectPanel'; 
 import { useObjects } from '../hooks/useObjects';
-import QuotePanel from '../components/quote/QuotePanel';
-import NavigationHelpModal from '../components/NavigationHelpModal';
+import QuotePanel from '../components/panels/QuotePanel';
+import NavigationHelpModal from '../components/panels/NavigationHelpModalPanel';
 import '../styles/Controls.css';
-import Toolbar from '../components/Toolbar';
-import BlueprintControls from '../components/blueprint/BlueprintControls';
+import Toolbar from '../components/panels/ToolbarPanel';
+import BlueprintControls from '../components/panels/BlueprintControlsPanel';
 import { useFloors } from '../hooks/useFloors';
-import RoomConfigPanel from '../components/room/RoomConfigPanel';
-import FloorSelector from '../components/room/FloorSelector';
+import RoomConfigPanel from '../components/panels/RoomConfigPanel';
+import FloorSelector from '../components/panels/FloorSelectorPanel';
 import { useBlueprint } from '../hooks/useBlueprint';
 
 const MaquettePage: React.FC = () => {
@@ -38,6 +38,8 @@ const MaquettePage: React.FC = () => {
     const isBlueprintView = viewMode === 'Blueprint';
     const isObjectOnlyView = viewMode === 'ObjectOnly';
     const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
+    // Nouvel état pour contrôler la visibilité du panneau de devis
+    const [showQuotePanel, setShowQuotePanel] = useState(true);
 
     // États pour le mode Blueprint
     const [blueprintPoints, setBlueprintPoints] = useState<THREE.Vector3[]>([]);
@@ -97,12 +99,9 @@ const MaquettePage: React.FC = () => {
         setQuote,
         currentFloor,
         setCurrentFloor,
-        selectedFloor2D,
-        setSelectedFloor2D,
-        showRoomConfig,
         setShowRoomConfig,
         roomConfig,
-        setRoomConfig
+        objects,
     });
     
     const blueprintUtils = useBlueprint({
@@ -294,7 +293,7 @@ const MaquettePage: React.FC = () => {
  
  
 
-    // Fonction pour rendre le panneau d'objet
+    // Fonction pour afficher le panneau d'objet
     const renderObjectPanel = useCallback((selectedObject: ObjectData) => {
         const panel = document.getElementById('floating-panel');
         setCreatingWallMode(false);
@@ -320,17 +319,22 @@ const MaquettePage: React.FC = () => {
                     }}
                     onRotateObject={objectsUtils.handleRotateObject}
                     onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
+                    onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
                 />
             );
         }
-    }, [objectsUtils, customTextures, setCreatingWallMode]);
+    }, [objectsUtils, customTextures, setCreatingWallMode, floorsUtils]);
 
     // Wrapper pour handleObjectClick qui utilise la fonction du hook
     const onObjectClick = useCallback((id: string) => {
         objectsUtils.handleObjectClick(id, viewMode, is2DView, renderObjectPanel);
     }, [objectsUtils, viewMode, is2DView, renderObjectPanel]);
 
-     
+    // Fonction pour basculer l'affichage du panneau de devis
+    const toggleQuotePanel = useCallback(() => {
+        setShowQuotePanel(prev => !prev);
+    }, []);
+
     return (
         <div id="page">
             <NavigationHelpModal 
@@ -353,11 +357,13 @@ const MaquettePage: React.FC = () => {
                 setCreatingWallMode={setCreatingWallMode}
                 is2DView={is2DView}
                 handleAddObject={objectsUtils.handleAddObject}
+                showQuotePanel={showQuotePanel}
+                toggleQuotePanel={toggleQuotePanel}
             />
 
             {/* Contenu principal */}
             <div id="container" className="container-essaie">
-                <div ref={leftPanelRef} className="left-panel">
+                <div ref={leftPanelRef} className={`left-panel ${!showQuotePanel ? 'left-panel-expanded' : ''}`}>
                     <FloorSelector 
                         currentFloor={currentFloor}
                         selectedFloor2D={selectedFloor2D}
@@ -420,16 +426,19 @@ const MaquettePage: React.FC = () => {
                     />
                 </div>
                             
-
-                <div ref={draggerRef} className="dragger"></div>
-                <div ref={rightPanelRef} className="right-panel">
-                    <QuotePanel 
-                        quote={quote} 
-                        setObjects={setObjects} 
-                        setQuote={setQuote} 
-                        getSerializableQuote={objectsUtils.getSerializableQuote} 
-                    />
-                </div>
+                {showQuotePanel && (
+                    <>
+                        <div ref={draggerRef} className="dragger"></div>
+                        <div ref={rightPanelRef} className="right-panel">
+                            <QuotePanel 
+                                quote={quote} 
+                                setObjects={setObjects} 
+                                setQuote={setQuote} 
+                                getSerializableQuote={objectsUtils.getSerializableQuote} 
+                            />
+                        </div>
+                    </>
+                )}
             </div>
             {showRoomConfig && <RoomConfigPanel 
                 roomConfig={roomConfig} 

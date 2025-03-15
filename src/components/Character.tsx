@@ -20,23 +20,28 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
     const isMousePressed = useRef(false);
     const speed = 0.1;
     const characterHeight = 1.7; // Hauteur moyenne d'une personne
-    const mouseSensitivity = 0.002;
+    const mouseSensitivityX = 0.0015; // Sensibilité horizontale réduite
+    const mouseSensitivityY = 0.001; // Sensibilité verticale encore plus réduite
     const rotationSpeed = 0.2;
     const { camera } = useThree();
+    
+    // Référence pour le lissage des mouvements de caméra
+    const targetRotation = useRef<THREE.Euler>(new THREE.Euler(0, 0, 0));
+    const smoothingFactor = 0.1; // Facteur de lissage (0-1), plus petit = plus lisse
 
     const handleRotation = (direction: 'up' | 'down' | 'left' | 'right') => {
         switch (direction) {
             case 'up':
-                rotationRef.current.x = Math.max(-Math.PI / 3, rotationRef.current.x - rotationSpeed);
+                targetRotation.current.x = Math.max(-Math.PI / 3, targetRotation.current.x - rotationSpeed);
                 break;
             case 'down':
-                rotationRef.current.x = Math.min(Math.PI / 3, rotationRef.current.x + rotationSpeed);
+                targetRotation.current.x = Math.min(Math.PI / 3, targetRotation.current.x + rotationSpeed);
                 break;
             case 'left':
-                rotationRef.current.y += rotationSpeed;
+                targetRotation.current.y += rotationSpeed;
                 break;
             case 'right':
-                rotationRef.current.y -= rotationSpeed;
+                targetRotation.current.y -= rotationSpeed;
                 break;
         }
         if (onPositionUpdate) {
@@ -57,11 +62,17 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
 
         const handleMouseMove = (e: MouseEvent) => {
             if (isMousePressed.current) {
-                rotationRef.current.y -= e.movementX * mouseSensitivity;
-                rotationRef.current.x = Math.max(
-                    -Math.PI / 3,
-                    Math.min(Math.PI / 3, rotationRef.current.x - e.movementY * mouseSensitivity)
-                );
+                // Utiliser des sensibilités différentes pour X et Y
+                targetRotation.current.y -= e.movementX * mouseSensitivityX;
+                
+                // Corriger le mouvement vertical pour qu'il corresponde à l'intuition de l'utilisateur
+                // Inverser le signe pour que le mouvement vers le haut déplace la caméra vers le haut
+                if (Math.abs(e.movementY) > 1) {
+                    targetRotation.current.x = Math.max(
+                        -Math.PI / 3,
+                        Math.min(Math.PI / 3, targetRotation.current.x + e.movementY * mouseSensitivityY)
+                    );
+                }
             }
         };
 
@@ -151,6 +162,10 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
     useFrame(() => {
         if (!isEnabled || !characterRef.current) return;
 
+        // Appliquer le lissage à la rotation
+        rotationRef.current.x += (targetRotation.current.x - rotationRef.current.x) * smoothingFactor;
+        rotationRef.current.y += (targetRotation.current.y - rotationRef.current.y) * smoothingFactor;
+
         const movement = new THREE.Vector3();
         const direction = new THREE.Vector3();
         const horizontalRotation = new THREE.Euler(0, rotationRef.current.y, 0);
@@ -169,6 +184,7 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
         if (onPositionUpdate) {
             const newPosition = characterRef.current.position.clone();
             newPosition.y = characterHeight;
+            // S'assurer que la rotation est correctement appliquée
             onPositionUpdate(newPosition, rotationRef.current);
         }
     });

@@ -18,6 +18,7 @@ type GLTFObjectProps = {
     price: number;
     updateQuotePrice: (id:string, price: number, scale : [number, number, number]) => void;
     showDimensions: boolean; 
+    color?: string;
 };
 
 const GLTFObject: React.FC<GLTFObjectProps> = ({
@@ -33,6 +34,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     price,
     updateQuotePrice,
     showDimensions,
+    color,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
     const [scene, setScene] = useState<THREE.Group | THREE.Mesh | null>(null);
@@ -78,10 +80,17 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             });
         } else {
             const wallGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
-            const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+            const wallColor = color ? new THREE.Color(color) : new THREE.Color(0x808080);
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+                color: wallColor,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
             const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
             console.log("les positions", position);
             console.log("les scale", scale);
+            console.log("la couleur", color);
             wallMesh.position.set(...position);
             if(rotation){
                 wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
@@ -89,7 +98,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             selectedMeshRef.current = wallMesh;
             setScene(wallMesh);
         }
-    }, [url]);
+    }, [url, color, scale, position, rotation]);
 
     const calculatePrice = (scale: [number, number, number]) => {
         // Exemple : Calcul du prix en fonction du volume
@@ -264,6 +273,20 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         }
     }, [scene, texture, scale]);
 
+    useEffect(() => {
+        if (scene && color && !url) {
+            console.log("Updating color to:", color);
+            scene.traverse((child: any) => {
+                if (child.isMesh) {
+                    if (child.material) {
+                        child.material.color = new THREE.Color(color);
+                        child.material.needsUpdate = true;
+                    }
+                }
+            });
+        }
+    }, [scene, color, url]);
+
     return (
         scene && (
             <TransformControls
@@ -296,7 +319,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                                 rotation: rotation || [0, 0, 0],
                                 mesh: event.object,
                                 material: event.object.material,
-                                geometry: event.object.geometry
+                                geometry: event.object.geometry,
+                                color: color
                             }
                         });
                         onClick();

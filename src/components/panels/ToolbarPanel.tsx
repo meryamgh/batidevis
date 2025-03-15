@@ -1,7 +1,7 @@
 import React from 'react';
-import ObjectSelector from './objects/ObjectSelector';
-import TextureUpload from '../services/TextureUpload';
-import ObjectUpload from '../services/ObjectUpload';
+import ObjectSelector from './ObjectSelectorPanel';
+import TextureUpload from './TextureUploadPanel';
+import ObjectUpload from './ObjectUploadPanel';
 
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
@@ -19,6 +19,8 @@ interface ToolbarProps {
   setCreatingWallMode: React.Dispatch<React.SetStateAction<boolean>>;
   is2DView: boolean;
   handleAddObject: (url: string) => Promise<void>;
+  showQuotePanel: boolean;
+  toggleQuotePanel: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -36,7 +38,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
   creatingWallMode,
   setCreatingWallMode,
   is2DView,
-  handleAddObject
+  handleAddObject,
+  showQuotePanel,
+  toggleQuotePanel
 }) => {
   return (
     <div className="banner">
@@ -91,6 +95,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
         disabled={currentFloor === 0 && objects.length === 0}
       >
         Ajouter un étage
+      </button>
+      <button
+        onClick={toggleQuotePanel}
+        className="bouton"
+        title={showQuotePanel ? "Masquer le panneau de devis" : "Afficher le panneau de devis"}
+      >
+        {showQuotePanel ? "Masquer devis" : "Afficher devis"}
       </button>
       <ObjectSelector handleAddObject={handleAddObject} />
     </div>
