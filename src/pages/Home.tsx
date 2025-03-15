@@ -5,7 +5,6 @@ import '../styles/Home.css';
 
 const Home: React.FC = () => {
     const [scrollPosition, setScrollPosition] = useState(0);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isReverse, setIsReverse] = useState(false);
     const totalSlides = 5;
@@ -24,12 +23,7 @@ const Home: React.FC = () => {
             setScrollPosition(window.scrollY);
         };
 
-        const handleMouseMove = (e: MouseEvent) => {
-            setMousePosition({ x: e.clientX, y: e.clientY });
-        };
-
         window.addEventListener('scroll', handleScroll);
-        window.addEventListener('mousemove', handleMouseMove);
 
         const interval = setInterval(() => {
             if (!isReverse) {
@@ -51,14 +45,9 @@ const Home: React.FC = () => {
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('mousemove', handleMouseMove);
             clearInterval(interval);
         };
     }, [currentSlide, isReverse, maxSlideIndex]);
-
-    const parallaxStyle = {
-        transform: `translate3d(${mousePosition.x / 50}px, ${mousePosition.y / 50}px, 0)`
-    };
 
     const prevSlide = () => {
         if (currentSlide > 0) {
@@ -106,7 +95,7 @@ const Home: React.FC = () => {
             <main>
                 <section className="hero-section">
                     <div className="hero-content-wrapper">
-                        <div className="hero-content" style={parallaxStyle}>
+                        <div className="hero-content">
                             <h1 className="animated-title" data-aos="zoom-in">
                                 <span className="gradient-text">PASSEZ DU PLAN AU DEVIS EN QUELQUES SECONDES</span>
                                 <br />
@@ -114,11 +103,11 @@ const Home: React.FC = () => {
                             </h1>
                             <br></br><br></br><br></br>
                             <p className="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
-                            <span className="cercle">○</span> un outil intuitif pensé pour les artisants du btp
+                            <span className="cercle">○</span> Un outil intuitif pensé pour les artisants du btp
                             <br></br><br></br>
-                            <span className="cercle">○</span> vos devis et factures générés en un clic depuis votre maquette 3D
+                            <span className="cercle">○</span> Vos devis et factures générés en un clic depuis votre maquette 3D
                             <br></br><br></br>
-                            <span className="cercle">○</span> gagnez du temps et concentrez-vous sur vos chantiers !
+                            <span className="cercle">○</span> Gagnez du temps et concentrez-vous sur vos chantiers !
                             </p>
                             <div className="interactive-buttons" data-aos="fade-up" data-aos-delay="400">
                                 <button className="primary-btn pulse-effect">
@@ -232,10 +221,10 @@ const Home: React.FC = () => {
                                     <ul className="features-list">
                                         <li>Toutes les fonctionnalités du forfait inférieur</li>
                                         <li>Sélection de tous les objets 3D</li>
-                                        <li>Bibliothèque personnalisée d’objets 3D</li>
+                                        <li>Bibliothèque personnalisée d'objets 3D</li>
                                         <li>Suivi comptable</li>
                                         <li>Catalogue fournisseur</li>
-                                        <li>Utilisation de l’IA pour générer les objets 3D</li>
+                                        <li>Utilisation de l'IA pour générer les objets 3D</li>
                                     </ul>
                                     <button className="pricing-btn">Choisir l'offre</button>
                                 </div>
