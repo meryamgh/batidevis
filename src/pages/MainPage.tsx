@@ -9,6 +9,10 @@ import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelU
 import CanvasScene from '../components/CanvasScene.js';
 import ObjectPanel from '../components/ObjectPanel.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import '../styles/Tarifs.css';
+import Header from '../components/Header';
 
 const MainPage: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
@@ -328,37 +332,64 @@ const MainPage: React.FC = () => {
         );
     };
 
+    const [scrollPosition, setScrollPosition] = useState(0);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isReverse, setIsReverse] = useState(false);
+    const totalSlides = 5;
+    const slidesPerView = 3;
+    const maxSlideIndex = totalSlides - slidesPerView;
+
+    useEffect(() => {
+        AOS.init({
+            duration: 1000,
+            once: false,
+            mirror: true
+        });
+
+        setScrollPosition(window.scrollY);
+
+        const handleScroll = () => {
+            setScrollPosition(window.scrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+
+        const interval = setInterval(() => {
+            if (!isReverse) {
+                if (currentSlide < maxSlideIndex) {
+                    setCurrentSlide(prev => prev + 1);
+                } else {
+                    setIsReverse(true);
+                    setCurrentSlide(prev => prev - 1);
+                }
+            } else {
+                if (currentSlide > 0) {
+                    setCurrentSlide(prev => prev - 1);
+                } else {
+                    setIsReverse(false);
+                    setCurrentSlide(prev => prev + 1);
+                }
+            }
+        }, 3000);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearInterval(interval);
+        };
+    }, [currentSlide, isReverse, maxSlideIndex]);
+
     return (
         <div id="page">
             {/* Bannière fixe en haut */}
-            <div className="logo">
-                <img src={"logo.png"} alt="Top Right" className="top-right-image" />
-                <span>MAQDEV</span>
+            <div className="background-tarifs">
             </div>
-            <nav>
-                <a href="#" className="active">ACCUEIL</a>
-                <a href="#">TARIFS</a>
-                <a href="#">MES DEVIS & FACTURES</a>
-                <a href="#">FAQ</a>
-            </nav>
-            <a href="#" className="btn">CONNEXION/INSCRIPTION</a>
-            <div className="banner">
-                <button onClick={() => setCreatingWallMode(!creatingWallMode)} disabled={!is2DView}>
-                    {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
-                </button>
-                <button onClick={() => handleAddObject('/wall_with_door.gltf')} className="bouton">
-                    mur avec ouverture pour porte
-                </button>
-                <button onClick={() => handleAddObject('/porte_fenetre.gltf')} className="bouton">
-                    porte-fenêtre
-                </button>
-            </div>
-
+            <Header scrollPosition={scrollPosition} />
             {/* Contenu principal */}
-            <div id="container" className="container-essaie">
-                <div ref={leftPanelRef} className="left-panel">
-                    <div
-                        id="floating-panel"
+            <main>
+                <div id="container" className="container-essaie">
+                    <div ref={leftPanelRef} className="left-panel">
+                        <div
+                            id="floating-panel"
                         className="floating-panel"
                         onMouseDown={(e) => startDraggingPanel(e)}
                     ></div>
@@ -405,6 +436,7 @@ const MainPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+            </main>
         </div>
     );
 };

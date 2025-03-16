@@ -1,9 +1,95 @@
+.dynamic-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    transition: all 0.5s ease;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    height: 60px;
+    box-shadow: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dynamic-header.scrolled {
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    border-bottom: none;
+}
+
+.nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0.5rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.logo {
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-left: 100px;
+    animation: slideInFromRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.logo-img {
+    height: 30px;
+    width: auto;
+    transition: transform 0.3s ease;
+}
+
+.logo-img:hover {
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        margin-left: 0;
+        gap: 1rem;
+    }
+    
+    .nav-container {
+        padding: 1rem;
+    }
+} 
+
 .button_connexion {
     background: var(--gradient-primary);
     color: white;
     border: none;
-    padding: 12px 24px;
-    font-size: 13px;
+    padding: 7px 24px;
+    font-size: 12px;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -88,15 +174,6 @@ body {
     transition: backdrop-filter 0.3s ease, background 0.3s ease;
 }
 
-.nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 .logo-img {
     height: 40px;
     width: auto;
@@ -105,13 +182,6 @@ body {
 
 .logo-img:hover {
     transform: scale(1.05);
-}
-
-.nav-links {
-    display: flex;
-    gap: 2rem;
-    align-items: center;
-    margin-left: 100px;
 }
 
 .nav-link {
@@ -123,6 +193,7 @@ body {
     padding: 0.5rem 0;
     transition: color 0.3s ease;
     font-size: 13px;
+    text-transform: uppercase;
 }
 
 .nav-link::before {
