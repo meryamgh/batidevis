@@ -177,6 +177,17 @@ body {
     position: relative;
     font-size : 20px;
     -webkit-text-stroke: 0.2px #884b00;
+    font-weight: bold;
+}
+
+.gradient-text-2 {
+    background: black;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    position: relative;
+    font-size : 20px;
+    font-weight: bold;
 }
 
 .title_showcase {
@@ -184,6 +195,19 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-size: 30px;
+    -webkit-text-stroke: 0.2px #884b00;
+    display: block;
+    text-align: center;
+    margin-bottom: 40px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.title_showcase_2 {
+    background: black;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 22px;
     -webkit-text-stroke: 0.2px #884b00;
     display: block;
     text-align: center;

@@ -1,13 +1,13 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { useNavigate } from 'react-router-dom';
-import { ObjectData } from '../types/ObjectData';
+import { ObjectData } from '../types/ObjectData.js';
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import '../styles/MainPage.css';
 import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelUtils.js';
-import CanvasScene from '../components/CanvasScene';
-import ObjectPanel from '../components/ObjectPanel';
+import CanvasScene from '../components/CanvasScene.js';
+import ObjectPanel from '../components/ObjectPanel.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const MainPage: React.FC = () => {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import '../styles/Home.css';
+import Header from '../components/Header';
 
 const Home: React.FC = () => {
     const [scrollPosition, setScrollPosition] = useState(0);
@@ -74,23 +75,7 @@ const Home: React.FC = () => {
                 }}></div>
             </div>
 
-            <header className="dynamic-header" style={{
-                backgroundColor: `rgba(0, 0, 0, ${Math.min(scrollPosition / 500, 0.9)})`,
-                boxShadow: `0 10px 17px rgba(0, 0, 0, 0.46)`
-            }}>
-                <nav className="nav-container">
-                    <div className="logo" data-aos="fade-right">
-                        <img src="/assets/logo.svg" alt="Devo Logo" className="logo-img" />
-                    </div>
-                    <div className="nav-links" data-aos="fade-left">
-                        <a href="/" className="nav-link active">ACCUEIL</a>
-                        <a href="/Maquette" className="nav-link">MAQUETTE</a>
-                        <a href="/Tarifs" className="nav-link">TARIFS</a>
-                        <a href="/Devis" className="nav-link">MES DEVIS & FACTURES</a>
-                        <button className="button_connexion">CONNEXION / INSCRIPTION</button>
-                    </div>
-                </nav>
-            </header>
+            <Header scrollPosition={scrollPosition} />
 
             <main>
                 <section className="hero-section">
@@ -123,7 +108,7 @@ const Home: React.FC = () => {
                 </section>
 
                 <section className="dynamic-showcase">
-                    <span className="title_showcase">La maquette 3D : un outil clé pour vos chantiers</span>
+                    <span className="title_showcase_2">La maquette 3D : un outil clé pour vos chantiers</span>
                     <div className="showcase-container">
                         <div className="showcase-slider" ref={sliderRef} style={{ transform: `translateX(-${currentSlide * 33.333}%)` }}>
                             <div className="showcase-slide">
@@ -186,7 +171,7 @@ const Home: React.FC = () => {
                 </section>
 
                 <section className="pricing-showcase">
-                    <span className="title_showcase">NOS FORFAITS</span>
+                    <span className="title_showcase_2">NOS FORFAITS</span>
                     <div className="pricing-container">
                         <div className="pricing-grid">
                             <div className="pricing-card">
