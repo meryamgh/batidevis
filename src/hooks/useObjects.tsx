@@ -21,7 +21,7 @@ interface UseObjectsProps {
 
 // Interface pour définir les propriétés retournées par le hook
 interface UseObjectsReturn {
-  handleAddObject: (url: string) => Promise<void>;
+  handleAddObject: (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => Promise<void>;
   handleRemoveObject: (id: string) => void;
   handleUpdatePosition: (id: string, position: [number, number, number]) => void;
   handleUpdateTexture: (id: string, newTexture: string) => void;
@@ -49,32 +49,87 @@ export const useObjects = ({
   showDimensions,
   setShowDimensions,
   focusedObjectId,
-  setFocusedObjectId
+  setFocusedObjectId,
 }: UseObjectsProps): UseObjectsReturn => {
 
-  const handleAddObject = useCallback(async (url: string) => {
+  const handleAddObject = useCallback(async (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => {
     try {
       const loader = new GLTFLoader();
       const gltf = await loader.loadAsync(url);
+      
+      // Calculer la bounding box de l'objet
       const box = new THREE.Box3().setFromObject(gltf.scene);
       const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
       box.getSize(size);
+      box.getCenter(center);
+
       const extras = gltf.asset?.extras || {};
-      const price = extras.price || 0;
-      const details = extras.details || 'No details available';
+      const price = extras.price || 100; // Prix par défaut si non spécifié
+      const details = extras.details || url.split('/').pop()?.replace('.gltf', '').replace('.glb', '') || 'No details available';
+
+      // Si l'événement de glisser-déposer est fourni, calculer la position basée sur l'intersection avec le plan
+      let position: [number, number, number] = [0, 0, 0];
+      
+      if (event && camera) {
+        // Créer un plan horizontal pour l'intersection
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        // Convertir les coordonnées de la souris en coordonnées normalisées (-1 à 1)
+        const rect = (event.target as HTMLElement).getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        raycaster.setFromCamera(mouse, camera);
+        
+        // Calculer l'intersection avec le plan
+        const intersection = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(plane, intersection)) {
+          // Calculer la position en tenant compte du centre de l'objet et de sa hauteur minimale
+          const objectHeight = box.max.y - box.min.y;
+          const bottomOffset = -box.min.y / 2; // Diviser par 2 pour ajuster la hauteur
+          
+          position = [
+            (intersection.x - center.x)/2,
+            bottomOffset,
+            (intersection.z - center.z)/2
+          ];
+        }
+      } else {
+        // Si pas d'événement de drop, placer l'objet au centre
+        const bottomOffset = -box.min.y / 2; // Diviser par 2 pour ajuster la hauteur
+        position = [-center.x, bottomOffset, -center.z];
+      }
+
+      // Réinitialiser la position de la scène de l'objet
+      gltf.scene.position.set(0, 0, 0);
+
+      const objectId = uuidv4();
+      const scale: [number, number, number] = [size.x, size.y, size.z];
+      const rotation: [number, number, number] = [0, 0, 0];
+
+      // Créer l'objet avec les propriétés de base
       const newObject: ObjectData = {
-        id: uuidv4(),
+        id: objectId,
         url,
         price,
         details,
-        position: [0, 0, 0] as [number, number, number],
-        gltf: gltf,
-        rotation: [0, 0, 0],
-        scale: [size.x, size.y, size.z],
+        position,
+        gltf,
+        rotation,
+        scale,
+        texture: '',
         color: '#FFFFFF',
       };
-      setObjects((prevObjects) => [...prevObjects, newObject]);
-      setQuote((prevQuote) => [...prevQuote, newObject]);
+
+      // Ajouter d'abord au devis
+      setQuote(prevQuote => [...prevQuote, newObject]);
+      
+      // Puis ajouter à la scène
+      setObjects(prevObjects => [...prevObjects, newObject]);
+
     } catch (error) {
       console.error('Error loading GLTF file:', error);
     }
@@ -195,3 +250,5 @@ export const useObjects = ({
     handleObjectClick
   };
 }; 
+
+export default useObjects;

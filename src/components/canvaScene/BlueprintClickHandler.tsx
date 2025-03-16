@@ -10,6 +10,7 @@ interface BlueprintClickHandlerProps {
     handleBlueprintClick?: (point: THREE.Vector3) => void;
     updateRectanglePreview?: (start: THREE.Vector3, end: THREE.Vector3) => void;
     isAngleAligned: (angle: number, tolerance?: number) => boolean;
+    blueprintLines?: {start: THREE.Vector3, end: THREE.Vector3, id: string, length: number}[];
 }
 
 const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
@@ -19,7 +20,8 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
     rectangleStartPoint,
     handleBlueprintClick,
     updateRectanglePreview,
-    isAngleAligned
+    isAngleAligned,
+    blueprintLines
 }) => {
     const { camera, scene } = useThree();
     const raycasterRef = useRef(new THREE.Raycaster());
@@ -28,17 +30,46 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
     const lineRef = useRef<THREE.Mesh | null>(null);
     const spriteRef = useRef<THREE.Sprite | null>(null);
     const [isAligned, setIsAligned] = useState(false);
+    const [snapPoint, setSnapPoint] = useState<THREE.Vector3 | null>(null);
     
     // Références pour les lignes de prévisualisation du rectangle
     const rectanglePreviewLinesRef = useRef<THREE.Mesh[]>([]);
     const rectanglePreviewSpriteRef = useRef<THREE.Sprite | null>(null);
+
+    const isPointNearLine = (point: THREE.Vector3): THREE.Vector3 | null => {
+        if (!blueprintLines) return null;
+        const tolerance = 0.5;
+
+        for (const line of blueprintLines) {
+            const start = new THREE.Vector3(line.start.x, line.start.y, line.start.z);
+            const end = new THREE.Vector3(line.end.x, line.end.y, line.end.z);
+            
+            // Calculer la distance du point à la ligne
+            const line3 = new THREE.Line3(start, end);
+            const closestPoint = new THREE.Vector3();
+            line3.closestPointToPoint(point, true, closestPoint);
+            const distance = point.distanceTo(closestPoint);
+            
+            if (distance < tolerance) {
+                return closestPoint;
+            }
+        }
+        return null;
+    };
     
     // Créer une ligne en pointillé entre le point temporaire et la position de la souris
     useEffect(() => {
         if (isBlueprintView && tempPoint && mousePosition) {
+            // Vérifier si le point de la souris est proche d'une ligne existante
+            const snappedPoint = isPointNearLine(mousePosition);
+            setSnapPoint(snappedPoint);
+            
+            // Utiliser le point snappé s'il existe, sinon utiliser la position de la souris
+            const endPoint = snappedPoint || mousePosition;
+            
             // Calculer l'angle entre le point temporaire et la position de la souris
             const direction = new THREE.Vector3().subVectors(
-                new THREE.Vector3(mousePosition.x, 0, mousePosition.z),
+                new THREE.Vector3(endPoint.x, 0, endPoint.z),
                 new THREE.Vector3(tempPoint.x, 0, tempPoint.z)
             ).normalize();
             const angle = Math.atan2(direction.z, direction.x);
@@ -75,13 +106,13 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
             // Créer un tube épais au lieu d'une simple ligne
             const path = new THREE.LineCurve3(
                 new THREE.Vector3(tempPoint.x, 0.1, tempPoint.z),
-                new THREE.Vector3(mousePosition.x, 0.1, mousePosition.z)
+                new THREE.Vector3(endPoint.x, 0.1, endPoint.z)
             );
             const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.2, 12, false);
             
-            // Créer un matériau avec la couleur appropriée (vert si aligné, rouge sinon)
+            // Créer un matériau avec la couleur appropriée (vert si aligné ou snappé, rouge sinon)
             const tubeMaterial = new THREE.MeshBasicMaterial({ 
-                color: aligned ? 0x00cc00 : 0xff3333,
+                color: aligned || snappedPoint ? 0x00cc00 : 0xff3333,
                 transparent: true,
                 opacity: 0.7,
             });
@@ -91,7 +122,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
             lineRef.current = line;
             
             // Afficher la longueur de la ligne en cours de création
-            const length = tempPoint.distanceTo(mousePosition);
+            const length = tempPoint.distanceTo(endPoint);
             
             // Créer un canvas pour le texte
             const canvas = document.createElement('canvas');
@@ -103,12 +134,12 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
                 // Fond avec bordure
                 context.fillStyle = '#ffffff';
                 context.fillRect(0, 0, canvas.width, canvas.height);
-                context.strokeStyle = aligned ? '#00cc00' : '#ff3333';
+                context.strokeStyle = aligned || snappedPoint ? '#00cc00' : '#ff3333';
                 context.lineWidth = 6;
                 context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
                 
                 // Texte avec la couleur appropriée
-                context.fillStyle = aligned ? '#00cc00' : '#ff3333';
+                context.fillStyle = aligned || snappedPoint ? '#00cc00' : '#ff3333';
                 context.font = 'bold 48px Arial';
                 context.textAlign = 'center';
                 context.textBaseline = 'middle';
@@ -129,50 +160,24 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
                 // Calculer la position du sprite
                 const midPoint = new THREE.Vector3().addVectors(
                     new THREE.Vector3(tempPoint.x, 0.1, tempPoint.z),
-                    new THREE.Vector3(mousePosition.x, 0.1, mousePosition.z)
+                    new THREE.Vector3(endPoint.x, 0.1, endPoint.z)
                 ).multiplyScalar(0.5);
                 
                 // Calculer la direction perpendiculaire à la ligne
                 const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize().multiplyScalar(0.7);
                 
-                // Position du texte
-                const textPosition = new THREE.Vector3().addVectors(midPoint, perpendicular);
-                
-                sprite.position.set(textPosition.x, 0.2, textPosition.z);
+                // Positionner le sprite
+                sprite.position.copy(midPoint.clone().add(perpendicular));
+                sprite.position.y = 0.2;
                 sprite.scale.set(2, 1, 1);
+                
                 scene.add(sprite);
                 spriteRef.current = sprite;
-            }
-        } else {
-            // Si le point temporaire n'existe plus, supprimer la ligne et le sprite
-            if (lineRef.current) {
-                scene.remove(lineRef.current);
-                if (lineRef.current.geometry) lineRef.current.geometry.dispose();
-                if (lineRef.current.material) {
-                    if (Array.isArray(lineRef.current.material)) {
-                        lineRef.current.material.forEach((m: THREE.Material) => m.dispose());
-                    } else {
-                        lineRef.current.material.dispose();
-                    }
-                }
-                lineRef.current = null;
-            }
-            
-            if (spriteRef.current) {
-                scene.remove(spriteRef.current);
-                if (spriteRef.current.material) {
-                    if (Array.isArray(spriteRef.current.material)) {
-                        spriteRef.current.material.forEach((m: THREE.Material) => m.dispose());
-                    } else {
-                        spriteRef.current.material.dispose();
-                    }
-                }
-                spriteRef.current = null;
             }
         }
         
         return () => {
-            // Nettoyer la ligne et le sprite lors du démontage
+            // Nettoyer les objets 3D
             if (lineRef.current) {
                 scene.remove(lineRef.current);
                 if (lineRef.current.geometry) lineRef.current.geometry.dispose();
@@ -183,9 +188,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
                         lineRef.current.material.dispose();
                     }
                 }
-                lineRef.current = null;
             }
-            
             if (spriteRef.current) {
                 scene.remove(spriteRef.current);
                 if (spriteRef.current.material) {
@@ -195,10 +198,9 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
                         spriteRef.current.material.dispose();
                     }
                 }
-                spriteRef.current = null;
             }
         };
-    }, [isBlueprintView, tempPoint, mousePosition, scene]);
+    }, [isBlueprintView, tempPoint, mousePosition, scene, isAngleAligned]);
     
     // Effet pour gérer la prévisualisation du rectangle
     useEffect(() => {
@@ -366,10 +368,13 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
                 const point = intersects[0].point.clone();
                 point.y = 0.1; // Légèrement au-dessus du sol
                 
-                console.log("Blueprint click at:", point);
+                // Utiliser le point snappé s'il existe
+                const finalPoint = snapPoint || point;
+                
+                console.log("Blueprint click at:", finalPoint);
                 
                 if (handleBlueprintClick) {
-                    handleBlueprintClick(point);
+                    handleBlueprintClick(finalPoint);
                 }
             }
         };
@@ -386,7 +391,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
         }
         
         return undefined;
-    }, [isBlueprintView, groundPlane, camera, scene, handleBlueprintClick]);
+    }, [isBlueprintView, groundPlane, camera, scene, handleBlueprintClick, snapPoint]);
     
     return null;
 };

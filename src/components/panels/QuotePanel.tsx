@@ -4,22 +4,36 @@ import { useNavigate } from 'react-router-dom';
 
 interface QuotePanelProps {
   quote: ObjectData[];
-  setObjects: React.Dispatch<React.SetStateAction<ObjectData[]>>;
-  setQuote: React.Dispatch<React.SetStateAction<ObjectData[]>>;
+  setObjects: (objects: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => void;
+  setQuote: (quote: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => void;
   getSerializableQuote: () => any[];
+  handleRemoveObject: (id: string) => void;
 }
 
 const QuotePanel: React.FC<QuotePanelProps> = ({ 
   quote, 
   setObjects, 
   setQuote, 
-  getSerializableQuote 
+  getSerializableQuote,
+  handleRemoveObject
 }) => {
   const navigate = useNavigate();
 
   const navigateToFullQuote = () => {
     const serializableQuote = getSerializableQuote();
     navigate('/full-quote', { state: { quote: serializableQuote } });
+  };
+
+  // Fonction pour supprimer uniquement du devis
+  const handleQuoteRemoval = (itemId: string) => {
+    console.log('handleQuoteRemoval appelé avec id:', itemId);
+    setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
+  };
+
+  // Wrapper pour handleRemoveObject avec logs
+  const handleCompleteRemoval = (itemId: string) => {
+    console.log('handleCompleteRemoval appelé avec id:', itemId);
+    handleRemoveObject(itemId);
   };
 
   return (
@@ -38,42 +52,39 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
             backgroundColor: '#f5f5f5',
             borderRadius: '4px'
           }}>
-            <div>
-              {item.details} {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} €
-            </div>
-            <div>
-              <button 
-                onClick={() => {
-                  setObjects(objects => objects.filter(obj => obj.id !== item.id));
-                  setQuote(quote => quote.filter(q => q.id !== item.id));
-                }}
-                style={{
-                  marginRight: '8px',
-                  padding: '4px 8px',
-                  backgroundColor: '#ff4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Tout supprimer
-              </button>
-              <button 
-                onClick={() => {
-                  setQuote(quote => quote.filter(q => q.id !== item.id));
-                }}
-                style={{
-                  padding: '4px 8px',
-                  backgroundColor: '#ffa500',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Supprimer du devis
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span>
+                {item.details} {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} €
+              </span>
+              <div>
+                <button 
+                  onClick={() => handleCompleteRemoval(item.id)}
+                  style={{
+                    marginRight: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#ff4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Tout supprimer
+                </button>
+                <button 
+                  onClick={() => handleQuoteRemoval(item.id)}
+                  style={{
+                    padding: '4px 8px',
+                    backgroundColor: '#ffa500',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Supprimer du devis
+                </button>
+              </div>
             </div>
           </li>
         ))}

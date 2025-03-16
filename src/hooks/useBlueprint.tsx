@@ -38,7 +38,7 @@ interface BlueprintProps {
 
 interface BlueprintReturn {
    handleAddWall2D: (start: THREE.Vector3, end: THREE.Vector3) => void;
-   isPointNearLine: (point: THREE.Vector3) => boolean;
+   isPointNearLine: (point: THREE.Vector3) => THREE.Vector3 | null;
    isAngleAligned: (angle: number) => boolean;
    adjustPointToAlignedAngle: (start: THREE.Vector3, end: THREE.Vector3) => THREE.Vector3;
    handleBlueprintClick: (point: THREE.Vector3) => void;
@@ -126,7 +126,7 @@ export const useBlueprint = ({
     };
 
 
-    const isPointNearLine = (point: THREE.Vector3): boolean => {
+    const isPointNearLine = (point: THREE.Vector3): THREE.Vector3 | null => {
         for (const line of blueprintLines) {
             const start = new THREE.Vector3(line.start.x, line.start.y, line.start.z);
             const end = new THREE.Vector3(line.end.x, line.end.y, line.end.z);
@@ -138,10 +138,10 @@ export const useBlueprint = ({
             const distance = point.distanceTo(closestPoint);
             
             if (distance < tolerance) {
-                return true;
+                return closestPoint;
             }
         }
-        return false;
+        return null;
     };
 
     const isAngleAligned = (angle: number): boolean => {
@@ -409,18 +409,19 @@ export const useBlueprint = ({
         
         // Mode création de mur (comportement existant)
         // Vérifier si le point est proche d'une ligne existante
-        const isNearLine = isPointNearLine(point);
+        const snapPoint = isPointNearLine(point);
+        const finalPoint = snapPoint || point;
         
         // Si on est en train de dessiner une ligne et que le point est proche d'une ligne existante,
         // on termine la ligne actuelle et on ne commence pas immédiatement une nouvelle ligne
-        if (isDrawingLine && isNearLine) {
+        if (isDrawingLine && snapPoint) {
             // Continuer la ligne existante jusqu'au point d'intersection
             const lastPoint = currentLinePoints[currentLinePoints.length - 1];
             
             // Créer un tube épais au lieu d'une simple ligne
             const path = new THREE.LineCurve3(
                 new THREE.Vector3(lastPoint.x, 0.1, lastPoint.z),
-                new THREE.Vector3(point.x, 0.1, point.z)
+                new THREE.Vector3(finalPoint.x, 0.1, finalPoint.z)
             );
             const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.25, 12, false);
             const tubeMaterial = new THREE.MeshBasicMaterial({ 
@@ -433,19 +434,19 @@ export const useBlueprint = ({
             line.uuid = lineId;
             
             // Calculer la longueur de la ligne
-            const length = lastPoint.distanceTo(point);
+            const length = lastPoint.distanceTo(finalPoint);
             
             // Ajouter la ligne à la liste des lignes
             const newLine = {
                 start: lastPoint,
-                end: point,
+                end: finalPoint,
                 id: lineId,
                 length
             };
             setBlueprintLines(prev => [...prev, newLine]);
             
             // Ajouter le point à la liste des points
-            setBlueprintPoints(prev => [...prev, point]);
+            setBlueprintPoints(prev => [...prev, finalPoint]);
             
             // Ajouter la ligne à la scène
             setWalls2D(prev => [...prev, line as unknown as THREE.Line]);
@@ -461,21 +462,21 @@ export const useBlueprint = ({
         // Si on n'est pas en train de dessiner une ligne ou si on vient de cliquer sur un nouveau point
         if (!isDrawingLine) {
             // Commencer une nouvelle ligne
-            setCurrentLinePoints([point]);
+            setCurrentLinePoints([finalPoint]);
             setIsDrawingLine(true);
-            setTempPoint(point);
+            setTempPoint(finalPoint);
         } else {
             // Continuer la ligne existante
             const lastPoint = currentLinePoints[currentLinePoints.length - 1];
             
             // Calculer l'angle entre le dernier point et le point actuel
-            const direction = new THREE.Vector3().subVectors(point, lastPoint);
+            const direction = new THREE.Vector3().subVectors(finalPoint, lastPoint);
             const angle = Math.atan2(direction.z, direction.x);
             
             // Ajuster le point si l'angle est aligné
             const adjustedPoint = isAngleAligned(angle) 
-                ? adjustPointToAlignedAngle(lastPoint, point)
-                : point;
+                ? adjustPointToAlignedAngle(lastPoint, finalPoint)
+                : finalPoint;
             
             // Créer un tube épais au lieu d'une simple ligne
             const path = new THREE.LineCurve3(

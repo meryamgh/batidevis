@@ -16,6 +16,7 @@ import { useFloors } from '../hooks/useFloors';
 import RoomConfigPanel from '../components/panels/RoomConfigPanel';
 import FloorSelector from '../components/panels/FloorSelectorPanel';
 import { useBlueprint } from '../hooks/useBlueprint';
+import { useHistory } from '../hooks/useHistory';
 
 const MaquettePage: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
@@ -84,18 +85,146 @@ const MaquettePage: React.FC = () => {
  
 
     // Initialiser le hook useObjects avec les états
+    const objectsHistory = useHistory<ObjectData[]>([]);
+    const quoteHistory = useHistory<ObjectData[]>([]);
+
+    // Modification du setter d'objets pour sauvegarder l'historique
+    const setObjectsWithHistory = useCallback((newObjects: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => {
+        const updatedObjects = typeof newObjects === 'function' ? newObjects(objects) : newObjects;
+        
+        // Sauvegarder l'état des objets
+        objectsHistory.saveState(updatedObjects);
+        setObjects(updatedObjects);
+        
+        // Ne pas filtrer le devis lors de l'ajout de nouveaux objets
+        // On ne filtre que si un objet a été supprimé
+        const removedObjectIds = objects.filter(obj => 
+            !updatedObjects.some(newObj => newObj.id === obj.id)
+        ).map(obj => obj.id);
+
+        if (removedObjectIds.length > 0) {
+            // Si des objets ont été supprimés, mettre à jour le devis
+            const updatedQuote = quote.filter(quoteItem => 
+                !removedObjectIds.includes(quoteItem.id)
+            );
+
+            if (updatedQuote.length !== quote.length) {
+                quoteHistory.saveState(updatedQuote);
+                setQuote(updatedQuote);
+            }
+        }
+    }, [objectsHistory, objects, quote, quoteHistory]);
+
+    // Modification du setter de devis pour sauvegarder l'historique
+    const setQuoteWithHistory = useCallback((newQuote: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => {
+        const currentQuote = typeof newQuote === 'function' ? newQuote(quote) : newQuote;
+        
+        // Sauvegarder l'état du devis directement sans filtrage
+        quoteHistory.saveState(currentQuote);
+        setQuote(currentQuote);
+    }, [quoteHistory, quote]);
+
+    // Fonction pour supprimer un objet
+    const handleRemoveObject = useCallback((id: string) => {
+        // Supprimer l'objet de la liste des objets
+        const newObjects = objects.filter(obj => obj.id !== id);
+        setObjectsWithHistory(newObjects);
+        
+        // Forcer la mise à jour du devis également
+        const newQuote = quote.filter(item => item.id !== id);
+        setQuoteWithHistory(newQuote);
+    }, [objects, quote, setObjectsWithHistory, setQuoteWithHistory]);
+
+    // Fonctions pour gérer l'annulation/rétablissement
+    const handleUndo = useCallback(() => {
+        if (objectsHistory.canUndo) {
+            objectsHistory.undo();
+            quoteHistory.undo();
+            
+            const previousObjects = objectsHistory.state;
+            const previousQuote = quoteHistory.state;
+            
+            // Vérifier la cohérence entre les objets et le devis
+            const validQuote = previousQuote.filter(quoteItem => 
+                previousObjects.some(obj => obj.id === quoteItem.id)
+            );
+            
+            setObjects(previousObjects);
+            setQuote(validQuote);
+        }
+    }, [objectsHistory, quoteHistory]);
+
+    const handleRedo = useCallback(() => {
+        console.log('handleRedo appelé, canRedo:', objectsHistory.canRedo);
+        if (objectsHistory.canRedo) {
+            console.log('Avant redo - État actuel:', {
+                objects: objects,
+                quote: quote
+            });
+
+            // Effectuer le redo sur les deux historiques
+            objectsHistory.redo();
+            quoteHistory.redo();
+            
+            const nextObjects = objectsHistory.state;
+            const nextQuote = quoteHistory.state;
+            
+            console.log('Après redo - Nouveaux états:', {
+                nextObjects: nextObjects,
+                nextQuote: nextQuote
+            });
+
+            // Mettre à jour les états directement sans passer par les setters avec historique
+            setObjects(nextObjects);
+            setQuote(nextQuote);
+        }
+    }, [objectsHistory, quoteHistory]);
+
+    // Initialiser le hook useObjects avec les états mis à jour
     const objectsUtils = useObjects({
         objects,
-        setObjects,
+        setObjects: setObjectsWithHistory,
         quote,
-        setQuote,
+        setQuote: setQuoteWithHistory,
         isMoving,
         setIsMoving,
         showDimensions,
         setShowDimensions,
         focusedObjectId,
-        setFocusedObjectId
+        setFocusedObjectId, 
     });
+
+    // Gestionnaire pour les raccourcis clavier
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            console.log('Touche pressée:', {
+                key: e.key,
+                ctrlKey: e.ctrlKey,
+                canRedo: objectsHistory.canRedo
+            });
+
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'z') {
+                    // Ctrl+Z ou Cmd+Z pour Undo
+                    console.log('Tentative de Undo');
+                    handleUndo();
+                } else if (e.key === 'y') {
+                    // Ctrl+Y ou Cmd+Y pour Redo
+                    console.log('Tentative de Redo');
+                    handleRedo();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleUndo, handleRedo]);
+
+    // Initialiser l'historique avec l'état initial
+    useEffect(() => {
+        objectsHistory.saveState(objects);
+        quoteHistory.saveState(quote);
+    }, []);
 
     const floorsUtils = useFloors({
         setObjects,
@@ -137,7 +266,6 @@ const MaquettePage: React.FC = () => {
         setViewMode,
         setCurrentFloor
     });
-
 
     useEffect(() => {
         const geometry = new THREE.PlaneGeometry(100, 100);
@@ -350,6 +478,7 @@ const MaquettePage: React.FC = () => {
                     onRotateObject={objectsUtils.handleRotateObject}
                     onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
                     onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
+                    onDeselectObject={(id) => setSelectedObjectId(null)}
                 />
             );
         }
@@ -390,6 +519,25 @@ const MaquettePage: React.FC = () => {
                 showQuotePanel={showQuotePanel}
                 toggleQuotePanel={toggleQuotePanel}
             />
+
+            <div className="history-controls">
+                <button 
+                    onClick={handleUndo}
+                    disabled={!objectsHistory.canUndo}
+                    className="history-button"
+                    title="Annuler (Ctrl+Z)"
+                >
+                    ↩ Annuler
+                </button>
+                <button 
+                    onClick={handleRedo}
+                    disabled={!objectsHistory.canRedo}
+                    className="history-button"
+                    title="Rétablir (Ctrl+Y)"
+                >
+                    ↪ Rétablir
+                </button>
+            </div>
 
             {/* Contenu principal */}
             <div id="container">
@@ -454,6 +602,7 @@ const MaquettePage: React.FC = () => {
                         handleBlueprintClick={blueprintUtils.handleBlueprintClick}
                         updateRectanglePreview={blueprintUtils.updateRectanglePreview}
                         rectangleStartPoint={rectangleStartPoint}
+                        handleAddObject={objectsUtils.handleAddObject}
                     />
                 </div>
                             
@@ -471,9 +620,10 @@ const MaquettePage: React.FC = () => {
                         >
                             <QuotePanel 
                                 quote={quote} 
-                                setObjects={setObjects} 
-                                setQuote={setQuote} 
-                                getSerializableQuote={objectsUtils.getSerializableQuote} 
+                                setObjects={setObjectsWithHistory}
+                                setQuote={setQuoteWithHistory}
+                                getSerializableQuote={objectsUtils.getSerializableQuote}
+                                handleRemoveObject={handleRemoveObject}
                             />
                         </div>
                     </>

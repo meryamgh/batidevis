@@ -38,6 +38,7 @@ type CanvasSceneProps = {
     handleBlueprintClick?: (point: THREE.Vector3) => void;
     updateRectanglePreview?: (start: THREE.Vector3, end: THREE.Vector3) => void;
     rectangleStartPoint?: THREE.Vector3 | null;
+    handleAddObject: (url: string, event: React.DragEvent<HTMLDivElement>, camera: THREE.Camera) => Promise<void>;
 };
 
 
@@ -66,6 +67,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     handleBlueprintClick,
     updateRectanglePreview,
     rectangleStartPoint,
+    handleAddObject,
 }) => {
     const [firstPersonView, setFirstPersonView] = useState(false);
     const [characterPosition, setCharacterPosition] = useState<THREE.Vector3 | undefined>();
@@ -77,6 +79,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     const targetPositionRef = useRef<THREE.Vector3 | null>(null);
     const cameraPositionRef = useRef<THREE.Vector3 | null>(null);
     const isMovingToTargetRef = useRef(false);
+    const [currentCamera, setCurrentCamera] = useState<THREE.Camera | null>(null);
 
     // Disable first person view when in ObjectOnly mode or when switching views
     useEffect(() => {
@@ -317,7 +320,22 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         }
     }, [navigationMode, firstPersonView, is2DView, isObjectOnlyView]);
 
-    
+    const handleSetCamera = useCallback((camera: THREE.Camera) => {
+        setCamera(camera);
+        setCurrentCamera(camera);
+    }, [setCamera]);
+
+    const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        const url = event.dataTransfer.getData('text/plain');
+        if (url && currentCamera) {
+            handleAddObject(url, event, currentCamera);
+        }
+    }, [handleAddObject, currentCamera]);
+
+    const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+    }, []);
 
     return (
         <>
@@ -339,198 +357,205 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                 navigationMode={navigationMode}
                 setNavigationMode={setNavigationMode}
             />
-            <Canvas 
-                onClick={() => setIsMoving(null)}
-                shadows
-                gl={{ 
-                    antialias: true,
-                    pixelRatio: window.devicePixelRatio
-                }}
+            <div 
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                style={{ width: '100%', height: '100%' }}
             >
-                <CameraProvider 
-                    setCamera={setCamera} 
-                    is2DView={is2DView} 
-                    firstPersonView={firstPersonView}
-                    firstPersonPosition={characterPosition}
-                    firstPersonRotation={characterRotation}
-                    zoom2D={zoom2D}
-                    isObjectOnlyView={isObjectOnlyView}
-                    focusedObject={focusedObjectId ? objects.find(o => o.id === focusedObjectId) || null : null}
-                />
-                {!firstPersonView && (
-                    <RaycasterHandler
-                        is2DView={is2DView}
-                        creatingWallMode={creatingWallMode}
-                        groundPlane={groundPlane}
-                        handleAddWall2D={handleAddWall2D}
-                        walls2D={walls2D}
+                <Canvas 
+                    onClick={() => setIsMoving(null)}
+                    shadows
+                    gl={{ 
+                        antialias: true,
+                        pixelRatio: window.devicePixelRatio
+                    }}
+                >
+                    <CameraProvider 
+                        setCamera={handleSetCamera} 
+                        is2DView={is2DView} 
+                        firstPersonView={firstPersonView}
+                        firstPersonPosition={characterPosition}
+                        firstPersonRotation={characterRotation}
+                        zoom2D={zoom2D}
+                        isObjectOnlyView={isObjectOnlyView}
+                        focusedObject={focusedObjectId ? objects.find(o => o.id === focusedObjectId) || null : null}
                     />
-                )}
-                <WallDimensions />
-                <ambientLight intensity={2.0} />
-                <directionalLight 
-                    position={[10, 20, 15]} 
-                    intensity={3.0}
-                    castShadow
-                />
-                <directionalLight position={[-10, -20, -15]} intensity={3.0} />
-                <pointLight position={[0, 10, 10]} intensity={2.5} />
-                <pointLight position={[10, -10, 10]} intensity={2.5} />
-                <hemisphereLight groundColor={'#b9b9b9'} intensity={2.0} />
-                
-                {!firstPersonView && !is2DView && navigationMode === 'orbit' && (
-                    <OrbitControls 
-                        ref={orbitControlsRef} 
-                        enabled={!is2DView || isObjectOnlyView} 
-                        minDistance={isObjectOnlyView ? 2 : 1}
-                        maxDistance={isObjectOnlyView ? 20 : 1000}
-                        enableZoom={!isObjectOnlyView}
-                        enablePan={!isObjectOnlyView}
-                        rotateSpeed={isObjectOnlyView ? 0.5 : 1}
-                        autoRotate={isObjectOnlyView}
-                        autoRotateSpeed={isObjectOnlyView ? 1 : 0}
-                    />
-                )}
-                
-                {!firstPersonView && !is2DView && navigationMode === 'move' && (
-                    <>
-                        <OrbitControls 
-                            ref={orbitControlsRef}
-                            enableRotate={true}
-                            enableZoom={true}
-                            enablePan={false}
-                            minPolarAngle={0}
-                            maxPolarAngle={Math.PI / 2 - 0.1} // Limiter la rotation verticale
-                        />
-                        <MoveControls 
-                            cameraPositionRef={cameraPositionRef}
-                            orbitControlsRef={orbitControlsRef}
-                            isMovingToTargetRef={isMovingToTargetRef}
-                            navigationMode={navigationMode}
-                            firstPersonView={firstPersonView}
+                    {!firstPersonView && (
+                        <RaycasterHandler
                             is2DView={is2DView}
-                            isObjectOnlyView={isObjectOnlyView}
-                            groundPlane={groundPlane} 
-                            handleSceneClick={handleSceneClick}
+                            creatingWallMode={creatingWallMode}
+                            groundPlane={groundPlane}
+                            handleAddWall2D={handleAddWall2D}
+                            walls2D={walls2D}
                         />
-                    </>
-                )}
-
-                {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode Blueprint ou ObjectOnly */}
-                {groundPlane && !isBlueprintView && !isObjectOnlyView && <primitive object={groundPlane} />}
-                
-                {/* Afficher la grille en mode 2D ou Blueprint, pas en mode ObjectOnly */}
-                {is2DView && !isObjectOnlyView && (
-                    <gridHelper 
-                        args={[50, 50]} 
-                        position={[0, 0.05, 0]} 
-                        // Couleur différente pour le mode Blueprint
-                        userData={{ color: isBlueprintView ? '#1a3f5c' : '#444444' }}
+                    )}
+                    <WallDimensions />
+                    <ambientLight intensity={2.0} />
+                    <directionalLight 
+                        position={[10, 20, 15]} 
+                        intensity={3.0}
+                        castShadow
                     />
-                )}
+                    <directionalLight position={[-10, -20, -15]} intensity={3.0} />
+                    <pointLight position={[0, 10, 10]} intensity={2.5} />
+                    <pointLight position={[10, -10, 10]} intensity={2.5} />
+                    <hemisphereLight groundColor={'#b9b9b9'} intensity={2.0} />
+                    
+                    {!firstPersonView && !is2DView && navigationMode === 'orbit' && (
+                        <OrbitControls 
+                            ref={orbitControlsRef} 
+                            enabled={!is2DView || isObjectOnlyView} 
+                            minDistance={isObjectOnlyView ? 2 : 1}
+                            maxDistance={isObjectOnlyView ? 20 : 1000}
+                            enableZoom={!isObjectOnlyView}
+                            enablePan={!isObjectOnlyView}
+                            rotateSpeed={isObjectOnlyView ? 0.5 : 1}
+                            autoRotate={isObjectOnlyView}
+                            autoRotateSpeed={isObjectOnlyView ? 1 : 0}
+                        />
+                    )}
+                    
+                    {!firstPersonView && !is2DView && navigationMode === 'move' && (
+                        <>
+                            <OrbitControls 
+                                ref={orbitControlsRef}
+                                enableRotate={true}
+                                enableZoom={true}
+                                enablePan={false}
+                                minPolarAngle={0}
+                                maxPolarAngle={Math.PI / 2 - 0.1} // Limiter la rotation verticale
+                            />
+                            <MoveControls 
+                                cameraPositionRef={cameraPositionRef}
+                                orbitControlsRef={orbitControlsRef}
+                                isMovingToTargetRef={isMovingToTargetRef}
+                                navigationMode={navigationMode}
+                                firstPersonView={firstPersonView}
+                                is2DView={is2DView}
+                                isObjectOnlyView={isObjectOnlyView}
+                                groundPlane={groundPlane} 
+                                handleSceneClick={handleSceneClick}
+                            />
+                        </>
+                    )}
 
-                {/* Fond bleu clair pour le mode Blueprint */}
-                {isBlueprintView && !isObjectOnlyView && (
-                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-                        <planeGeometry args={[100, 100]} />
-                        <meshBasicMaterial color="#e6f2ff" />
-                    </mesh>
-                )}
-                
-                {/* Fond neutre pour le mode ObjectOnly */}
-                {isObjectOnlyView && (
-                    <color attach="background" args={["#f5f5f5"]} />
-                )}
+                    {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode Blueprint ou ObjectOnly */}
+                    {groundPlane && !isBlueprintView && !isObjectOnlyView && <primitive object={groundPlane} />}
+                    
+                    {/* Afficher la grille en mode 2D ou Blueprint, pas en mode ObjectOnly */}
+                    {is2DView && !isObjectOnlyView && (
+                        <gridHelper 
+                            args={[50, 50]} 
+                            position={[0, 0.05, 0]} 
+                            // Couleur différente pour le mode Blueprint
+                            userData={{ color: isBlueprintView ? '#1a3f5c' : '#444444' }}
+                        />
+                    )}
 
-                {/* Afficher les objets normalement en mode 3D ou 2D */}
-                {!isBlueprintView && objects.map((obj) => (
-                    <GLTFObject
-                        key={obj.id}
-                        id={obj.id}
-                        url={obj.url}
-                        scale={obj.scale}
-                        position={obj.position}
-                        gltf={obj.gltf}
-                        texture={obj.texture || ''}
-                        price={obj.price}
-                        updateQuotePrice={updateQuotePrice}
-                        rotation={obj.rotation}
-                        onUpdatePosition={onUpdatePosition}
-                        isMovable={isMoving === obj.id}
-                        onClick={() => onClick(obj.id)}
-                        showDimensions={!!showDimensions[obj.id]}
-                        color={obj.color}
-                        isSelected={selectedObjectId === obj.id}
-                    />
-                ))}
+                    {/* Fond bleu clair pour le mode Blueprint */}
+                    {isBlueprintView && !isObjectOnlyView && (
+                        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+                            <planeGeometry args={[100, 100]} />
+                            <meshBasicMaterial color="#e6f2ff" />
+                        </mesh>
+                    )}
+                    
+                    {/* Fond neutre pour le mode ObjectOnly */}
+                    {isObjectOnlyView && (
+                        <color attach="background" args={["#f5f5f5"]} />
+                    )}
 
-                {/* Afficher les représentations blueprint en mode Blueprint */}
-                {isBlueprintView && objects.map(createBlueprintRepresentation)}
+                    {/* Afficher les objets normalement en mode 3D ou 2D */}
+                    {!isBlueprintView && objects.map((obj) => (
+                        <GLTFObject
+                            key={obj.id}
+                            id={obj.id}
+                            url={obj.url}
+                            scale={obj.scale}
+                            position={obj.position}
+                            gltf={obj.gltf}
+                            texture={obj.texture || ''}
+                            price={obj.price}
+                            updateQuotePrice={updateQuotePrice}
+                            rotation={obj.rotation}
+                            onUpdatePosition={onUpdatePosition}
+                            isMovable={isMoving === obj.id}
+                            onClick={() => onClick(obj.id)}
+                            showDimensions={!!showDimensions[obj.id]}
+                            color={obj.color}
+                            isSelected={selectedObjectId === obj.id}
+                        />
+                    ))}
 
-                {/* Afficher les lignes Blueprint avec leur taille */}
-                {isBlueprintView && walls2D.map((line, index) => (
-                    <primitive key={`blueprint-line-${index}`} object={line} />
-                ))}
-                
-                {/* Afficher les mesures des lignes */}
-                {isBlueprintView && blueprintLines && blueprintLines.map(line => (
-                    <LineMeasurement 
-                        key={`measure-${line.id}`}
-                        start={line.start}
-                        end={line.end}
-                        length={line.length}
-                    />
-                ))}
+                    {/* Afficher les représentations blueprint en mode Blueprint */}
+                    {isBlueprintView && objects.map(createBlueprintRepresentation)}
 
-                {/* Afficher le point temporaire */}
-                {isBlueprintView && tempPoint && (
-                    <mesh position={[tempPoint.x, 0.1, tempPoint.z]}>
-                        <sphereGeometry args={[0.2, 16, 16]} />
-                        <meshBasicMaterial color="#ff3333" />
-                    </mesh>
-                )}
-                
-                {/* Afficher tous les points existants */}
-                {isBlueprintView && blueprintPoints && blueprintPoints.length > 0 && (
-                    <group>
-                        {blueprintPoints.map((point, index) => (
-                            <mesh 
-                                key={`point-${index}`}
-                                position={[point.x, 0.1, point.z]}
-                            >
-                                <sphereGeometry args={[0.15, 16, 16]} />
-                                <meshBasicMaterial color="#0066cc" />
-                            </mesh>
-                        ))}
-                    </group>
-                )}
+                    {/* Afficher les lignes Blueprint avec leur taille */}
+                    {isBlueprintView && walls2D.map((line, index) => (
+                        <primitive key={`blueprint-line-${index}`} object={line} />
+                    ))}
+                    
+                    {/* Afficher les mesures des lignes */}
+                    {isBlueprintView && blueprintLines && blueprintLines.map(line => (
+                        <LineMeasurement 
+                            key={`measure-${line.id}`}
+                            start={line.start}
+                            end={line.end}
+                            length={line.length}
+                        />
+                    ))}
 
-                {is2DView && !isBlueprintView && walls2D.map((line, index) => (
-                    <primitive key={`2d-line-${index}`} object={line} />
-                ))}
+                    {/* Afficher le point temporaire */}
+                    {isBlueprintView && tempPoint && (
+                        <mesh position={[tempPoint.x, 0.1, tempPoint.z]}>
+                            <sphereGeometry args={[0.2, 16, 16]} />
+                            <meshBasicMaterial color="#ff3333" />
+                        </mesh>
+                    )}
+                    
+                    {/* Afficher tous les points existants */}
+                    {isBlueprintView && blueprintPoints && blueprintPoints.length > 0 && (
+                        <group>
+                            {blueprintPoints.map((point, index) => (
+                                <mesh 
+                                    key={`point-${index}`}
+                                    position={[point.x, 0.1, point.z]}
+                                >
+                                    <sphereGeometry args={[0.15, 16, 16]} />
+                                    <meshBasicMaterial color="#0066cc" />
+                                </mesh>
+                            ))}
+                        </group>
+                    )}
 
-                {!is2DView && !isObjectOnlyView && (
-                    <Character 
-                        isEnabled={firstPersonView} 
-                        onPositionUpdate={handleCharacterUpdate}
-                        onRotationUpdate={(handler) => {
-                            rotateCharacterRef.current = handler;
-                        }}
-                    />
-                )}
-                 
-                {isBlueprintView && (
-                    <BlueprintClickHandler 
-                        isBlueprintView={isBlueprintView}
-                        tempPoint={tempPoint || null}
-                        groundPlane={groundPlane}
-                        rectangleStartPoint={rectangleStartPoint || null}
-                        handleBlueprintClick={handleBlueprintClick || (() => {})}
-                        updateRectanglePreview={updateRectanglePreview}
-                        isAngleAligned={isAngleAligned}
-                    />
-                )}
-            </Canvas>
+                    {is2DView && !isBlueprintView && walls2D.map((line, index) => (
+                        <primitive key={`2d-line-${index}`} object={line} />
+                    ))}
+
+                    {!is2DView && !isObjectOnlyView && (
+                        <Character 
+                            isEnabled={firstPersonView} 
+                            onPositionUpdate={handleCharacterUpdate}
+                            onRotationUpdate={(handler) => {
+                                rotateCharacterRef.current = handler;
+                            }}
+                        />
+                    )}
+                     
+                    {isBlueprintView && (
+                        <BlueprintClickHandler 
+                            isBlueprintView={isBlueprintView}
+                            tempPoint={tempPoint || null}
+                            groundPlane={groundPlane}
+                            rectangleStartPoint={rectangleStartPoint || null}
+                            handleBlueprintClick={handleBlueprintClick || (() => {})}
+                            updateRectanglePreview={updateRectanglePreview}
+                            isAngleAligned={isAngleAligned}
+                            blueprintLines={blueprintLines}
+                        />
+                    )}
+                </Canvas>
+            </div>
         </>
     );
 };

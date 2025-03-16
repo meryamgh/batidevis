@@ -67,9 +67,28 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         if (url !== '') {
             const loader = new GLTFLoader();
             loader.load(url, (gltf) => {
-                console.log("gltf.scene.scale", scale);
-                defaultScaleRef.current = [scale[0], scale[1], scale[2]];
                 const clonedScene = gltf.scene.clone();
+                
+                // Calculer l'échelle initiale en fonction de la taille du modèle
+                const box = new THREE.Box3().setFromObject(clonedScene);
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                
+                // Stocker la taille originale pour les calculs d'échelle futurs
+                defaultScaleRef.current = [size.x, size.y, size.z];
+                
+                // Calculer les facteurs d'échelle
+                const scaleX = scale[0] / size.x;
+                const scaleY = scale[1] / size.y;
+                const scaleZ = scale[2] / size.z;
+                
+                // Appliquer l'échelle
+                clonedScene.scale.set(scaleX, scaleY, scaleZ);
+                
+                // Appliquer la rotation initiale si elle existe
+                if (rotation) {
+                    clonedScene.rotation.set(rotation[0], rotation[1], rotation[2]);
+                }
                 
                 // Store the first mesh found for texture application
                 clonedScene.traverse((child: any) => {
@@ -77,7 +96,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         selectedMeshRef.current = child;
                     }
                     
-                    // Appliquer la couleur à tous les meshes si elle est définie
+                    // Appliquer la couleur uniquement si une nouvelle couleur est spécifiée
                     if (child.isMesh && color) {
                         if (!child.material) {
                             child.material = new THREE.MeshStandardMaterial();
@@ -90,7 +109,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 setScene(clonedScene);
             });
         } else {
-            const wallGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
+            const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
             const wallColor = color ? new THREE.Color(color) : new THREE.Color(0x808080);
             const wallMaterial = new THREE.MeshStandardMaterial({ 
                 color: wallColor,
@@ -99,9 +118,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 side: THREE.DoubleSide
             });
             const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-            console.log("les positions", position);
-            console.log("les scale", scale);
-            console.log("la couleur", color);
+            wallMesh.scale.set(scale[0], scale[1], scale[2]);
             wallMesh.position.set(...position);
             if(rotation){
                 wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
@@ -109,7 +126,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             selectedMeshRef.current = wallMesh;
             setScene(wallMesh);
         }
-    }, [url, color, scale, position, rotation]);
+    }, [url, color, position, rotation]);
 
     const calculatePrice = (scale: [number, number, number]) => {
         // Exemple : Calcul du prix en fonction du volume
@@ -118,37 +135,26 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         return volume * basePricePerUnit;
     };
     useEffect(() => {
-        if (meshRef.current && scale) { 
-            const mesh = meshRef.current as THREE.Mesh;
-    
-            if (mesh.geometry) {
-                const newGeometry = new THREE.BoxGeometry(scale[0], scale[1], scale[2]);
-                newGeometry.translate(0, scale[1] / 2, 0);
-                mesh.geometry.dispose();
-                mesh.geometry = newGeometry;
-                
+        if (meshRef.current && scale && defaultScaleRef.current) {
+            if (url !== '') {
+                // Pour les modèles GLTF, calculer l'échelle relative
+                const scaleX = scale[0] / defaultScaleRef.current[0];
+                const scaleY = scale[1] / defaultScaleRef.current[1];
+                const scaleZ = scale[2] / defaultScaleRef.current[2];
+                meshRef.current.scale.set(scaleX, scaleY, scaleZ);
             } else {
-                console.log("defaultScaleRef.current", defaultScaleRef.current);
-                console.log("scale", scale);
-
-                const x = 1 + (scale[0] - defaultScaleRef.current[0]);
-                const y = 1 + (scale[1] - defaultScaleRef.current[1]);
-                const z = 1 + (scale[2] - defaultScaleRef.current[2]);
-
-                mesh.scale.set(x, y, z);
-                
-                const box = new THREE.Box3().setFromObject(mesh);
-                const height = box.max.y - box.min.y;
-                mesh.position.y = height / 2;
-                
-                mesh.updateMatrixWorld(true);
+                // Pour les murs et autres objets simples, appliquer l'échelle directement
+                meshRef.current.scale.set(scale[0], scale[1], scale[2]);
             }
+            
+            meshRef.current.updateMatrixWorld(true);
+            
+            // Mettre à jour les dimensions et le prix
             updateDimensionHelpers();
-            price = calculatePrice(scale);
-            updateQuotePrice(id, price, scale);
-            console.log(`Le prix mis à jour est de ${price} €`);
+            const newPrice = calculatePrice(scale);
+            updateQuotePrice(id, newPrice, scale);
         }
-    }, [scale]); 
+    }, [scale, id, updateQuotePrice, url]);
     
     
     
@@ -246,87 +252,46 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
     useEffect(() => {
         if (meshRef.current && rotation) {
-            console.log("la rotation est : ",rotation)
+            // Appliquer la rotation directement à l'objet
             meshRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
+            
+            // Mettre à jour la matrice mondiale pour s'assurer que la rotation est appliquée
+            meshRef.current.updateMatrixWorld(true);
+            
+            // Mettre à jour les helpers de dimension si nécessaire
+            if (showDimensions) {
+                updateDimensionHelpers();
+            }
         }
-    }, [rotation]);
+    }, [rotation, showDimensions]);
 
     useEffect(() => {
         if (scene && texture) {
-            console.log("Applying texture:", texture);
             const loadedTexture = new THREE.TextureLoader().load(texture);
             loadedTexture.anisotropy = 16;
             loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
             loadedTexture.repeat.set(scale[0], scale[1]);
             
             scene.traverse((child: any) => {
-                if (child.isMesh) {
-                    // Create a new material if it doesn't exist
-                    if (!child.material) {
-                        child.material = new THREE.MeshStandardMaterial();
-                    }
-                    
-                    // Sauvegarder la couleur actuelle
-                    const currentColor = child.material.color ? child.material.color.clone() : new THREE.Color(color || '#FFFFFF');
-                    
+                if (child.isMesh && child.material) {
                     child.material.map = loadedTexture;
                     child.material.needsUpdate = true;
-                    child.material.side = THREE.DoubleSide;
-                    child.material.roughness = 0.8;
-                    child.material.metalness = 0.2;
                     
-                    // Restaurer la couleur après avoir appliqué la texture
-                    child.material.color = currentColor;
-                    
-                    // Appliquer la couleur si elle est définie
+                    // Appliquer la couleur uniquement si une nouvelle couleur est spécifiée
                     if (color) {
                         child.material.color = new THREE.Color(color);
                     }
-                    
-                    if (child.geometry) {
-                        child.geometry.computeVertexNormals();
-                        child.geometry.computeBoundingSphere();
-                    }
-                    
-                    child.castShadow = true;
-                    child.receiveShadow = true;
                 }
             });
-            
-            // Si c'est un mur (pas d'URL), appliquer directement la texture au mesh
-            if (!url && scene instanceof THREE.Mesh && scene.material) {
-                // Vérifier si le matériau est un tableau ou un seul matériau
-                const material = Array.isArray(scene.material) ? scene.material[0] : scene.material;
-                
-                // Vérifier si c'est un MeshStandardMaterial
-                if (material instanceof THREE.MeshStandardMaterial) {
-                    // Sauvegarder la couleur actuelle
-                    const currentColor = material.color ? material.color.clone() : new THREE.Color(color || '#FFFFFF');
-                    
-                    material.map = loadedTexture;
-                    material.needsUpdate = true;
-                    material.side = THREE.DoubleSide;
-                    material.roughness = 0.8;
-                    material.metalness = 0.2;
-                    
-                    // Restaurer la couleur après avoir appliqué la texture
-                    material.color = currentColor;
-                    
-                    // Conserver la couleur d'origine mais avec la texture
-                    if (color) {
-                        material.color = new THREE.Color(color);
-                    }
-                }
-            }
         }
-    }, [scene, texture, scale, url, color]);
+    }, [scene, texture, scale, color]);
 
     useEffect(() => {
         if (scene && color) {
-            console.log("Updating color to:", color);
             scene.traverse((child: any) => {
-                if (child.isMesh) {
-                    if (child.material) {
+                if (child.isMesh && child.material) {
+                    // Ne pas écraser la couleur si color est une chaîne vide
+                    if (color !== '') {
                         child.material.color = new THREE.Color(color);
                         child.material.needsUpdate = true;
                     }
@@ -337,91 +302,49 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
     useEffect(() => {
         if (scene) {
-            // Appliquer un effet visuel pour mettre en évidence l'objet sélectionné
+            const meshes: THREE.Mesh[] = [];
             scene.traverse((child: any) => {
                 if (child.isMesh) {
-                    if (isSelected) {
-                        // Si l'objet est sélectionné, ajouter un effet d'émission
-                        if (!child.material.emissive) {
-                            // Si le matériau n'a pas de propriété emissive, c'est probablement un MeshBasicMaterial
-                            // Convertir en MeshStandardMaterial
-                            const oldMaterial = child.material;
-                            const newMaterial = new THREE.MeshStandardMaterial({
-                                color: oldMaterial.color,
-                                map: oldMaterial.map,
-                                transparent: oldMaterial.transparent,
-                                opacity: oldMaterial.opacity,
-                                side: oldMaterial.side
-                            });
-                            child.material = newMaterial;
-                        }
+                    meshes.push(child);
+                    
+                    // S'assurer que le matériau est du bon type pour les transformations
+                    if (!(child.material instanceof THREE.MeshStandardMaterial)) {
+                        const oldMaterial = child.material;
+                        const newMaterial = new THREE.MeshStandardMaterial({
+                            color: oldMaterial.color ? oldMaterial.color.clone() : new THREE.Color(0xffffff),
+                            map: oldMaterial.map,
+                            transparent: oldMaterial.transparent,
+                            opacity: oldMaterial.opacity,
+                            side: oldMaterial.side
+                        });
                         
-                        // Ajouter un effet d'émission beaucoup plus intense pour mettre en évidence l'objet
-                        child.material.emissive = new THREE.Color(0x00ffff); // Couleur cyan brillante
-                        child.material.emissiveIntensity = 1.0; // Intensité plus élevée
+                        // Copier d'autres propriétés si elles existent
+                        if (oldMaterial.roughness !== undefined) newMaterial.roughness = oldMaterial.roughness;
+                        if (oldMaterial.metalness !== undefined) newMaterial.metalness = oldMaterial.metalness;
                         
-                        // Augmenter la brillance et réduire la rugosité pour un effet plus brillant
-                        child.material.metalness = 0.8;
-                        child.material.roughness = 0.1;
-                        
-                        // Ajouter un léger effet de transparence pour un aspect plus lumineux
-                        child.material.transparent = true;
-                        child.material.opacity = 0.9;
-                        
+                        child.material = newMaterial;
                         child.material.needsUpdate = true;
-                        
-                        // Créer un contour lumineux autour de l'objet sélectionné
-                        if (!child.userData.outlineMesh) {
-                            // Créer une copie légèrement plus grande de la géométrie pour le contour
-                            const outlineGeometry = child.geometry.clone();
-                            const outlineMaterial = new THREE.MeshBasicMaterial({
-                                color: 0x00ffff, // Couleur cyan pour le contour
-                                side: THREE.BackSide, // Afficher seulement l'arrière pour créer un contour
-                                transparent: true,
-                                opacity: 0.7
-                            });
-                            
-                            const outlineMesh = new THREE.Mesh(outlineGeometry, outlineMaterial);
-                            outlineMesh.scale.multiplyScalar(1.05); // Légèrement plus grand que l'objet original
-                            outlineMesh.position.copy(child.position);
-                            outlineMesh.rotation.copy(child.rotation);
-                            outlineMesh.quaternion.copy(child.quaternion);
-                            
-                            child.parent.add(outlineMesh);
-                            child.userData.outlineMesh = outlineMesh;
-                        }
-                    } else {
-                        // Si l'objet n'est pas sélectionné, réinitialiser l'effet d'émission
-                        if (child.material.emissive) {
-                            child.material.emissive = new THREE.Color(0x000000);
-                            child.material.emissiveIntensity = 0;
-                            
-                            // Restaurer les propriétés du matériau
-                            child.material.metalness = 0.2;
-                            child.material.roughness = 0.8;
-                            
-                            // Restaurer l'opacité si elle a été modifiée
-                            if (child.material.transparent) {
-                                // Si c'est un mur, garder la transparence
-                                if (!url) {
-                                    child.material.opacity = 0.8;
-                                } else {
-                                    child.material.transparent = false;
-                                    child.material.opacity = 1.0;
-                                }
-                            }
-                            
-                            child.material.needsUpdate = true;
-                        }
-                        
-                        // Supprimer le contour s'il existe
-                        if (child.userData.outlineMesh) {
-                            child.parent.remove(child.userData.outlineMesh);
-                            child.userData.outlineMesh = null;
-                        }
+                    }
+
+                    // Supprimer les effets visuels de sélection s'ils existent
+                    if (child.userData.outlineMesh) {
+                        child.parent.remove(child.userData.outlineMesh);
+                        child.userData.outlineMesh = null;
                     }
                 }
             });
+
+            // Nettoyage lors du démontage
+            return () => {
+                meshes.forEach((mesh) => {
+                    if (mesh) {
+                        if (mesh.userData.outlineMesh && mesh.parent) {
+                            mesh.parent.remove(mesh.userData.outlineMesh);
+                            mesh.userData.outlineMesh = null;
+                        }
+                    }
+                });
+            };
         }
     }, [scene, isSelected, url]);
 

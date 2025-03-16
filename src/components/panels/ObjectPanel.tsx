@@ -16,6 +16,7 @@ type ObjectPanelProps = {
     onToggleShowDimensions: (id: string) => void;
     customTextures: Record<string, string>;
     onUpdateRoomDimensions?: (floorId: string, width: number, length: number, height: number) => void;
+    onDeselectObject: (id: string) => void;
 };
 
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
@@ -31,12 +32,13 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     onToggleShowDimensions,
     customTextures,
     onUpdateRoomDimensions,
+    onDeselectObject,
 }) => {
     const [width, setWidth] = useState(object.scale[0]);
     const [height, setHeight] = useState(object.scale[1]);
     const [depth, setDepth] = useState(object.scale[2]);
     const [texture, setTexture] = useState(object.texture);
-    const [color, setColor] = useState(object.color || '#FFFFFF');
+    const [color, setColor] = useState<string | undefined>(object.color);
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
     const [showDimensions, setShowDimensions] = useState(false);
@@ -57,6 +59,18 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     
     // Utilisation du hook personnalisé pour récupérer les textures
     const { textures: apiTextures, isLoading: isLoadingTextures, error: texturesError } = useTextures();
+
+    // Styles pour le bouton "Aucune couleur"
+    const noColorButtonStyle = {
+        marginTop: '10px',
+        padding: '8px 16px',
+        backgroundColor: '#f0f0f0',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        width: '100%',
+        textAlign: 'center' as const,
+    };
 
     const toggleDimensions = () => {
         onToggleShowDimensions(object.id);
@@ -179,7 +193,10 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     return (
         <div className="object-panel">
             <div className='close'>
-                <button className='bouton-close' onClick={onClosePanel}>x</button>
+                <button className='bouton-close' onClick={() => {
+                    onDeselectObject(object.id);
+                    onClosePanel();
+                }}>x</button>
             </div>
             <div className='title_popup'>
                 <p className='modif'>modification de l'objet</p>
@@ -422,13 +439,23 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     <div className="panel-section">
                         <h3 className="section-title">Couleur</h3>
                         <div className="color-selector">
-                            <div className="color-preview" style={{ backgroundColor: color }}></div>
+                            <div className="color-preview" style={{ backgroundColor: color || '#FFFFFF' }}></div>
                             <input
                                 type="color"
-                                value={color}
+                                value={color || '#FFFFFF'}
                                 onChange={(e) => applyColor(e.target.value)}
                                 className="color-picker"
                             />
+                            <button 
+                                className="no-color-button"
+                                style={noColorButtonStyle}
+                                onClick={() => {
+                                    setColor(undefined);
+                                    onUpdateColor(object.id, '');
+                                }}
+                            >
+                                Aucune couleur
+                            </button>
                             <div className="color-presets">
                                 {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFFFFF', '#000000'].map((presetColor) => (
                                     <div
@@ -458,9 +485,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     <button className='bouton-popup'
                         onClick={() => {
                             const newRotation: [number, number, number] = [
-                                rotation[0] + Math.PI / 2,
-                                rotation[1] + Math.PI / 2,
-                                rotation[2] + Math.PI / 2,
+                                rotation[0],
+                                (rotation[1] + Math.PI / 2) % (Math.PI * 2),
+                                rotation[2]
                             ];
                             setRotation(newRotation);
                             onRotateObject(object.id, newRotation);

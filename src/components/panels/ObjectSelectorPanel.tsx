@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import '../../styles/Controls.css';
+import * as THREE from 'three';
 
 interface ObjectSelectorProps {
-    handleAddObject: (url: string) => void;
+    handleAddObject: (url: string, event: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => Promise<void>;
 }
 
 const ObjectSelector: React.FC<ObjectSelectorProps> = ({ handleAddObject }) => {
@@ -27,6 +28,10 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ handleAddObject }) => {
         fetchFiles();
     }, []);
 
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, file: string) => {
+        e.dataTransfer.setData('text/plain', `http://127.0.0.1:5000/files/${file}`);
+    };
+
     return (
         <div className="object-selector">
             <button 
@@ -42,15 +47,15 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ handleAddObject }) => {
                     ) : (
                         <div className="object-selector-list">
                             {gltfFiles.map((file, index) => (
-                                <button
+                                <div
                                     key={index}
-                                    onClick={() => {
-                                        handleAddObject(`http://127.0.0.1:5000/files/${file}`);
-                                    }}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, file)}
                                     className="object-selector-item"
+                                    style={{ cursor: 'grab' }}
                                 >
                                     {file.replace(".gltf", "").replace(".glb", "")}
-                                </button>
+                                </div>
                             ))}
                         </div>
                     )}
