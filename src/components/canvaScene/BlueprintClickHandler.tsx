@@ -59,6 +59,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
     
     // Créer une ligne en pointillé entre le point temporaire et la position de la souris
     useEffect(() => {
+        console.log("BlueprintClickHandler useEffect 1")
         if (isBlueprintView && tempPoint && mousePosition) {
             // Vérifier si le point de la souris est proche d'une ligne existante
             const snappedPoint = isPointNearLine(mousePosition);
@@ -204,6 +205,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
     
     // Effet pour gérer la prévisualisation du rectangle
     useEffect(() => {
+        console.log("BlueprintClickHandler useEffect 2")
         // Nettoyer les lignes de prévisualisation existantes à chaque rendu
         const cleanupPreviews = () => {
             // Nettoyer les lignes de prévisualisation
@@ -333,6 +335,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
     }, [isBlueprintView, rectangleStartPoint, mousePosition, scene, groundPlane, updateRectanglePreview]);
     
     useEffect(() => {
+        console.log("BlueprintClickHandler useEffect 3")
         if (!isBlueprintView || !groundPlane) return;
         
         const handleMouseMove = (e: MouseEvent) => {

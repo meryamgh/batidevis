@@ -47,6 +47,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     const selectedMeshRef = useRef<THREE.Mesh | null>(null);
 
     const createTextSprite = (text: string) => {
+        console.log("createTextSprite")
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
 
@@ -109,16 +110,32 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 setScene(clonedScene);
             });
         } else {
-            const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+            // Détecter si c'est un sol (rotation X = -PI/2)
+            const isFloor = rotation && rotation[0] === -Math.PI / 2;
+            
+            let geometry;
+            if (isFloor) {
+                // Pour le sol, utiliser PlaneGeometry avec les dimensions réelles
+                geometry = new THREE.PlaneGeometry(scale[0], scale[2]);
+            } else {
+                // Pour les murs, utiliser BoxGeometry
+                geometry = new THREE.BoxGeometry(1, 1, 1);
+            }
+
             const wallColor = color ? new THREE.Color(color) : new THREE.Color(0x808080);
             const wallMaterial = new THREE.MeshStandardMaterial({ 
                 color: wallColor,
                 transparent: true,
                 opacity: 0.8,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                dithering: true,
+                toneMapped: true
             });
-            const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-            wallMesh.scale.set(scale[0], scale[1], scale[2]);
+            
+            const wallMesh = new THREE.Mesh(geometry, wallMaterial);
+            if (!isFloor) {
+                wallMesh.scale.set(scale[0], scale[1], scale[2]);
+            }
             wallMesh.position.set(...position);
             if(rotation){
                 wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
@@ -270,8 +287,30 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             const loadedTexture = new THREE.TextureLoader().load(texture);
             loadedTexture.anisotropy = 16;
             loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
-            loadedTexture.repeat.set(scale[0], scale[1]);
+            
+            // Détecter si c'est un sol en vérifiant si c'est un PlaneGeometry
+            let isFloor = false;
+            scene.traverse((child: any) => {
+                if (child.isMesh && child.geometry instanceof THREE.PlaneGeometry) {
+                    isFloor = true;
+                }
+            });
+            
+            if (isFloor) {
+                // Pour le sol, utiliser une répétition fixe
+                loadedTexture.repeat.set(1, 1);
+                loadedTexture.offset.set(0, 0);
+                loadedTexture.rotation = 0;
+                loadedTexture.flipY = true;
+            } else {
+                // Pour les autres objets, utiliser l'échelle
+                loadedTexture.repeat.set(scale[0] / 2, scale[1] / 2);
+            }
+            
             loadedTexture.colorSpace = 'srgb';
+            loadedTexture.minFilter = THREE.LinearFilter;
+            loadedTexture.magFilter = THREE.LinearFilter;
+            loadedTexture.generateMipmaps = true;
             
             scene.traverse((child: any) => {
                 if (child.isMesh && child.material) {
@@ -281,7 +320,9 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         side: THREE.DoubleSide,
                         transparent: true,
                         metalness: 0,
-                        roughness: 1
+                        roughness: 1,
+                        dithering: true,
+                        toneMapped: true
                     });
                     
                     child.material = newMaterial;
@@ -335,6 +376,41 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         child.parent.remove(child.userData.outlineMesh);
                         child.userData.outlineMesh = null;
                     }
+
+                    // Ajouter l'effet de contour si l'objet est sélectionné
+                    if (isSelected) {
+                        const geometry = child.geometry;
+                        const edges = new THREE.EdgesGeometry(geometry);
+                        const outlineMaterial = new THREE.LineDashedMaterial({
+                            color: 0x000000,
+                            dashSize: 0.3,
+                            gapSize: 0.1,
+                            linewidth: 3,
+                            scale: 1,
+                            transparent: true,
+                            opacity: 1
+                        });
+                        const outlineMesh = new THREE.LineSegments(edges, outlineMaterial);
+                        outlineMesh.computeLineDistances();
+                        
+                        // Créer un groupe pour le contour
+                        const outlineGroup = new THREE.Group();
+                        outlineGroup.add(outlineMesh);
+                        
+                        // Appliquer une légère augmentation d'échelle pour décaler le contour
+                        const scaleFactor = 1.02; // 2% plus grand
+                        outlineGroup.scale.set(
+                            child.scale.x * scaleFactor,
+                            child.scale.y * scaleFactor,
+                            child.scale.z * scaleFactor
+                        );
+                        
+                        outlineGroup.position.copy(child.position);
+                        outlineGroup.rotation.copy(child.rotation);
+                        
+                        child.parent.add(outlineGroup);
+                        child.userData.outlineMesh = outlineGroup;
+                    }
                 }
             });
 
@@ -351,6 +427,35 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             };
         }
     }, [scene, isSelected, url]);
+
+    // Modifier le useEffect pour la mise à jour du contour
+    useEffect(() => {
+        if (scene && isSelected) {
+            scene.traverse((child: any) => {
+                if (child.isMesh && child.userData.outlineMesh) {
+                    const outlineGroup = child.userData.outlineMesh;
+                    const scaleFactor = 1.06; // 2% plus grand
+                    
+                    // Mettre à jour l'échelle avec le facteur d'augmentation
+                    outlineGroup.scale.set(
+                        child.scale.x * scaleFactor,
+                        child.scale.y * scaleFactor,
+                        child.scale.z * scaleFactor
+                    );
+                    
+                    outlineGroup.position.copy(child.position);
+                    outlineGroup.rotation.copy(child.rotation);
+                    
+                    // Mettre à jour les distances des lignes en pointillés
+                    outlineGroup.children.forEach((outlineMesh: any) => {
+                        if (outlineMesh instanceof THREE.LineSegments) {
+                            outlineMesh.computeLineDistances();
+                        }
+                    });
+                }
+            });
+        }
+    }, [scene, isSelected, scale, position, rotation]);
 
     return (
         scene && (

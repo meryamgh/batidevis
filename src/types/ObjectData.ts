@@ -11,8 +11,8 @@ export type ObjectData = {
     texture ?: string;
     scale : [number, number, number];
     rotation?: [number, number, number];
-    color?: string; // Couleur de l'objet
-    // Points pour le rendu 2D des murs
+    color?: string;  
     startPoint?: [number, number];
     endPoint?: [number, number];
+    parentScale?: [number, number, number];
 };

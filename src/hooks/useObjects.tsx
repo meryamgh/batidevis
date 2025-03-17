@@ -3,25 +3,24 @@ import { ObjectData } from '../types/ObjectData';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Root } from 'react-dom/client';
 
-// Interface pour les paramètres d'entrée du hook
 interface UseObjectsProps {
   objects: ObjectData[];
   setObjects: React.Dispatch<React.SetStateAction<ObjectData[]>>;
   quote: ObjectData[];
   setQuote: React.Dispatch<React.SetStateAction<ObjectData[]>>;
-  isMoving: string | null;
+ 
   setIsMoving: React.Dispatch<React.SetStateAction<string | null>>;
-  showDimensions: { [key: string]: boolean };
+  
   setShowDimensions: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
-  focusedObjectId: string | null;
+ 
   setFocusedObjectId: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 // Interface pour définir les propriétés retournées par le hook
 interface UseObjectsReturn {
   handleAddObject: (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => Promise<void>;
+  handleAddObjectFromData: (object: ObjectData) => void;
   handleRemoveObject: (id: string) => void;
   handleUpdatePosition: (id: string, position: [number, number, number]) => void;
   handleUpdateTexture: (id: string, newTexture: string) => void;
@@ -43,12 +42,9 @@ export const useObjects = ({
   objects,
   setObjects,
   quote,
-  setQuote,
-  isMoving,
-  setIsMoving,
-  showDimensions,
-  setShowDimensions,
-  focusedObjectId,
+  setQuote, 
+  setIsMoving, 
+  setShowDimensions, 
   setFocusedObjectId,
 }: UseObjectsProps): UseObjectsReturn => {
 
@@ -76,8 +72,7 @@ export const useObjects = ({
         const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        
-        // Convertir les coordonnées de la souris en coordonnées normalisées (-1 à 1)
+         
         const rect = (event.target as HTMLElement).getBoundingClientRect();
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -88,7 +83,7 @@ export const useObjects = ({
         const intersection = new THREE.Vector3();
         if (raycaster.ray.intersectPlane(plane, intersection)) {
           // Calculer la position en tenant compte du centre de l'objet et de sa hauteur minimale
-          const objectHeight = box.max.y - box.min.y;
+      
           const bottomOffset = -box.min.y / 2; // Diviser par 2 pour ajuster la hauteur
           
           position = [
@@ -133,6 +128,14 @@ export const useObjects = ({
     } catch (error) {
       console.error('Error loading GLTF file:', error);
     }
+  }, [setObjects, setQuote]);
+
+  const handleAddObjectFromData = useCallback((object: ObjectData) => {
+    // Ajouter d'abord au devis
+    setQuote(prevQuote => [...prevQuote, object]);
+    
+    // Puis ajouter à la scène
+    setObjects(prevObjects => [...prevObjects, object]);
   }, [setObjects, setQuote]);
 
   const handleRemoveObject = useCallback((id: string) => {
@@ -238,6 +241,7 @@ export const useObjects = ({
 
   return {
     handleAddObject,
+    handleAddObjectFromData,
     handleRemoveObject,
     handleUpdatePosition,
     handleUpdateTexture,

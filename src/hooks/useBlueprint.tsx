@@ -84,7 +84,7 @@ export const useBlueprint = ({
 
     const handleAddWall2D = (start: THREE.Vector3, end: THREE.Vector3) => {
         // Hauteur de base pour le rez-de-chaussée
-        const baseWallHeight = 6;
+        const baseWallHeight = 2;
         // Hauteur ajustée en fonction de l'étage courant
         const wallHeight = baseWallHeight;
         // Position Y ajustée en fonction de l'étage

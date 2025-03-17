@@ -72,7 +72,7 @@ const MaquettePage: React.FC = () => {
     const [roomConfig, setRoomConfig] = useState({
         width: 10,    // Valeur qui fonctionnait
         length: 8,    // Valeur qui fonctionnait
-        height: 6     // Valeur qui fonctionnait
+        height: 3     // Valeur qui fonctionnait
     });
  
     const [currentFloor, setCurrentFloor] = useState(0);
@@ -186,11 +186,11 @@ const MaquettePage: React.FC = () => {
         setObjects: setObjectsWithHistory,
         quote,
         setQuote: setQuoteWithHistory,
-        isMoving,
+       
         setIsMoving,
-        showDimensions,
+       
         setShowDimensions,
-        focusedObjectId,
+      
         setFocusedObjectId, 
     });
 
@@ -479,6 +479,7 @@ const MaquettePage: React.FC = () => {
                     onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
                     onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
                     onDeselectObject={(id) => setSelectedObjectId(null)}
+                    onAddObject={objectsUtils.handleAddObjectFromData}
                 />
             );
         }

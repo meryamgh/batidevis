@@ -88,9 +88,10 @@ export const handleMouseMove = (
         if (obj.id === objectId) {
           // Keep the original y position of the object
           const originalY = obj.position[1];
+          // Divide x and z coordinates by 2
           return {
             ...obj,
-            position: [intersection.x, originalY, intersection.z] as [number, number, number],
+            position: [intersection.x / 2, originalY, intersection.z / 2] as [number, number, number],
           };
         }
         return obj;
