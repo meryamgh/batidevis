@@ -20,9 +20,6 @@ const NavigationModeIndicator: React.FC<NavigationModeIndicatorProps> = ({
     
     // Fonction pour gérer les mouvements de caméra
     const handleCameraMove = (direction: 'forward' | 'backward' | 'left' | 'right' | 'zoomIn' | 'zoomOut' | 'rotateLeft' | 'rotateRight' | 'rotateUp' | 'rotateDown') => {
-        // Créer un événement personnalisé avec la direction
-        console.log('handleCameraMove appelé avec direction:', direction);
-        
         try {
             const event = new CustomEvent('cameraControl', { 
                 detail: { 
@@ -30,13 +27,16 @@ const NavigationModeIndicator: React.FC<NavigationModeIndicatorProps> = ({
                     mode: navigationMode
                 } 
             });
-            
-            // Dispatcher l'événement pour qu'il soit capturé par le composant MoveControls
             window.dispatchEvent(event);
-            console.log('Événement cameraControl dispatché avec succès');
         } catch (error) {
             console.error('Erreur lors du dispatch de l\'événement cameraControl:', error);
         }
+    };
+
+    // Fonction pour changer le mode de navigation
+    const handleModeChange = () => {
+        const newMode = navigationMode === 'orbit' ? 'move' : 'orbit';
+        setNavigationMode(newMode);
     };
 
     if (is2DView || isObjectOnlyView || firstPersonView) return null;
@@ -53,7 +53,7 @@ const NavigationModeIndicator: React.FC<NavigationModeIndicatorProps> = ({
                 <div className="nav-mode-label">
                     Mode: {isOrbitMode ? 'Orbite' : 'Déplacement'}
                     <button
-                        onClick={() => setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit')}
+                        onClick={handleModeChange}
                         className="nav-mode-button"
                     >
                         Changer (N)
@@ -100,7 +100,7 @@ const NavigationModeIndicator: React.FC<NavigationModeIndicatorProps> = ({
                 
                 {/* Mode */}
                 <button
-                    onClick={() => setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit')}
+                    onClick={handleModeChange}
                     className="nav-button mode-button"
                     title={isOrbitMode ? "Mode Orbite" : "Mode Déplacement"}
                 >

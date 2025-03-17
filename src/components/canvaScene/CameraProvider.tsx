@@ -1,9 +1,7 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import React, { useEffect, useRef } from 'react';
+import { useThree } from '@react-three/fiber';
 import { ObjectData } from '../../types/ObjectData';
 import * as THREE from 'three';
-
-
 
 const CameraProvider: React.FC<{ 
     setCamera: (camera: THREE.Camera) => void; 
@@ -14,52 +12,143 @@ const CameraProvider: React.FC<{
     zoom2D: number;
     isObjectOnlyView?: boolean;
     focusedObject?: ObjectData | null;
-}> = ({ setCamera, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, zoom2D, isObjectOnlyView, focusedObject }) => {
-    const { camera, scene } = useThree();
+    preserveCameraOnModeChange?: boolean;
+}> = ({ 
+    setCamera, 
+    is2DView, 
+    firstPersonView, 
+    firstPersonPosition, 
+    firstPersonRotation, 
+    zoom2D, 
+    isObjectOnlyView, 
+    focusedObject,
+    preserveCameraOnModeChange 
+}) => {
+    const { camera, set } = useThree();
+    const lastCameraState = useRef<{
+        position: THREE.Vector3;
+        rotation: THREE.Euler;
+        zoom?: number;
+        target?: THREE.Vector3;
+    } | null>(null);
 
     useEffect(() => {
-        if (firstPersonView && firstPersonPosition && firstPersonRotation) {
-            camera.position.copy(firstPersonPosition);
-            camera.rotation.copy(firstPersonRotation);
-        } else if (isObjectOnlyView && focusedObject) {
-            // Focus on the selected object
-            const objectPosition = new THREE.Vector3(
-                focusedObject.position[0],
-                focusedObject.position[1],
-                focusedObject.position[2]
+        let newCamera: THREE.Camera;
+
+        // Si on a un état précédent et qu'on veut le préserver
+        if (preserveCameraOnModeChange && lastCameraState.current && !is2DView && !firstPersonView && !isObjectOnlyView) {
+            const perspectiveCamera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
             );
-            
-            // Calculate object size based on scale
-            const objectSize = Math.max(
-                focusedObject.scale[0],
-                focusedObject.scale[1],
-                focusedObject.scale[2]
-            );
-            
-            // Position the camera at a distance proportional to the object size
-            const distance = objectSize * 5;
-            camera.position.set(
-                objectPosition.x + distance,
-                objectPosition.y + distance / 2,
-                objectPosition.z + distance
-            );
-            
-            // Look at the object
-            camera.lookAt(objectPosition);
-            
-            // Set a narrower field of view for a more focused look
-            (camera as THREE.PerspectiveCamera).fov = 30;
+
+            perspectiveCamera.position.copy(lastCameraState.current.position);
+            perspectiveCamera.rotation.copy(lastCameraState.current.rotation);
+            perspectiveCamera.updateProjectionMatrix();
+            newCamera = perspectiveCamera;
         } else if (is2DView) {
-            camera.position.set(0, zoom2D, 0);
-            camera.lookAt(0, 0, 0);
-            (camera as THREE.PerspectiveCamera).fov = 10;
+            // Configuration de la caméra orthographique
+            const aspect = window.innerWidth / window.innerHeight;
+            const frustumSize = 100;
+            
+            const orthographicCamera = new THREE.OrthographicCamera(
+                -frustumSize * aspect / 2,
+                frustumSize * aspect / 2,
+                frustumSize / 2,
+                -frustumSize / 2,
+                -1000,
+                1000
+            );
+            
+            orthographicCamera.position.set(0, 100, 0);
+            orthographicCamera.up.set(0, 0, -1);
+            orthographicCamera.rotation.set(-Math.PI / 2, 0, 0);
+            orthographicCamera.zoom = zoom2D / 20;
+            
+            orthographicCamera.updateMatrix();
+            orthographicCamera.updateMatrixWorld();
+            orthographicCamera.updateProjectionMatrix();
+            
+            newCamera = orthographicCamera;
         } else {
-            camera.position.set(10, 20, 30);
-            camera.lookAt(0, 0, 0);
+            // Configuration de la caméra perspective pour les autres modes
+            const perspectiveCamera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+
+            if (firstPersonView && firstPersonPosition && firstPersonRotation) {
+                perspectiveCamera.position.copy(firstPersonPosition);
+                perspectiveCamera.rotation.copy(firstPersonRotation);
+                perspectiveCamera.fov = 75;
+            } else if (isObjectOnlyView && focusedObject) {
+                const objectPosition = new THREE.Vector3(...focusedObject.position);
+                const objectSize = Math.max(...focusedObject.scale);
+                const distance = objectSize * 5;
+                
+                perspectiveCamera.position.set(
+                    objectPosition.x + distance,
+                    objectPosition.y + distance * 0.5,
+                    objectPosition.z + distance
+                );
+                
+                perspectiveCamera.up.set(0, 1, 0);
+                perspectiveCamera.lookAt(objectPosition);
+                perspectiveCamera.fov = 30;
+            } else {
+                perspectiveCamera.position.set(30, 30, 30);
+                perspectiveCamera.up.set(0, 1, 0);
+                perspectiveCamera.lookAt(0, 0, 0);
+                perspectiveCamera.fov = 50;
+            }
+
+            perspectiveCamera.updateProjectionMatrix();
+            newCamera = perspectiveCamera;
         }
-        camera.updateProjectionMatrix();
-        setCamera(camera);
-    }, [camera, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, setCamera, zoom2D, isObjectOnlyView, focusedObject]);
+
+        // Sauvegarder l'état de la caméra actuelle
+        if (!is2DView && !firstPersonView && !isObjectOnlyView) {
+            lastCameraState.current = {
+                position: newCamera.position.clone(),
+                rotation: newCamera.rotation.clone(),
+                zoom: newCamera instanceof THREE.OrthographicCamera ? newCamera.zoom : undefined
+            };
+        }
+
+        // Définir la nouvelle caméra comme caméra active
+        if (newCamera instanceof THREE.PerspectiveCamera) {
+            set(() => ({ camera: Object.assign(newCamera, { manual: true }) }));
+        } else if (newCamera instanceof THREE.OrthographicCamera) {
+            set(() => ({ camera: Object.assign(newCamera, { manual: true }) }));
+        }
+        setCamera(newCamera);
+
+    }, [set, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, zoom2D, isObjectOnlyView, focusedObject, preserveCameraOnModeChange, setCamera]);
+
+    // Gérer le redimensionnement de la fenêtre
+    useEffect(() => {
+        const handleResize = () => {
+            if (camera instanceof THREE.OrthographicCamera && is2DView) {
+                const aspect = window.innerWidth / window.innerHeight;
+                const frustumSize = 100;
+                camera.left = -frustumSize * aspect / 2;
+                camera.right = frustumSize * aspect / 2;
+                camera.top = frustumSize / 2;
+                camera.bottom = -frustumSize / 2;
+                camera.updateProjectionMatrix();
+            } else if (camera instanceof THREE.PerspectiveCamera) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [camera, is2DView]);
 
     return null;
 };

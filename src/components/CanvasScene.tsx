@@ -80,6 +80,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     const cameraPositionRef = useRef<THREE.Vector3 | null>(null);
     const isMovingToTargetRef = useRef(false);
     const [currentCamera, setCurrentCamera] = useState<THREE.Camera | null>(null);
+    const [orbitTarget, setOrbitTarget] = useState(new THREE.Vector3(0, 0, 0));
 
     // Disable first person view when in ObjectOnly mode or when switching views
     useEffect(() => {
@@ -143,6 +144,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         
         // Toggle between orbit and move navigation modes with 'n' key
         if ((e.key === 'n' || e.key === 'N') && !isObjectOnlyView && !is2DView && !firstPersonView) {
+            e.preventDefault(); // Empêcher tout comportement par défaut
             setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit');
         }
     };
@@ -337,6 +339,38 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         event.preventDefault();
     }, []);
 
+    // Mettre à jour le point cible de l'orbite
+    const updateOrbitTarget = useCallback(() => {
+        if (!currentCamera) return;
+        
+        // Créer un vecteur direction pointant vers l'avant de la caméra
+        const direction = new THREE.Vector3(0, 0, -1);
+        direction.applyQuaternion(currentCamera.quaternion);
+        
+        // Calculer le point d'intersection avec le plan y=0
+        const cameraPosition = currentCamera.position.clone();
+        const t = -cameraPosition.y / direction.y;
+        const intersectionPoint = new THREE.Vector3(
+            cameraPosition.x + direction.x * t,
+            0,
+            cameraPosition.z + direction.z * t
+        );
+        
+        // Si le point d'intersection est trop loin ou invalide, utiliser un point par défaut
+        if (!isFinite(t) || Math.abs(t) > 1000) {
+            setOrbitTarget(new THREE.Vector3(0, 0, 0));
+        } else {
+            setOrbitTarget(intersectionPoint);
+        }
+    }, [currentCamera]);
+
+    // Mettre à jour le point cible lors du changement de mode et de la position de la caméra
+    useEffect(() => {
+        if (!firstPersonView && !is2DView) {
+            updateOrbitTarget();
+        }
+    }, [navigationMode, updateOrbitTarget, currentCamera?.position.x, currentCamera?.position.y, currentCamera?.position.z, firstPersonView, is2DView]);
+
     return (
         <>
             {is2DView && (
@@ -369,6 +403,12 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         antialias: true,
                         pixelRatio: window.devicePixelRatio
                     }}
+                    camera={{
+                        position: [30, 30, 30],
+                        fov: 50,
+                        near: 0.1,
+                        far: 1000
+                    }}
                 >
                     <CameraProvider 
                         setCamera={handleSetCamera} 
@@ -379,6 +419,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         zoom2D={zoom2D}
                         isObjectOnlyView={isObjectOnlyView}
                         focusedObject={focusedObjectId ? objects.find(o => o.id === focusedObjectId) || null : null}
+                        preserveCameraOnModeChange={true}
                     />
                     {!firstPersonView && (
                         <RaycasterHandler
@@ -401,42 +442,54 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     <pointLight position={[10, -10, 10]} intensity={2.5} />
                     <hemisphereLight groundColor={'#b9b9b9'} intensity={2.0} />
                     
-                    {!firstPersonView && !is2DView && navigationMode === 'orbit' && (
+                    {!firstPersonView && !is2DView && (
                         <OrbitControls 
                             ref={orbitControlsRef} 
-                            enabled={!is2DView || isObjectOnlyView} 
+                            enabled={!is2DView || isObjectOnlyView}
                             minDistance={isObjectOnlyView ? 2 : 1}
                             maxDistance={isObjectOnlyView ? 20 : 1000}
                             enableZoom={!isObjectOnlyView}
-                            enablePan={!isObjectOnlyView}
-                            rotateSpeed={isObjectOnlyView ? 0.5 : 1}
+                            enablePan={navigationMode === 'orbit'}
+                            enableRotate={true}
+                            rotateSpeed={1}
                             autoRotate={isObjectOnlyView}
                             autoRotateSpeed={isObjectOnlyView ? 1 : 0}
+                            target={orbitTarget}
+                            minPolarAngle={0}
+                            maxPolarAngle={Math.PI / 2}
+                            enableDamping={true}
+                            dampingFactor={0.05}
+                        />
+                    )}
+
+                    {is2DView && (
+                        <OrbitControls
+                            ref={orbitControlsRef}
+                            enableRotate={false}
+                            enableZoom={true}
+                            enablePan={true}
+                            target={[0, 0, 0]}
+                            minPolarAngle={Math.PI / 2}
+                            maxPolarAngle={Math.PI / 2}
+                            enableDamping={false}
+                            zoomSpeed={1}
+                            panSpeed={1}
+                            screenSpacePanning={true}
                         />
                     )}
                     
-                    {!firstPersonView && !is2DView && navigationMode === 'move' && (
-                        <>
-                            <OrbitControls 
-                                ref={orbitControlsRef}
-                                enableRotate={true}
-                                enableZoom={true}
-                                enablePan={false}
-                                minPolarAngle={0}
-                                maxPolarAngle={Math.PI / 2 - 0.1} // Limiter la rotation verticale
-                            />
-                            <MoveControls 
-                                cameraPositionRef={cameraPositionRef}
-                                orbitControlsRef={orbitControlsRef}
-                                isMovingToTargetRef={isMovingToTargetRef}
-                                navigationMode={navigationMode}
-                                firstPersonView={firstPersonView}
-                                is2DView={is2DView}
-                                isObjectOnlyView={isObjectOnlyView}
-                                groundPlane={groundPlane} 
-                                handleSceneClick={handleSceneClick}
-                            />
-                        </>
+                    {navigationMode === 'move' && !firstPersonView && !is2DView && (
+                        <MoveControls 
+                            cameraPositionRef={cameraPositionRef}
+                            orbitControlsRef={orbitControlsRef}
+                            isMovingToTargetRef={isMovingToTargetRef}
+                            navigationMode={navigationMode}
+                            firstPersonView={firstPersonView}
+                            is2DView={is2DView}
+                            isObjectOnlyView={isObjectOnlyView}
+                            groundPlane={groundPlane} 
+                            handleSceneClick={handleSceneClick}
+                        />
                     )}
 
                     {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode Blueprint ou ObjectOnly */}
@@ -446,7 +499,8 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     {is2DView && !isObjectOnlyView && (
                         <gridHelper 
                             args={[50, 50]} 
-                            position={[0, 0.05, 0]} 
+                            position={[0, 0, 0]} 
+                            rotation={[0, 0, 0]}
                             // Couleur différente pour le mode Blueprint
                             userData={{ color: isBlueprintView ? '#1a3f5c' : '#444444' }}
                         />
@@ -454,7 +508,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
 
                     {/* Fond bleu clair pour le mode Blueprint */}
                     {isBlueprintView && !isObjectOnlyView && (
-                        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+                        <mesh rotation={[0, 0, 0]} position={[0, -0.1, 0]}>
                             <planeGeometry args={[100, 100]} />
                             <meshBasicMaterial color="#e6f2ff" />
                         </mesh>
@@ -541,7 +595,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                             }}
                         />
                     )}
-                     
+                    
                     {isBlueprintView && (
                         <BlueprintClickHandler 
                             isBlueprintView={isBlueprintView}

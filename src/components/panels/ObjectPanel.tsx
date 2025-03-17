@@ -320,8 +320,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         <div className="deformation-group">
                             <input
                                 type="range"
-                                min="-10"
-                                max="10"
+                                min="-50"
+                                max="50"
                                 step="0.1"
                                 value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
                                 onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value))}
@@ -343,8 +343,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                             </div>
                             <input
                                 type="range"
-                                min="0"
-                                max="1"
+                                min="-50"
+                                max="50"
                                 step="0.1"
                                 value={curvature}
                                 onChange={(e) => setCurvature(parseFloat(e.target.value))}
@@ -357,8 +357,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                             </div>
                             <input
                                 type="range"
-                                min="0.5"
-                                max="2"
+                                min="-50"
+                                max="50"
                                 step="0.1"
                                 value={stretch}
                                 onChange={(e) => setStretch(parseFloat(e.target.value))}

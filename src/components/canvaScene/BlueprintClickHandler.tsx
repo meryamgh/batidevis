@@ -105,10 +105,10 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
             
             // Créer un tube épais au lieu d'une simple ligne
             const path = new THREE.LineCurve3(
-                new THREE.Vector3(tempPoint.x, 0.1, tempPoint.z),
-                new THREE.Vector3(endPoint.x, 0.1, endPoint.z)
+                new THREE.Vector3(tempPoint.x, 0, tempPoint.z),
+                new THREE.Vector3(endPoint.x, 0, endPoint.z)
             );
-            const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.2, 12, false);
+            const tubeGeometry = new THREE.TubeGeometry(path, 1, 0.1, 12, false);
             
             // Créer un matériau avec la couleur appropriée (vert si aligné ou snappé, rouge sinon)
             const tubeMaterial = new THREE.MeshBasicMaterial({ 

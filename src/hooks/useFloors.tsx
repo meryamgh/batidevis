@@ -4,6 +4,9 @@ import * as THREE from 'three';
 import { ObjectData } from '../types/ObjectData';
 
 // Constantes globales
+// 8 10 5 ==> 8
+// 80  100 5 ==> 4.2
+// 16 20 
 const WALL_THICKNESS = 0.2;
 const FLOOR_PRICE_PER_SQUARE_METER = 50;
 const WALL_PRICE = 100;

@@ -44,11 +44,6 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
                 targetRotation.current.y -= rotationSpeed;
                 break;
         }
-        if (onPositionUpdate) {
-            const newPosition = characterRef.current?.position.clone() || new THREE.Vector3();
-            newPosition.y = characterHeight;
-            onPositionUpdate(newPosition, rotationRef.current);
-        }
     };
 
     useEffect(() => {
@@ -62,11 +57,8 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
 
         const handleMouseMove = (e: MouseEvent) => {
             if (isMousePressed.current) {
-                // Utiliser des sensibilités différentes pour X et Y
                 targetRotation.current.y -= e.movementX * mouseSensitivityX;
                 
-                // Corriger le mouvement vertical pour qu'il corresponde à l'intuition de l'utilisateur
-                // Inverser le signe pour que le mouvement vers le haut déplace la caméra vers le haut
                 if (Math.abs(e.movementY) > 1) {
                     targetRotation.current.x = Math.max(
                         -Math.PI / 3,
@@ -87,7 +79,6 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
         const handleWheel = (e: WheelEvent) => {
             if (!isEnabled) return;
             const perspCamera = camera as THREE.PerspectiveCamera;
-            // Ajuster le FOV avec la molette de la souris
             perspCamera.fov = Math.max(30, Math.min(90, perspCamera.fov + e.deltaY * 0.05));
             perspCamera.updateProjectionMatrix();
         };
@@ -181,26 +172,39 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
 
         characterRef.current.position.add(movement);
 
-        if (onPositionUpdate) {
+        // Mettre à jour la position et la rotation de la caméra
+        if (isEnabled) {
             const newPosition = characterRef.current.position.clone();
             newPosition.y = characterHeight;
-            // S'assurer que la rotation est correctement appliquée
-            onPositionUpdate(newPosition, rotationRef.current);
+            camera.position.copy(newPosition);
+            
+            // Appliquer la rotation à la caméra
+            camera.rotation.x = rotationRef.current.x;
+            camera.rotation.y = rotationRef.current.y;
+            camera.rotation.z = 0;
+            camera.updateProjectionMatrix();
+        }
+
+        if (onPositionUpdate) {
+            onPositionUpdate(camera.position.clone(), camera.rotation.clone());
         }
     });
 
     return (
         <group ref={characterRef} position={[0, 0, 0]} rotation={[0, rotationRef.current.y, 0]}>
-            {/* Corps du personnage */}
-            <mesh position={[0, characterHeight / 2, 0]}>
-                <capsuleGeometry args={[0.2, 1.3, 8, 16]} />
-                <meshStandardMaterial color="#4287f5" />
-            </mesh>
-            {/* Tête du personnage */}
-            <mesh position={[0, characterHeight - 0.15, 0]}>
-                <sphereGeometry args={[0.15, 16, 16]} />
-                <meshStandardMaterial color="#ffd700" />
-            </mesh>
+            {/* Corps du personnage (invisible en mode première personne) */}
+            {!isEnabled && (
+                <>
+                    <mesh position={[0, characterHeight / 2, 0]}>
+                        <capsuleGeometry args={[0.2, 1.3, 8, 16]} />
+                        <meshStandardMaterial color="#4287f5" />
+                    </mesh>
+                    <mesh position={[0, characterHeight - 0.15, 0]}>
+                        <sphereGeometry args={[0.15, 16, 16]} />
+                        <meshStandardMaterial color="#ffd700" />
+                    </mesh>
+                </>
+            )}
         </group>
     );
 };

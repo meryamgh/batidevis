@@ -271,26 +271,30 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             loadedTexture.anisotropy = 16;
             loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
             loadedTexture.repeat.set(scale[0], scale[1]);
+            loadedTexture.colorSpace = 'srgb';
             
             scene.traverse((child: any) => {
                 if (child.isMesh && child.material) {
-                    child.material.map = loadedTexture;
-                    child.material.needsUpdate = true;
+                    // Créer un nouveau matériau pour la texture
+                    const newMaterial = new THREE.MeshStandardMaterial({
+                        map: loadedTexture,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        metalness: 0,
+                        roughness: 1
+                    });
                     
-                    // Appliquer la couleur uniquement si une nouvelle couleur est spécifiée
-                    if (color) {
-                        child.material.color = new THREE.Color(color);
-                    }
+                    child.material = newMaterial;
+                    child.material.needsUpdate = true;
                 }
             });
-        }
+        } 
     }, [scene, texture, scale, color]);
 
     useEffect(() => {
-        if (scene && color) {
+        if (scene && color && !texture) {  // Ajouter la condition !texture
             scene.traverse((child: any) => {
                 if (child.isMesh && child.material) {
-                    // Ne pas écraser la couleur si color est une chaîne vide
                     if (color !== '') {
                         child.material.color = new THREE.Color(color);
                         child.material.needsUpdate = true;
@@ -298,7 +302,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 }
             });
         }
-    }, [scene, color]);
+    }, [scene, color, texture]);  // Ajouter texture comme dépendance
 
     useEffect(() => {
         if (scene) {
@@ -354,6 +358,9 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 position={position}
                 enabled={isMovable}
                 mode="translate"
+                showX={false}
+                showY={false}
+                showZ={false}
                 onObjectChange={() => {
                     if (meshRef.current) {
                         const newPos: [number, number, number] = [
