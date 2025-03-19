@@ -1,0 +1,134 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 8,
+      "type": "VEC3",
+      "max": [
+        1.0750000476837158,
+        0.44999998807907104,
+        0.02500000037252903
+      ],
+      "min": [
+        -1.0750000476837158,
+        -0.44999998807907104,
+        -0.02500000037252903
+      ]
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5123,
+      "normalized": false,
+      "count": 36,
+      "type": "SCALAR",
+      "max": [
+        7
+      ],
+      "min": [
+        0
+      ]
+    }
+  ],
+  "asset": {
+    "generator": "pygltflib@v1.16.2",
+    "version": "2.0",
+    "extras": {
+      "details": "Porte-fen\u00eatre \u00e0 la fran\u00e7aise grand vitrage avec param\u00e8tres modifiables",
+      "price":10
+      }
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 96,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 96,
+      "byteLength": 72,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "data:application/octet-stream;base64,mpmJv2Zm5r7NzMy8mpmJP2Zm5r7NzMy8mpmJP2Zm5j7NzMy8mpmJv2Zm5j7NzMy8mpmJv2Zm5r7NzMw8mpmJP2Zm5r7NzMw8mpmJP2Zm5j7NzMw8mpmJv2Zm5j7NzMw8AAABAAIAAgADAAAABAAFAAYABgAHAAQABAAFAAEAAQAAAAQABwAGAAIAAgADAAcABAAHAAMAAwAAAAQABQAGAAIAAgABAAUA",
+      "byteLength": 168
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.55,
+          0.27,
+          0.07,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.5
+      },
+      "emissiveFactor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "alphaMode": "OPAQUE",
+      "alphaCutoff": 0.5,
+      "doubleSided": false,
+      "name": "BoisExotique"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "indices": 1,
+          "mode": 4,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "extras": {
+        "details": "Porte-fen\u00eatre \u00e0 la fran\u00e7aise grand vitrage avec param\u00e8tres modifiables",
+        "price":10,
+        "parameters": {
+          "Param12": 2150,
+          "Param14": 900,
+          "Param16": 1,
+          "Param19": 50,
+          "Param27": "4/20/4",
+          "Param40": 2150,
+          "Param42": "ht",
+          "Param45": 1,
+          "Param47": "vantail",
+          "Param53": "4Fe/20/4",
+          "Param59": 1181,
+          "Param60": 7643852941,
+          "Param61": "U"
+        }
+      },
+      "mesh": 0,
+      "name": "PorteFenetre"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

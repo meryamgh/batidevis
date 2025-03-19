@@ -309,7 +309,53 @@ html, body {
     color: #777; 
     cursor: not-allowed; 
     box-shadow: none; 
-    text-shadow: none;
-    user-select: none;
-    display: none; /* Cacher les boutons désactivés */
+    text-shadow : none;
+    user-select : none;
 } 
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background: white;
+    border-bottom: 1px solid #ccc;
+}
+.logo {
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #1E2A44;
+}
+.logo img {
+    height: 40px;
+    margin-right: 10px;
+}
+nav {
+    display: flex;
+    gap: 25px;
+}
+nav a {
+    text-decoration: none;
+    color: #1E2A44;
+    font-size: 16px;
+    font-weight: bold;
+}
+nav a.active {
+    text-decoration: underline;
+}
+.btn {
+    background: #C28B00;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+}
