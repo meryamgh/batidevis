@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
-import { ObjectData } from '../types/ObjectData';
+import { ObjectData, FacesData } from '../types/ObjectData';
 
 // Constantes globales
 // 8 10 5 ==> 8
@@ -10,10 +10,10 @@ import { ObjectData } from '../types/ObjectData';
 const WALL_THICKNESS = 0.2;
 const FLOOR_PRICE_PER_SQUARE_METER = 50;
 const WALL_PRICE = 100;
-const WALL_POSITION_DIVISOR = 4;
+const WALL_POSITION_DIVISOR = 4.08;
 // Définition des couleurs avec des valeurs hexadécimales plus vives
 const FLOOR_COLORS = [
-  '#90EE90', // Vert clair (rez-de-chaussée)
+  '#808080', // Gris neutre (rez-de-chaussée)
   '#FF6B88', // Rose vif
   '#FFA500', // Orange
   '#9370DB', // Violet moyen
@@ -21,7 +21,7 @@ const FLOOR_COLORS = [
 ];
 
 const WALL_COLORS = [
-  '#87CEEB', // Bleu ciel (rez-de-chaussée)
+  '#808080', // Gris neutre (rez-de-chaussée)
   '#FF69B4', // Rose chaud
   '#FFD700', // Or
   '#9932CC', // Violet foncé
@@ -29,7 +29,7 @@ const WALL_COLORS = [
 ];
 
 const FLOOR_OPACITY = 0.8;
-const WALL_OPACITY = 0.7;
+const WALL_OPACITY = 1.0;
 
 interface RoomConfig {
   width: number;
@@ -77,6 +77,10 @@ export const useFloors = ({
       side: THREE.DoubleSide
     });
     const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+
+    const boundingBox = new THREE.Box3();
+    boundingBox.min.set(-roomConfig.width/2, -WALL_THICKNESS/2, -roomConfig.length/2);
+    boundingBox.max.set(roomConfig.width/2, WALL_THICKNESS/2, roomConfig.length/2);
     
     const floorObject: ObjectData = {
       id: uuidv4(),
@@ -87,7 +91,20 @@ export const useFloors = ({
       gltf: floorMesh,
       rotation: [0, 0, 0],
       scale: [roomConfig.width, WALL_THICKNESS, roomConfig.length],
-      color: FLOOR_COLORS[0] // Ajouter la couleur comme propriété
+      color: FLOOR_COLORS[0], // Ajouter la couleur comme propriété
+      type: 'floor',
+      boundingBox: {
+        min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+        max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+        size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+        center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+      },
+      faces: {
+        top: {
+          color: FLOOR_COLORS[0],
+          texture: ''
+        }
+      }
     };
 
     // Créer les murs en commençant au niveau du sol
@@ -119,8 +136,8 @@ export const useFloors = ({
     ];
 
     // Ajouter le sol
-    setObjects(prevObjects => [...prevObjects, floorObject]);
-    setQuote(prevQuote => [...prevQuote, {
+    setObjects((prevObjects: ObjectData[]) => [...prevObjects, floorObject]);
+    setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
       ...floorObject,
       price: (roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
     }]);
@@ -128,14 +145,11 @@ export const useFloors = ({
     // Ajouter les murs
     walls.forEach(wall => {
       const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
-      const wallMaterial = new THREE.MeshStandardMaterial({ 
-        color: WALL_COLORS[0],
-        transparent: true,
-        opacity: WALL_OPACITY,
-        side: THREE.DoubleSide
-      });
+      const wallMaterial = new THREE.MeshStandardMaterial();
       const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-
+      const boundingBox = new THREE.Box3();
+      boundingBox.min.set(-wall.scale[0]/2, -wall.scale[1]/2, -wall.scale[2]/2);
+      boundingBox.max.set(wall.scale[0]/2, wall.scale[1]/2, wall.scale[2]/2);
       const newWallObject: ObjectData = {
         id: uuidv4(),
         url: '',
@@ -143,23 +157,56 @@ export const useFloors = ({
         details: 'Mur (Rez-de-chaussée)',
         position: [
           wall.position[0],
-          (wall.position[1] + WALL_THICKNESS/2)/2, // Ajuster la position Y pour commencer au niveau du sol
+          (wall.position[1] + WALL_THICKNESS/2)/2,
           wall.position[2]
         ],
         gltf: wallMesh,
         rotation: wall.rotation as [number, number, number],
         scale: wall.scale as [number, number, number],
-        color: WALL_COLORS[0], // Ajouter la couleur comme propriété
-        texture: '' // Ajouter une propriété texture vide pour permettre l'application de textures
+        color: '',
+        texture: '',
+        type: 'wall',
+        faces: {
+          front: {
+            color: '',
+            texture: ''
+          },
+          back: {
+            color: '',
+            texture: ''
+          },
+          left: {
+            color: '',
+            texture: ''
+          },
+          right: {
+            color: '',
+            texture: ''
+          },
+          top: {
+            color: '',
+            texture: ''
+          },
+          bottom: {
+            color: '',
+            texture: ''
+          }
+        },
+        boundingBox: {
+          min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+          max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+          size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+          center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+        }
       };
 
-      setObjects(prevObjects => [...prevObjects, newWallObject]);
-      setQuote(prevQuote => [...prevQuote, newWallObject]);
+      setObjects((prevObjects: ObjectData[]) => [...prevObjects, newWallObject]);
+      setQuote((prevQuote: ObjectData[]) => [...prevQuote, newWallObject]);
     });
 
     setCurrentFloor(0);
     setShowRoomConfig(false);
-  }, [roomConfig]);
+  }, [roomConfig, setObjects, setQuote, setCurrentFloor, setShowRoomConfig]);
 
   const addNewFloor = useCallback(() => {
     const nextFloorNumber = currentFloor + 1;
@@ -178,17 +225,32 @@ export const useFloors = ({
       side: THREE.DoubleSide
     });
     const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
-    
+    const boundingBox = new THREE.Box3();
+    boundingBox.min.set(-roomConfig.width/2, -WALL_THICKNESS/2, -roomConfig.length/2);
+    boundingBox.max.set(roomConfig.width/2, WALL_THICKNESS/2, roomConfig.length/2);
     const floorObject: ObjectData = {
       id: uuidv4(),
       url: '',
       price: FLOOR_PRICE_PER_SQUARE_METER,
       details: `Sol (Étage ${nextFloorNumber})`,
-      position: [0, (floorHeight + WALL_THICKNESS/2)/2, 0], // Ajuster la position Y pour l'épaisseur du sol
+      position: [0, (floorHeight + WALL_THICKNESS/2)/2, 0],
       gltf: floorMesh,
       rotation: [0, 0, 0],
       scale: [roomConfig.width, WALL_THICKNESS, roomConfig.length],
-      color: floorColor // Ajouter la couleur comme propriété
+      color: floorColor,
+      type: 'floor',
+      boundingBox: {
+        min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+        max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+        size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+        center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+      },
+      faces: {
+        top: {
+          color: floorColor,
+          texture: ''
+        }
+      }
     };
 
     // Créer les murs de l'étage
@@ -220,8 +282,8 @@ export const useFloors = ({
     ];
 
     // Ajouter le sol
-    setObjects(prevObjects => [...prevObjects, floorObject]);
-    setQuote(prevQuote => [...prevQuote, {
+    setObjects((prevObjects: ObjectData[]) => [...prevObjects, floorObject]);
+    setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
       ...floorObject,
       price: (roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
     }]);
@@ -229,14 +291,11 @@ export const useFloors = ({
     // Ajouter les murs
     walls.forEach(wall => {
       const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
-      const wallMaterial = new THREE.MeshStandardMaterial({ 
-        color: wallColor,
-        transparent: true,
-        opacity: WALL_OPACITY,
-        side: THREE.DoubleSide
-      });
+      const wallMaterial = new THREE.MeshStandardMaterial();
       const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-
+      const boundingBox = new THREE.Box3();
+      boundingBox.min.set(-wall.scale[0]/2, -wall.scale[1]/2, -wall.scale[2]/2);
+      boundingBox.max.set(wall.scale[0]/2, wall.scale[1]/2, wall.scale[2]/2);
       const newWallObject: ObjectData = {
         id: uuidv4(),
         url: '',
@@ -244,27 +303,60 @@ export const useFloors = ({
         details: `Mur (Étage ${nextFloorNumber})`,
         position: [
           wall.position[0],
-          wall.position[1] + WALL_THICKNESS/2, // Ajuster la position Y pour commencer au niveau du sol de l'étage
+          wall.position[1],
           wall.position[2]
         ],
         gltf: wallMesh,
         rotation: wall.rotation as [number, number, number],
         scale: wall.scale as [number, number, number],
-        color: wallColor, // Ajouter la couleur comme propriété
-        texture: '' // Ajouter une propriété texture vide pour permettre l'application de textures
+        color: wallColor,
+        texture: '',
+        type: 'wall',
+        faces: {
+          front: {
+            color: wallColor,
+            texture: ''
+          },
+          back: {
+            color: wallColor,
+            texture: ''
+          },
+          left: {
+            color: wallColor,
+            texture: ''
+          },
+          right: {
+            color: wallColor,
+            texture: ''
+          },
+          top: {
+            color: wallColor,
+            texture: ''
+          },
+          bottom: {
+            color: wallColor,
+            texture: ''
+          }
+        },
+        boundingBox: {
+          min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+          max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+          size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+          center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+        }
       };
 
-      setObjects(prevObjects => [...prevObjects, newWallObject]);
-      setQuote(prevQuote => [...prevQuote, newWallObject]);
+      setObjects((prevObjects: ObjectData[]) => [...prevObjects, newWallObject]);
+      setQuote((prevQuote: ObjectData[]) => [...prevQuote, newWallObject]);
     });
 
     setCurrentFloor(nextFloorNumber);
-  }, [currentFloor, roomConfig]);
+  }, [currentFloor, roomConfig, setObjects, setQuote, setCurrentFloor]);
 
   // Nouvelle fonction pour mettre à jour les dimensions d'une pièce existante
   const updateRoomDimensions = useCallback((floorId: string, newWidth: number, newLength: number, newHeight: number) => {
     // Trouver l'étage concerné
-    const floorObject = objects.find(obj => obj.id === floorId);
+    const floorObject = objects.find((obj: ObjectData) => obj.id === floorId);
     if (!floorObject || !floorObject.details.includes('Sol')) return;
     
     // Déterminer le numéro d'étage
@@ -272,7 +364,7 @@ export const useFloors = ({
     const floorNumber = floorNumberMatch ? parseInt(floorNumberMatch[1]) : 0;
     
     // Trouver tous les objets de cet étage (sol et murs)
-    const floorObjects = objects.filter(obj => {
+    const floorObjects = objects.filter((obj: ObjectData) => {
       const isCurrentFloor = floorNumber === 0 
         ? obj.details.includes('Rez-de-chaussée')
         : obj.details.includes(`Étage ${floorNumber}`);
@@ -280,7 +372,7 @@ export const useFloors = ({
     });
     
     // Mettre à jour les objets
-    setObjects(prevObjects => prevObjects.map(obj => {
+    setObjects((prevObjects: ObjectData[]) => prevObjects.map((obj: ObjectData) => {
       // Vérifier si l'objet appartient à l'étage concerné
       const isCurrentFloor = floorNumber === 0 
         ? obj.details.includes('Rez-de-chaussée')
@@ -336,8 +428,8 @@ export const useFloors = ({
     }));
     
     // Mettre à jour les prix dans le devis
-    setQuote(prevQuote => prevQuote.map(item => {
-      const matchingObject = objects.find(obj => obj.id === item.id);
+    setQuote((prevQuote: ObjectData[]) => prevQuote.map((item: ObjectData) => {
+      const matchingObject = objects.find((obj: ObjectData) => obj.id === item.id);
       if (!matchingObject) return item;
       
       // Vérifier si l'objet appartient à l'étage concerné

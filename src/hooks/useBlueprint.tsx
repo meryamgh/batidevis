@@ -95,14 +95,16 @@ export const useBlueprint = ({
         const pricePerUnitLength = 10;
         const wallPrice = wallLength * pricePerUnitLength;
         const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallWidth);
-        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 }); 
+        const wallMaterial = new THREE.MeshStandardMaterial();
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
 
         const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
         midPoint.y = wallPositionY; // Ajuster la hauteur en fonction de l'étage
         const direction = new THREE.Vector3().subVectors(end, start).normalize();
         const angle = Math.atan2(direction.z, direction.x);
-
+        const boundingBox = new THREE.Box3();
+        boundingBox.min.set(-wallLength/2, -wallHeight/2, -wallWidth/2);
+        boundingBox.max.set(wallLength/2, wallHeight/2, wallWidth/2);
         const newWallObject: ObjectData = {
             id: uuidv4(),
             url: '',
@@ -112,8 +114,41 @@ export const useBlueprint = ({
             gltf: wallMesh,
             rotation: [0, -angle, 0],
             scale: [wallLength, wallHeight, wallWidth],
-            texture: '', // Ajouter une propriété texture vide pour permettre l'application de textures
-            color: '#87CEEB' // Ajouter une couleur par défaut
+           // Ajouter une propriété texture vide pour permettre l'application de textures
+            color: '', // Enlever la couleur par défaut
+            type: 'wall',
+            faces: {
+                front: {
+                    color: '',
+                    texture: ''
+                },
+                back: {
+                    color: '',
+                    texture: ''
+                },
+                left: {
+                    color: '',
+                    texture: ''
+                },
+                right: {
+                    color: '',
+                    texture: ''
+                },
+                top: {
+                    color: '',
+                    texture: ''
+                },
+                bottom: {
+                    color: '',
+                    texture: ''
+                }
+            },
+            boundingBox: {
+                min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+                max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+                size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+                center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+            }
         };
 
         setObjects((prevObjects: ObjectData[]) => [...prevObjects, newWallObject]);
@@ -223,7 +258,7 @@ export const useBlueprint = ({
         
         // Créer le matériau du sol avec une couleur différente selon l'étage
         const floorColors = [
-            0xE0E0E0, // Gris clair pour le rez-de-chaussée
+            0x808080, // Gris neutre pour le rez-de-chaussée
             0xCCE6FF, // Bleu clair pour le 1er étage
             0xE6FFCC, // Vert clair pour le 2ème étage
             0xFFE6CC  // Orange clair pour le 3ème étage et plus
@@ -237,16 +272,14 @@ export const useBlueprint = ({
             opacity: 0.8
         });
         
-        const wallMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xADD8E6,
-            transparent: true,
-            opacity: 0.7
-        });
+        const wallMaterial = new THREE.MeshStandardMaterial();
         
         // Créer le sol
         const floorGeometry = new THREE.BoxGeometry(1, 1, 1);
         const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
-        
+        const boundingBox = new THREE.Box3();
+        boundingBox.min.set(-width/2, -wallThickness/2, -length/2);
+        boundingBox.max.set(width/2, wallThickness/2, length/2);
         const floorObject: ObjectData = {
             id: uuidv4(),
             url: '',
@@ -256,6 +289,20 @@ export const useBlueprint = ({
             gltf: floorMesh,
             rotation: [0, 0, 0],
             scale: [width, wallThickness, length],
+            color: '#' + floorColor.toString(16).padStart(6, '0'),
+            type: 'floor',
+            faces: {
+                top: {
+                    color: '#' + floorColor.toString(16).padStart(6, '0'),
+                    texture: ''
+                }
+            },
+            boundingBox: {
+                min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+                max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+                size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+                center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+            }
         };
         
         // Ajouter le sol aux objets et au devis
@@ -310,8 +357,41 @@ export const useBlueprint = ({
                 gltf: wallMesh,
                 rotation: wall.rotation as [number, number, number],
                 scale: wall.scale as [number, number, number],
-                texture: '', // Ajouter une propriété texture vide pour permettre l'application de textures
-                color: '#87CEEB' // Ajouter une couleur par défaut
+                color: '', // Enlever la couleur par défaut
+                texture: '',
+                type: 'wall',
+                faces: {
+                    front: {
+                        color: '',
+                        texture: ''
+                    },
+                    back: {
+                        color: '',
+                        texture: ''
+                    },
+                    left: {
+                        color: '',
+                        texture: ''
+                    },
+                    right: {
+                        color: '',
+                        texture: ''
+                    },
+                    top: {
+                        color: '',
+                        texture: ''
+                    },
+                    bottom: {
+                        color: '',
+                        texture: ''
+                    }
+                },
+                boundingBox: {
+                    min: [-wall.scale[0]/2, -wall.scale[1]/2, -wall.scale[2]/2],
+                    max: [wall.scale[0]/2, wall.scale[1]/2, wall.scale[2]/2],
+                    size: [wall.scale[0], wall.scale[1], wall.scale[2]],
+                    center: [0, 0, 0]
+                }
             };
             
             setObjects(prevObjects => [...prevObjects, newWallObject]);
@@ -427,11 +507,11 @@ export const useBlueprint = ({
             const tubeMaterial = new THREE.MeshBasicMaterial({ 
                 color: 0x0066cc,
             });
-            const line = new THREE.Mesh(tubeGeometry, tubeMaterial);
+            const tubeLine = new THREE.Mesh(tubeGeometry, tubeMaterial);
             
             // Générer un ID unique pour la ligne
             const lineId = uuidv4();
-            line.uuid = lineId;
+            tubeLine.uuid = lineId;
             
             // Calculer la longueur de la ligne
             const length = lastPoint.distanceTo(finalPoint);
@@ -449,7 +529,7 @@ export const useBlueprint = ({
             setBlueprintPoints(prev => [...prev, finalPoint]);
             
             // Ajouter la ligne à la scène
-            setWalls2D(prev => [...prev, line as unknown as THREE.Line]);
+            setWalls2D(prev => [...prev, tubeLine as unknown as THREE.Line]);
             
             // Terminer la ligne actuelle
             setIsDrawingLine(false);
@@ -487,11 +567,11 @@ export const useBlueprint = ({
             const tubeMaterial = new THREE.MeshBasicMaterial({ 
                 color: 0x0066cc,
             });
-            const line = new THREE.Mesh(tubeGeometry, tubeMaterial);
+            const tubeLine = new THREE.Mesh(tubeGeometry, tubeMaterial);
             
             // Générer un ID unique pour la ligne
             const lineId = uuidv4();
-            line.uuid = lineId;
+            tubeLine.uuid = lineId;
             
             // Calculer la longueur de la ligne
             const length = lastPoint.distanceTo(adjustedPoint);
@@ -512,7 +592,7 @@ export const useBlueprint = ({
             setBlueprintPoints(prev => [...prev, adjustedPoint]);
             
             // Ajouter la ligne à la scène
-            setWalls2D(prev => [...prev, line as unknown as THREE.Line]);
+            setWalls2D(prev => [...prev, tubeLine as unknown as THREE.Line]);
             
             // Mettre à jour le point temporaire
             setTempPoint(adjustedPoint);
@@ -569,7 +649,9 @@ export const useBlueprint = ({
             // Créer la géométrie du sol
             const floorGeometry = new THREE.BoxGeometry(1, 1, 1);
             const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
-            
+            const boundingBox = new THREE.Box3();
+            boundingBox.min.set(-floorWidth/2, -floorThickness/2, -floorLength/2);
+            boundingBox.max.set(floorWidth/2, floorThickness/2, floorLength/2);
             // Créer l'objet sol
             const floorObject: ObjectData = {
                 id: uuidv4(),
@@ -580,6 +662,20 @@ export const useBlueprint = ({
                 gltf: floorMesh,
                 rotation: [0, 0, 0],
                 scale: [floorWidth, floorThickness, floorLength],
+                color: '#' + floorColor.toString(16).padStart(6, '0'),
+                type: 'floor',
+                faces: {
+                    top: {
+                        color: '#' + floorColor.toString(16).padStart(6, '0'),
+                        texture: ''
+                    }
+                },
+                boundingBox: {
+                    min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
+                    max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
+                    size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
+                    center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+                }
             };
             
             // Ajouter le sol aux objets et au devis

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 
 interface CharacterProps {
     isEnabled: boolean;
@@ -24,6 +25,9 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
     const mouseSensitivityY = 0.001; // Sensibilité verticale encore plus réduite
     const rotationSpeed = 0.2;
     const { camera } = useThree();
+    
+    // Load the GLTF model
+    const { scene: characterModel } = useGLTF('http://127.0.0.1:5000/files/character.gltf');
     
     // Référence pour le lissage des mouvements de caméra
     const targetRotation = useRef<THREE.Euler>(new THREE.Euler(0, 0, 0));
@@ -194,16 +198,11 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
         <group ref={characterRef} position={[0, 0, 0]} rotation={[0, rotationRef.current.y, 0]}>
             {/* Corps du personnage (invisible en mode première personne) */}
             {!isEnabled && (
-                <>
-                    <mesh position={[0, characterHeight / 2, 0]}>
-                        <capsuleGeometry args={[0.2, 1.3, 8, 16]} />
-                        <meshStandardMaterial color="#4287f5" />
-                    </mesh>
-                    <mesh position={[0, characterHeight - 0.15, 0]}>
-                        <sphereGeometry args={[0.15, 16, 16]} />
-                        <meshStandardMaterial color="#ffd700" />
-                    </mesh>
-                </>
+                <primitive 
+                    object={characterModel.clone()} 
+                    scale={[0.5, 0.5, 0.5]}
+                    position={[0, 1, 0]}
+                />
             )}
         </group>
     );

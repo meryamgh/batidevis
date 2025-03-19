@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { ObjectData } from '../types/ObjectData';
+import { ObjectData, FacesData } from '../types/ObjectData';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -15,6 +15,8 @@ interface UseObjectsProps {
   setShowDimensions: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
  
   setFocusedObjectId: React.Dispatch<React.SetStateAction<string | null>>;
+  quoteHistory: any;
+  objectsHistory: any;
 }
 
 // Interface pour définir les propriétés retournées par le hook
@@ -36,6 +38,7 @@ interface UseObjectsReturn {
     is2DView: boolean,
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => void;
+  handleUpdateFaces: (id: string, faces: FacesData) => void;
 }
 
 export const useObjects = ({
@@ -46,6 +49,8 @@ export const useObjects = ({
   setIsMoving, 
   setShowDimensions, 
   setFocusedObjectId,
+  quoteHistory,
+  objectsHistory,
 }: UseObjectsProps): UseObjectsReturn => {
 
   const handleAddObject = useCallback(async (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => {
@@ -59,6 +64,14 @@ export const useObjects = ({
       const center = new THREE.Vector3();
       box.getSize(size);
       box.getCenter(center);
+
+      // Stocker les informations de la bounding box
+      const boundingBox = {
+        min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
+        max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
+        size: [size.x, size.y, size.z] as [number, number, number],
+        center: [center.x, center.y, center.z] as [number, number, number]
+      };
 
       const extras = gltf.asset?.extras || {};
       const price = extras.price || 100; // Prix par défaut si non spécifié
@@ -83,7 +96,6 @@ export const useObjects = ({
         const intersection = new THREE.Vector3();
         if (raycaster.ray.intersectPlane(plane, intersection)) {
           // Calculer la position en tenant compte du centre de l'objet et de sa hauteur minimale
-      
           const bottomOffset = -box.min.y / 2; // Diviser par 2 pour ajuster la hauteur
           
           position = [
@@ -117,6 +129,7 @@ export const useObjects = ({
         scale,
         texture: '',
         color: '#FFFFFF',
+        boundingBox
       };
 
       // Ajouter d'abord au devis
@@ -128,7 +141,7 @@ export const useObjects = ({
     } catch (error) {
       console.error('Error loading GLTF file:', error);
     }
-  }, [setObjects, setQuote]);
+  }, [setQuote]);
 
   const handleAddObjectFromData = useCallback((object: ObjectData) => {
     // Ajouter d'abord au devis
@@ -136,58 +149,178 @@ export const useObjects = ({
     
     // Puis ajouter à la scène
     setObjects(prevObjects => [...prevObjects, object]);
-  }, [setObjects, setQuote]);
+  }, [ setQuote]);
 
   const handleRemoveObject = useCallback((id: string) => {
     setObjects((prevObjects) => prevObjects.filter((obj) => obj.id !== id));
     setQuote((prevQuote) => prevQuote.filter((item) => item.id !== id));
     setIsMoving(null);
-  }, [setObjects, setQuote, setIsMoving]);
+  }, [ setQuote, setIsMoving]);
 
-  const handleUpdatePosition = useCallback((id: string, position: [number, number, number]) => {
+  const handleUpdatePosition = (id: string, position: [number, number, number]) => {
+    console.log("Updating position in useObjects:", position);
     setObjects((prev) =>
-      prev.map((obj) => (obj.id === id ? { ...obj, position } : obj))
+      prev.map((obj) => {
+        if (obj.id === id) {
+          console.log("Found object to update:", obj.id);
+          return { ...obj, position };
+        }
+        return obj;
+      })
     );
-  }, [setObjects]);
+  };
 
-  const handleUpdateTexture = useCallback((id: string, newTexture: string) => {
+  const handleUpdateTexture = (id: string, newTexture: string) => {
     setObjects((prevObjects) =>
-      prevObjects.map((obj) =>
-        obj.id === id ? { ...obj, texture: newTexture } : obj
-      )
+      prevObjects.map((obj) => {
+        if (obj.id === id) {
+          // Si l'objet a des faces spécifiques et est de type mur ou sol
+          if ((obj.type === 'wall' || obj.type === 'floor') && obj.faces) {
+            const updatedFaces = { ...obj.faces };
+            // Pour les sols, on met à jour uniquement la face supérieure
+            if (obj.type === 'floor') {
+              updatedFaces.top = {
+                ...updatedFaces.top,
+                texture: newTexture
+              };
+            }
+            // Pour les murs, on met à jour la face sélectionnée (si définie)
+            else if (obj.type === 'wall') {
+              // Si aucune face n'est sélectionnée, on applique à toutes les faces
+              const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'] as const;
+              faces.forEach(face => {
+                if (updatedFaces[face]) {
+                  updatedFaces[face] = {
+                    ...updatedFaces[face],
+                    texture: newTexture
+                  };
+                } else {
+                  updatedFaces[face] = {
+                    texture: newTexture
+                  };
+                }
+              });
+            }
+            return {
+              ...obj,
+              faces: updatedFaces
+            };
+          }
+          // Pour les autres objets, on garde le comportement par défaut
+          return { ...obj, texture: newTexture };
+        }
+        return obj;
+      })
     );
-  }, [setObjects]);
+  };
 
   const handleUpdateColor = useCallback((id: string, newColor: string) => {
     setObjects((prevObjects) =>
-      prevObjects.map((obj) =>
-        obj.id === id ? { ...obj, color: newColor } : obj
-      )
+      prevObjects.map((obj) => {
+        if (obj.id === id) {
+          // Si l'objet a des faces spécifiques et est de type mur ou sol
+          if ((obj.type === 'wall' || obj.type === 'floor') && obj.faces) {
+            const updatedFaces = { ...obj.faces };
+            // Pour les sols, on met à jour uniquement la face supérieure
+            if (obj.type === 'floor') {
+              updatedFaces.top = {
+                ...updatedFaces.top,
+                color: newColor
+              };
+            }
+            // Pour les murs, on met à jour la face sélectionnée (si définie)
+            else if (obj.type === 'wall') {
+              // Si aucune face n'est sélectionnée, on applique à toutes les faces
+              const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'] as const;
+              faces.forEach(face => {
+                if (updatedFaces[face]) {
+                  updatedFaces[face] = {
+                    ...updatedFaces[face],
+                    color: newColor
+                  };
+                } else {
+                  updatedFaces[face] = {
+                    color: newColor
+                  };
+                }
+              });
+            }
+            return {
+              ...obj,
+              faces: updatedFaces,
+              color: newColor // Garder la couleur globale pour la compatibilité
+            };
+          }
+          // Pour les autres objets, on garde le comportement par défaut
+          return { ...obj, color: newColor };
+        }
+        return obj;
+      })
     );
   }, [setObjects]);
 
-  const handleUpdateScale = useCallback((id: string, newScale: [number, number, number]) => {
+  const handleUpdateScale = (id: string, newScale: [number, number, number]) => {
+    console.log("Updating scale in useObjects:", newScale);
     setObjects((prevObjects) => {
       return prevObjects.map((obj) => {
         if (obj.id === id) {
-          return {
-            ...obj,
-            scale: newScale,
-          };
+          console.log("Found object to update scale:", obj.id);
+          if (obj.boundingBox) {
+            // Calculate the scale factors
+            const scaleFactors = [
+              newScale[0] / obj.scale[0],
+              newScale[1] / obj.scale[1],
+              newScale[2] / obj.scale[2]
+            ];
+
+            // Update the bounding box with the new scale
+            const newBoundingBox = {
+              min: [
+                obj.boundingBox.min[0] * scaleFactors[0],
+                obj.boundingBox.min[1] * scaleFactors[1],
+                obj.boundingBox.min[2] * scaleFactors[2]
+              ] as [number, number, number],
+              max: [
+                obj.boundingBox.max[0] * scaleFactors[0],
+                obj.boundingBox.max[1] * scaleFactors[1],
+                obj.boundingBox.max[2] * scaleFactors[2]
+              ] as [number, number, number],
+              size: [
+                obj.boundingBox.size[0] * scaleFactors[0],
+                obj.boundingBox.size[1] * scaleFactors[1],
+                obj.boundingBox.size[2] * scaleFactors[2]
+              ] as [number, number, number],
+              center: [
+                obj.boundingBox.center[0] * scaleFactors[0],
+                obj.boundingBox.center[1] * scaleFactors[1],
+                obj.boundingBox.center[2] * scaleFactors[2]
+              ] as [number, number, number]
+            };
+
+            return {
+              ...obj,
+              scale: newScale,
+              boundingBox: newBoundingBox
+            };
+          }
+          return { ...obj, scale: newScale };
         }
         return obj;
       });
     });
-  }, [setObjects]);
+    console.log("Objects after update:", objects);
+  };
 
-  const handleRotateObject = useCallback((id: string, newRotation: [number, number, number]) => {
+  
+
+  const handleRotateObject = (id: string, newRotation: [number, number, number]) => {
     setObjects((prevObjects) =>
       prevObjects.map((obj) =>
         obj.id === id ? { ...obj, rotation: newRotation } : obj
       )
     );
     return [id, newRotation] as [string, [number, number, number]];
-  }, [setObjects]);
+  };
 
   const handleToggleShowDimensions = useCallback((id: string) => {
     setShowDimensions((prev) => ({
@@ -239,6 +372,37 @@ export const useObjects = ({
     }
   }, [objects, setFocusedObjectId]);
 
+  const handleUpdateFaces = useCallback((id: string, faces: FacesData) => {
+    console.log('handleUpdateFaces called with:', { id, faces });
+    setObjects((prevObjects) =>
+      prevObjects.map((obj) => {
+        if (obj.id === id) {
+          console.log('Updating object faces:', {
+            objectId: obj.id,
+            oldFaces: obj.faces,
+            newFaces: faces
+          });
+          
+          // Créer un nouvel objet faces en ne conservant que les propriétés définies
+          const cleanedFaces = Object.entries(faces).reduce((acc, [faceName, faceData]) => {
+            // Assertion de type pour faceName
+            const face = faceName as keyof FacesData;
+            acc[face] = {};
+            if (faceData.texture !== undefined) acc[face].texture = faceData.texture;
+            if (faceData.color !== undefined && faceData.color !== null) acc[face].color = faceData.color;
+            return acc;
+          }, {} as FacesData);
+
+          return {
+            ...obj,
+            faces: cleanedFaces
+          };
+        }
+        return obj;
+      })
+    );
+  }, [setObjects]);
+
   return {
     handleAddObject,
     handleAddObjectFromData,
@@ -251,7 +415,8 @@ export const useObjects = ({
     handleToggleShowDimensions,
     updateQuotePrice,
     getSerializableQuote,
-    handleObjectClick
+    handleObjectClick,
+    handleUpdateFaces
   };
 }; 
 

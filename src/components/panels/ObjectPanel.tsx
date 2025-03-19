@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ObjectData } from '../../types/ObjectData';
+import { ObjectData, FacesData } from '../../types/ObjectData';
 import '../../styles/Controls.css';
 import { useTextures } from '../../services/TextureService';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
+import '../../styles/ObjectPanel.css';
 
 type ObjectPanelProps = {
     object: ObjectData;
@@ -20,7 +21,12 @@ type ObjectPanelProps = {
     onUpdateRoomDimensions?: (floorId: string, width: number, length: number, height: number) => void;
     onDeselectObject: (id: string) => void;
     onAddObject: (object: ObjectData) => void;
+    onExtendObject: (object: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => ObjectData;
+    onUpdateFaces?: (id: string, faces: FacesData) => void;
 };
+
+// Type pour les noms des faces
+type FaceName = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
 
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
     object,
@@ -37,6 +43,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     onUpdateRoomDimensions,
     onDeselectObject,
     onAddObject,
+    onExtendObject,
+    onUpdateFaces,
 }) => {
     const [width, setWidth] = useState(object.scale[0]);
     const [height, setHeight] = useState(object.scale[1]);
@@ -50,11 +58,17 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [curvature, setCurvature] = useState(0);
     const [stretch, setStretch] = useState(1);
     const [selectedAxis, setSelectedAxis] = useState<'x' | 'y' | 'z'>('y');
-    
+    const [recalculateYPosition, setRecalculateYPosition] = useState(false);
     // États pour les dimensions de la pièce
     const [roomWidth, setRoomWidth] = useState(object.scale[0]);
     const [roomLength, setRoomLength] = useState(object.scale[2]);
     const [roomHeight, setRoomHeight] = useState(3); // Valeur par défaut
+    // État pour suivre le dernier objet étendu
+    const [lastExtendedObject, setLastExtendedObject] = useState<ObjectData>(object);
+    // État pour suivre tous les objets étendus
+    const [extendedObjects, setExtendedObjects] = useState<ObjectData[]>([]);
+    const [selectedFace, setSelectedFace] = useState<FaceName>('front');
+    const [faces, setFaces] = useState<FacesData>(object.faces || {});
     
     // Vérifier si l'objet est un sol ou un mur
     const isFloor = object.details.includes('Sol');
@@ -76,32 +90,35 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         textAlign: 'center' as const,
     };
 
+
+    const getMinYAxis = (object: ObjectData) => {
+        if (object.boundingBox) {
+            return -object.boundingBox.min[1] / 2;
+        }
+        return 0;
+    }
+
     const toggleDimensions = () => {
         onToggleShowDimensions(object.id);
         setShowDimensions(!showDimensions);
     };
 
     useEffect(() => {
-        setWidth(object.scale[0]);
-        setHeight(object.scale[1]);
-        setDepth(object.scale[2]);
-        setRotation(object.rotation || [0, 0, 0]);
-        setPosition(object.position);
-        
-        // Mettre à jour les dimensions de la pièce si c'est un sol
-        if (isFloor) {
-            setRoomWidth(object.scale[0]);
-            setRoomLength(object.scale[2]);
+        if (object) {
+            console.log('Updating dimensions:', object.scale);
+            setWidth(object.scale[0]);
+            setHeight(object.scale[1]);
+            setDepth(object.scale[2]);
+            setRotation(object.rotation || [0, 0, 0]);
+            setPosition(object.position);
             
-            // Essayer de trouver un mur associé pour obtenir la hauteur
-            const floorNumberMatch = object.details.match(/Étage (\d+)/);
-            const floorNumber = floorNumberMatch ? parseInt(floorNumberMatch[1]) : 0;
-            const floorLabel = floorNumber === 0 ? 'Rez-de-chaussée' : `Étage ${floorNumber}`;
-            
-            // Stocker la hauteur actuelle pour une utilisation ultérieure
-            setRoomHeight(3); // Valeur par défaut si on ne peut pas déterminer
+            if (isFloor) {
+                setRoomWidth(object.scale[0]);
+                setRoomLength(object.scale[2]);
+                setRoomHeight(3);
+            }
         }
-    }, [object.scale, object.rotation, object.position, isFloor]);
+    }, [object, isFloor]);
 
     useEffect(() => {
         setTexture(object.texture);
@@ -138,9 +155,36 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         };
     }, [isRotating, rotation, onRotateObject, object.id]);
 
+     
+
     const handleUpdateScale = (newWidth: number, newHeight: number, newDepth: number) => {
+        console.log('updateScale');
+        setWidth(newWidth);
+        setHeight(newHeight);
+        setDepth(newDepth);
         onUpdateScale(object.id, [newWidth, newHeight, newDepth]);
+
+        setRecalculateYPosition(true);
     };
+
+    useEffect(() => {
+        
+        if (object && recalculateYPosition) {
+            updateYPosition(); 
+        }
+    }, [recalculateYPosition]);
+
+    const updateYPosition = () => { 
+        console.log("new height", height)
+        const minY = getMinYAxis(object);
+        if (minY !== position[1]) {
+            console.log('minY', minY);
+            const newPosition: [number, number, number] = [position[0], minY, position[2]];
+            onUpdatePosition(object.id, newPosition);
+            setPosition(newPosition);
+        }
+        setRecalculateYPosition(false);
+    }
 
     const handleUpdatePosition = (axis: 'x' | 'y' | 'z', value: number) => {
         const newPosition: [number, number, number] = [...position];
@@ -233,19 +277,16 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
         const newWindow: ObjectData = {
             id: uuidv4(),
-            url: 'http://127.0.0.1:5000/files/fenêtre.gltf',
+            url: 'http://127.0.0.1:5000/files/fenêtre.glb',
             price: 200,
             details: 'Fenêtre',
-            position: [
-                object.position[0],
-                object.position[1],
-                object.position[2]
-            ],
+            position: object.position,
             gltf: mesh,
             rotation: object.rotation,
             scale: [1, 1, 1],
             color: '#FFFFFF',
-            parentScale: object.scale
+            parentScale: object.scale,
+            texture: ''
         };
         onAddObject(newWindow);
     };
@@ -257,21 +298,254 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
         const newDoor: ObjectData = {
             id: uuidv4(),
-            url: 'http://127.0.0.1:5000/files/porte.gltf',
+            url: 'http://127.0.0.1:5000/files/porte.glb',
             price: 500,
             details: 'Porte',
-            position: [
-                object.position[0],
-                object.position[1],
-                object.position[2]
-            ],
+            position: object.position,
             gltf: mesh,
             rotation: object.rotation,
             scale: [1, 1, 1],
             color: '#8B4513',
-            parentScale: object.scale
+            parentScale: object.scale,
+            texture: ''
         };
         onAddObject(newDoor);
+    };
+
+    // Modifier la fonction handleWallDimensionChange
+    const handleWallDimensionChange = (e: React.ChangeEvent<HTMLInputElement>, dimension: 'width' | 'height' | 'depth') => {
+        const value = parseFloat(e.target.value);
+        if (isNaN(value)) return;
+
+        console.log('Input value changed:', dimension, value);
+
+        // Créer une copie des dimensions actuelles
+        let newDimensions: [number, number, number] = [width, height, depth];
+
+        // Mettre à jour la dimension appropriée
+        switch (dimension) {
+            case 'width':
+                newDimensions[0] = Math.max(0.5, value);
+                break;
+            case 'height':
+                newDimensions[1] = Math.max(0.5, value);
+                break;
+            case 'depth':
+                newDimensions[2] = Math.max(0.1, value);
+                break;
+        }
+
+        console.log('New dimensions:', newDimensions);
+
+        // Mettre à jour l'état local
+        setWidth(newDimensions[0]);
+        setHeight(newDimensions[1]);
+        setDepth(newDimensions[2]);
+
+        // Mettre à jour l'objet
+        onUpdateScale(object.id, newDimensions);
+    };
+
+    const renderDimensionsInputs = () => {
+        
+        return (
+            <>
+                <div className='container-label'>
+                    <label className='titre-label'>largeur</label>
+                    <input className='selection'
+                        type="number"
+                        step="0.01"
+                        value={width}
+                        onChange={(e) => {
+                            const newWidth = parseFloat(e.target.value) || 0;
+                            handleUpdateScale(newWidth, height, depth);
+                        }}
+                    />
+                </div>
+                <div className='container-label'>
+                    <label className='titre-label'>hauteur</label>
+                    <input className='selection'
+                        type="number"
+                        step="0.01"
+                        value={height}
+                        onChange={(e) => {
+                            const newHeight = parseFloat(e.target.value) || 0;
+                            handleUpdateScale(width, newHeight, depth);
+                        }}
+                    />
+                </div>
+                <div className='container-label'>
+                    <label className='titre-label'>profondeur</label>
+                    <input className='selection'
+                        type="number"
+                        step="0.01"
+                        value={depth}
+                        onChange={(e) => {
+                            const newDepth = parseFloat(e.target.value) || 0;
+                            handleUpdateScale(width, height, newDepth);
+                        }}
+                    />
+                </div>
+            </>
+        );
+    };
+
+    // Ajouter l'objet original à extendedObjects lors de l'initialisation
+    useEffect(() => {
+        if (extendedObjects.length === 0) {
+            setExtendedObjects([object]);
+            setLastExtendedObject(object);
+        }
+    }, []); // Dépendance vide pour n'exécuter qu'une seule fois
+
+    // Fonction pour gérer l'extension d'objet avec suivi
+    const handleExtendWithTracking = (direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => {
+        try {
+            console.log('=== Début de l\'extension ===');
+            console.log('État actuel des objets étendus:', extendedObjects);
+            console.log('Dernier objet étendu:', lastExtendedObject);
+
+            // Utiliser le dernier objet étendu comme source pour la nouvelle extension
+            // n'utilise plus le dernier objet étendu mais l'objet original et rajoute la distance qu'il faut pour le creer au bon endroit
+            const sourceObject = extendedObjects.length > 0 
+                ? extendedObjects[extendedObjects.length - 1] 
+                : object;
+            
+            console.log('Objet source sélectionné:', {
+                id: sourceObject.id,
+                position: sourceObject.position,
+                details: sourceObject.details
+            });
+            
+            if (!sourceObject) {
+                console.error("Pas d'objet source trouvé pour l'extension");
+                return;
+            }
+            
+            // Utiliser la fonction onExtendObject fournie dans les props
+            console.log('Appel de onExtendObject avec direction:', direction);
+            const newObject = onExtendObject(sourceObject, direction);
+            
+            console.log('Nouvel objet créé:', {
+                id: newObject.id,
+                position: newObject.position,
+                details: newObject.details
+            });
+
+            // Vérifier si le nouvel objet a bien un nouvel ID
+            if (newObject.id === sourceObject.id) {
+                console.error('ERREUR: Le nouvel objet a le même ID que la source!');
+                return;
+            }
+
+            // Vérifier si la position est différente
+            const samePosition = newObject.position.every((val, idx) => val === sourceObject.position[idx]);
+            if (samePosition) {
+                console.warn('ATTENTION: Le nouvel objet a la même position que la source!');
+            }
+
+            // Mettre à jour les états locaux
+            console.log('Mise à jour des états locaux');
+            console.log('Ancien état extendedObjects:', extendedObjects);
+            
+            setLastExtendedObject(newObject);
+            setExtendedObjects(prev => {
+                const newState = [...prev, newObject];
+                console.log('Nouvel état extendedObjects:', newState);
+                return newState;
+            });
+
+            console.log('=== Fin de l\'extension ===');
+        } catch (error) {
+            console.error("Erreur lors de l'extension de l'objet:", error);
+        }
+    };
+
+    // Fonction pour annuler le dernier objet étendu
+    const handleUndoLastExtend = () => {
+        if (extendedObjects.length > 0) {
+            const lastObject = extendedObjects[extendedObjects.length - 2] || object;
+            const objectToRemove = extendedObjects[extendedObjects.length - 1];
+            
+            onRemoveObject(objectToRemove.id);
+            setExtendedObjects(prev => prev.slice(0, -1));
+            setLastExtendedObject(lastObject);
+        }
+    };
+
+    // Fonction pour annuler tous les objets étendus
+    const handleCancelAllExtends = () => {
+        extendedObjects.forEach(obj => {
+            onRemoveObject(obj.id);
+        });
+        setExtendedObjects([]);
+        setLastExtendedObject(object);
+    };
+
+    // Réinitialiser le dernier objet étendu lors de la fermeture du panneau
+    const handleClosePanel = () => {
+        setLastExtendedObject(object);
+        setExtendedObjects([]);
+        onClosePanel();
+    };
+
+    // Fonction pour obtenir le nom lisible d'une face
+    const getFaceName = (face: FaceName): string => {
+        const names = {
+            front: 'Face avant',
+            back: 'Face arrière',
+            left: 'Face gauche',
+            right: 'Face droite',
+            top: 'Face supérieure',
+            bottom: 'Face inférieure'
+        };
+        return names[face];
+    };
+
+    // Fonction pour appliquer une texture à une face spécifique
+    const applyTextureToFace = (textureUrl: string) => {
+        console.log("Applying texture to face:", {
+            selectedFace,
+            textureUrl,
+            currentFaces: faces,
+            objectId: object.id,
+            objectType: object.type
+        });
+
+        const newFaces = {
+            ...faces,
+            [selectedFace]: {
+                ...faces[selectedFace],
+                texture: textureUrl,
+                // Ne pas inclure la couleur par défaut
+                color: undefined
+            }
+        };
+        console.log("New faces configuration:", newFaces);
+        
+        setFaces(newFaces);
+        if (onUpdateFaces) {
+            console.log("Calling onUpdateFaces with:", {
+                objectId: object.id,
+                newFaces
+            });
+            onUpdateFaces(object.id, newFaces);
+        } else {
+            console.warn("onUpdateFaces is not defined");
+        }
+    };
+
+    // Fonction pour appliquer une couleur à une face spécifique
+    const applyColorToFace = (colorValue: string) => {
+        const newFaces = {
+            ...faces,
+            [selectedFace]: {
+                ...faces[selectedFace],
+                color: colorValue
+            }
+        };
+        setFaces(newFaces);
+        onUpdateFaces?.(object.id, newFaces);
     };
 
     return (
@@ -279,7 +553,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             <div className='close'>
                 <button className='bouton-close' onClick={() => {
                     onDeselectObject(object.id);
-                    onClosePanel();
+                    handleClosePanel();
                 }}>x</button>
             </div>
             <div className='title_popup'>
@@ -287,7 +561,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             </div>
             <p className='texte'>{object.details}</p>
 
-            {isRoomComponent && onUpdateRoomDimensions && (
+            {isFloor && (
                 <div className="room-dimensions-section">
                     <h4>Dimensions de la pièce</h4>
                     <div className="dimension-control">
@@ -338,45 +612,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 <>
                     <div className="panel-section">
                         <h3 className="section-title">Dimensions</h3>
-                        <div className='container-label'>
-                            <label className='titre-label'>largeur</label>
-                            <input className='selection'
-                                type="number"
-                                step="0.01"
-                                value={width}
-                                onChange={(e) => {
-                                    const newWidth = parseFloat(e.target.value) || 0;
-                                    setWidth(newWidth);
-                                    handleUpdateScale(newWidth, height, depth);
-                                }}
-                            />
-                        </div>
-                        <div className='container-label'>
-                            <label className='titre-label'>hauteur</label>
-                            <input className='selection'
-                                type="number"
-                                step="0.01"
-                                value={height}
-                                onChange={(e) => {
-                                    const newHeight = parseFloat(e.target.value) || 0;
-                                    setHeight(newHeight);
-                                    handleUpdateScale(width, newHeight, depth);
-                                }}
-                            />
-                        </div>
-                        <div className='container-label'>
-                            <label className='titre-label'>profondeur</label>
-                            <input className='selection'
-                                type="number"
-                                step="0.01"
-                                value={depth}
-                                onChange={(e) => {
-                                    const newDepth = parseFloat(e.target.value) || 0;
-                                    setDepth(newDepth);
-                                    handleUpdateScale(width, height, newDepth);
-                                }}
-                            />
-                        </div>
+                        {renderDimensionsInputs()}
                     </div>
                     {/* dans le cas ou c'est un mur  */}
                     {isWall && (
@@ -422,8 +658,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         <div className="deformation-group">
                             <input
                                 type="range"
-                                min="-50"
-                                max="50"
+                                min={selectedAxis === 'y' ? getMinYAxis(object) : "-25"}
+                                max="25"
                                 step="0.01"
                                 value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
                                 onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value))}
@@ -471,7 +707,37 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     </div>
 
                     <div className="panel-section">
-                        <h3 className="section-title">Texture</h3>
+                        <h3 className="section-title">Face sélectionnée</h3>
+                        <div className="face-selector">
+                            {object.type === 'wall' ? (
+                                // Pour les murs, montrer toutes les faces
+                                ['front', 'back', 'left', 'right', 'top', 'bottom'].map((face) => (
+                                    <button
+                                        key={face}
+                                        className={`face-button ${selectedFace === face ? 'selected' : ''}`}
+                                        onClick={() => setSelectedFace(face as FaceName)}
+                                    >
+                                        {getFaceName(face as FaceName)}
+                                    </button>
+                                ))
+                            ) : (
+                                // Pour le sol, montrer uniquement la face supérieure
+                                <button
+                                    className="face-button selected"
+                                    onClick={() => setSelectedFace('top')}
+                                >
+                                    Face supérieure
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="panel-section">
+                        <h3 className="section-title">
+                            {object.type === 'wall' || object.type === 'floor' 
+                                ? `Texture - ${getFaceName(selectedFace)}`
+                                : 'Texture'}
+                        </h3>
                         
                         <div className="texture-selector">
                             {isLoadingTextures ? (
@@ -485,14 +751,21 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                             ) : (
                                 <>
                                     <div className="texture-grid">
-                                       
-                                        
-                                        {/* Textures personnalisées */}
                                         {Object.entries(customTextures).map(([name, url]) => (
                                             <div 
                                                 key={url}
-                                                className={`texture-option ${texture === url ? 'selected' : ''}`}
-                                                onClick={() => applyTexture(url)}
+                                                className={`texture-option ${
+                                                    faces[selectedFace]?.texture === url ? 'selected' : ''
+                                                }`}
+                                                onClick={() => {
+                                                    console.log('Texture clicked:', {
+                                                        name,
+                                                        url,
+                                                        selectedFace,
+                                                        currentFaces: faces
+                                                    });
+                                                    applyTextureToFace(url);
+                                                }}
                                             >
                                                 <img 
                                                     src={url} 
@@ -515,7 +788,19 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                                     <div 
                                                         key={`api-${index}`}
                                                         className={`texture-option ${texture === textureItem.fullUrl ? 'selected' : ''}`}
-                                                        onClick={() => applyTexture(textureItem.fullUrl)}
+                                                        onClick={() => {
+                                                            console.log('API Texture clicked:', {
+                                                                name: textureItem.name,
+                                                                url: textureItem.fullUrl,
+                                                                selectedFace,
+                                                                currentFaces: faces
+                                                            });
+                                                            if (object.type === 'wall' || object.type === 'floor') {
+                                                                applyTextureToFace(textureItem.fullUrl);
+                                                            } else {
+                                                                applyTexture(textureItem.fullUrl);
+                                                            }
+                                                        }}
                                                     >
                                                         <img 
                                                             src={textureItem.fullUrl} 
@@ -539,21 +824,31 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     </div>
 
                     <div className="panel-section">
-                        <h3 className="section-title">Couleur</h3>
+                        <h3 className="section-title">
+                            {object.type === 'wall' || object.type === 'floor' 
+                                ? `Couleur - ${getFaceName(selectedFace)}`
+                                : 'Couleur'}
+                        </h3>
                         <div className="color-selector">
-                            <div className="color-preview" style={{ backgroundColor: color || '#FFFFFF' }}></div>
+                            <div className="color-preview" 
+                                style={{ backgroundColor: faces[selectedFace]?.color || color || '#FFFFFF' }}
+                            ></div>
                             <input
                                 type="color"
-                                value={color || '#FFFFFF'}
-                                onChange={(e) => applyColor(e.target.value)}
+                                value={faces[selectedFace]?.color || color || '#FFFFFF'}
+                                onChange={(e) => applyColorToFace(e.target.value)}
                                 className="color-picker"
                             />
                             <button 
                                 className="no-color-button"
                                 style={noColorButtonStyle}
                                 onClick={() => {
-                                    setColor(undefined);
-                                    onUpdateColor(object.id, '');
+                                    const newFaces = { ...faces };
+                                    if (newFaces[selectedFace]) {
+                                        delete newFaces[selectedFace].color;
+                                    }
+                                    setFaces(newFaces);
+                                    onUpdateFaces?.(object.id, newFaces);
                                 }}
                             >
                                 Aucune couleur
@@ -562,9 +857,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFFFFF', '#000000'].map((presetColor) => (
                                     <div
                                         key={presetColor}
-                                        className={`color-preset ${color === presetColor ? 'selected' : ''}`}
+                                        className={`color-preset ${faces[selectedFace]?.color === presetColor ? 'selected' : ''}`}
                                         style={{ backgroundColor: presetColor }}
-                                        onClick={() => applyColor(presetColor)}
+                                        onClick={() => applyColorToFace(presetColor)}
                                     ></div>
                                 ))}
                             </div>
@@ -572,6 +867,56 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     </div>
                 </>
             )}
+
+            <div className="panel-section">
+                <h3 className="section-title">Étendre l'objet</h3>
+                <div className="extend-controls">
+                    <div className="extend-row">
+                        <button 
+                            className="extend-button"
+                            onClick={() => handleExtendWithTracking('left')}
+                        >
+                            ← Gauche
+                        </button>
+                        <button 
+                            className="extend-button"
+                            onClick={() => handleExtendWithTracking('right')}
+                        >
+                            Droite →
+                        </button>
+                    </div>
+                    <div className="extend-row">
+                        <button 
+                            className="extend-button"
+                            onClick={() => handleExtendWithTracking('front')}
+                        >
+                            ↑ Devant
+                        </button>
+                        <button 
+                            className="extend-button"
+                            onClick={() => handleExtendWithTracking('back')}
+                        >
+                            Derrière ↓
+                        </button>
+                    </div>
+                    <div className="extend-controls-actions">
+                        <button 
+                            className="extend-control-button"
+                            onClick={handleUndoLastExtend}
+                            disabled={extendedObjects.length === 0}
+                        >
+                            Annuler dernier
+                        </button>
+                        <button 
+                            className="extend-control-button"
+                            onClick={handleCancelAllExtends}
+                            disabled={extendedObjects.length === 0}
+                        >
+                            Annuler tout
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <p><strong>Prix:</strong> {object.price} €</p>
 
@@ -610,5 +955,13 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         </div>
     );
 };
+
+
+// Ajouter les styles au document
+if (!document.getElementById('extend-controls-styles')) {
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'extend-controls-styles';
+    document.head.appendChild(styleSheet);
+}
 
 export default ObjectPanel;

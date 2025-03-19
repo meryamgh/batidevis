@@ -3,7 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import GLTFObject from './GLTFObject';
 import Character from './Character';
-import { ObjectData } from '../types/ObjectData';
+import { ObjectData, FacesData } from '../types/ObjectData';
 import * as THREE from 'three';
 import CameraProvider from './canvaScene/CameraProvider';
 import RaycasterHandler from './canvaScene/RaycasterHandler';
@@ -15,7 +15,7 @@ import BlueprintClickHandler from './canvaScene/BlueprintClickHandler';
 
 type CanvasSceneProps = {
     objects: ObjectData[];
-    onClick: (id: string) => void;
+    onClick: (id: string, point?: THREE.Vector3) => void;
     onUpdatePosition: (id: string, position: [number, number, number]) => void;
     isMoving: string | null;
     setIsMoving: (id: string | null) => void;
@@ -32,6 +32,12 @@ type CanvasSceneProps = {
     groundPlane: THREE.Mesh | null;
     handleAddWall2D: (start: THREE.Vector3, end: THREE.Vector3) => void;
     creatingWallMode: boolean;
+    isCreatingSurface: boolean;
+    surfaceStartPoint: THREE.Vector3 | null;
+    surfaceEndPoint: THREE.Vector3 | null;
+    surfacePreview: THREE.Mesh | null;
+    onSurfacePointSelected: (point: THREE.Vector3) => void;
+    onSurfacePreviewUpdate: (start: THREE.Vector3, end: THREE.Vector3) => void;
     blueprintPoints?: THREE.Vector3[];
     blueprintLines?: {start: THREE.Vector3, end: THREE.Vector3, id: string, length: number}[];
     tempPoint?: THREE.Vector3 | null;
@@ -39,8 +45,79 @@ type CanvasSceneProps = {
     updateRectanglePreview?: (start: THREE.Vector3, end: THREE.Vector3) => void;
     rectangleStartPoint?: THREE.Vector3 | null;
     handleAddObject: (url: string, event: React.DragEvent<HTMLDivElement>, camera: THREE.Camera) => Promise<void>;
+    onUpdateFaces: (id: string, faces: FacesData) => void;
 };
 
+const SurfaceHandler: React.FC<{
+    isCreatingSurface: boolean;
+    groundPlane: THREE.Mesh | null;
+    surfaceStartPoint: THREE.Vector3 | null;
+    onSurfacePointSelected: (point: THREE.Vector3) => void;
+    onSurfacePreviewUpdate: (start: THREE.Vector3, end: THREE.Vector3) => void;
+}> = ({
+    isCreatingSurface,
+    groundPlane,
+    surfaceStartPoint,
+    onSurfacePointSelected,
+    onSurfacePreviewUpdate
+}) => {
+    const { camera } = useThree();
+
+    useEffect(() => {
+        if (!isCreatingSurface || !groundPlane || !camera) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const canvas = e.target as HTMLElement;
+            const canvasBounds = canvas.getBoundingClientRect();
+            const x = ((e.clientX - canvasBounds.left) / canvasBounds.width) * 2 - 1;
+            const y = -((e.clientY - canvasBounds.top) / canvasBounds.height) * 2 + 1;
+
+            const mouse = new THREE.Vector2(x, y);
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObject(groundPlane);
+
+            if (intersects.length > 0 && surfaceStartPoint) {
+                const point = intersects[0].point.clone();
+                point.y = 0.05; // Légèrement au-dessus du sol
+                onSurfacePreviewUpdate(surfaceStartPoint, point);
+            }
+        };
+
+        const handleClick = (e: MouseEvent) => {
+            const canvas = e.target as HTMLElement;
+            const canvasBounds = canvas.getBoundingClientRect();
+            const x = ((e.clientX - canvasBounds.left) / canvasBounds.width) * 2 - 1;
+            const y = -((e.clientY - canvasBounds.top) / canvasBounds.height) * 2 + 1;
+
+            const mouse = new THREE.Vector2(x, y);
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObject(groundPlane);
+
+            if (intersects.length > 0) {
+                const point = intersects[0].point.clone();
+                point.y = 0.05; // Légèrement au-dessus du sol
+                onSurfacePointSelected(point);
+            }
+        };
+
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('click', handleClick);
+
+            return () => {
+                canvas.removeEventListener('mousemove', handleMouseMove);
+                canvas.removeEventListener('click', handleClick);
+            };
+        }
+    }, [isCreatingSurface, groundPlane, surfaceStartPoint, camera, onSurfacePreviewUpdate, onSurfacePointSelected]);
+
+    return null;
+};
 
 const CanvasScene: React.FC<CanvasSceneProps> = ({
     objects,
@@ -61,6 +138,12 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     groundPlane,
     handleAddWall2D,
     creatingWallMode,
+    isCreatingSurface,
+    surfaceStartPoint,
+    surfaceEndPoint,
+    surfacePreview,
+    onSurfacePointSelected,
+    onSurfacePreviewUpdate,
     blueprintPoints,
     blueprintLines,
     tempPoint,
@@ -68,6 +151,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     updateRectanglePreview,
     rectangleStartPoint,
     handleAddObject,
+    onUpdateFaces,
 }) => {
     const [firstPersonView, setFirstPersonView] = useState(false);
     const [characterPosition, setCharacterPosition] = useState<THREE.Vector3 | undefined>();
@@ -538,6 +622,9 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                             showDimensions={!!showDimensions[obj.id]}
                             color={obj.color}
                             isSelected={selectedObjectId === obj.id}
+                            type={obj.type}
+                            faces={obj.faces}
+                            onUpdateFaces={onUpdateFaces}
                         />
                     ))}
 
@@ -608,6 +695,19 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                             blueprintLines={blueprintLines}
                         />
                     )}
+
+                    {/* Afficher l'aperçu de la surface */}
+                    {surfacePreview && (
+                        <primitive object={surfacePreview} />
+                    )}
+
+                    <SurfaceHandler
+                        isCreatingSurface={isCreatingSurface}
+                        groundPlane={groundPlane}
+                        surfaceStartPoint={surfaceStartPoint}
+                        onSurfacePointSelected={onSurfacePointSelected}
+                        onSurfacePreviewUpdate={onSurfacePreviewUpdate}
+                    />
                 </Canvas>
             </div>
         </>

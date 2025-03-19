@@ -38,25 +38,25 @@ export function useHistory<T>(initialPresent: T) {
 
   // Sauvegarder un nouvel état
   const saveState = useCallback((newPresent: T) => {
-    setState(currentState => {
-      // Si le nouvel état correspond au prochain état dans future,
-      // c'est probablement une action redo manuelle, donc on ne vide pas future
-      if (currentState.future.length > 0 && 
-          areObjectsEqual(currentState.future[0], newPresent)) {
-        return {
-          past: [...currentState.past, currentState.present],
-          present: newPresent,
-          future: currentState.future.slice(1)
-        };
-      }
+    // setState(currentState => {
+    //   // Si le nouvel état correspond au prochain état dans future,
+    //   // c'est probablement une action redo manuelle, donc on ne vide pas future
+    //   if (currentState.future.length > 0 && 
+    //       areObjectsEqual(currentState.future[0], newPresent)) {
+    //     return {
+    //       past: [...currentState.past, currentState.present],
+    //       present: newPresent,
+    //       future: currentState.future.slice(1)
+    //     };
+    //   }
       
-      // Sinon, c'est une nouvelle action, donc on vide future
-      return {
-        past: [...currentState.past, currentState.present],
-        present: newPresent,
-        future: []
-      };
-    });
+    //   // Sinon, c'est une nouvelle action, donc on vide future
+    //   return {
+    //     past: [...currentState.past, currentState.present],
+    //     present: newPresent,
+    //     future: []
+    //   };
+    // });
   }, []);
 
   // Annuler la dernière action

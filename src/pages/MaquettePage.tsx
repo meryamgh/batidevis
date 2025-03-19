@@ -17,6 +17,7 @@ import RoomConfigPanel from '../components/panels/RoomConfigPanel';
 import FloorSelector from '../components/panels/FloorSelectorPanel';
 import { useBlueprint } from '../hooks/useBlueprint';
 import { useHistory } from '../hooks/useHistory';
+import { v4 as uuidv4 } from 'uuid';
 
 const MaquettePage: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
@@ -39,10 +40,12 @@ const MaquettePage: React.FC = () => {
     const isBlueprintView = viewMode === 'Blueprint';
     const isObjectOnlyView = viewMode === 'ObjectOnly';
     const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
-    // Nouvel état pour contrôler la visibilité du panneau de devis
     const [showQuotePanel, setShowQuotePanel] = useState(true);
-    // État pour stocker la largeur du panneau de devis
     const [quotePanelWidth, setQuotePanelWidth] = useState(300);
+    const [isCreatingSurface, setIsCreatingSurface] = useState(false);
+    const [surfaceStartPoint, setSurfaceStartPoint] = useState<THREE.Vector3 | null>(null);
+    const [surfaceEndPoint, setSurfaceEndPoint] = useState<THREE.Vector3 | null>(null);
+    const [surfacePreview, setSurfacePreview] = useState<THREE.Mesh | null>(null);
 
     // États pour le mode Blueprint
     const [blueprintPoints, setBlueprintPoints] = useState<THREE.Vector3[]>([]);
@@ -124,6 +127,66 @@ const MaquettePage: React.FC = () => {
         setQuote(currentQuote);
     }, [quoteHistory, quote]);
 
+    // Initialiser le hook useObjects avec les états mis à jour
+    const objectsUtils = useObjects({
+        objects,
+        setObjects: setObjectsWithHistory,
+        quote,
+        setQuote: setQuoteWithHistory,
+        setIsMoving,
+        setShowDimensions,
+        setFocusedObjectId,
+        quoteHistory,
+        objectsHistory,
+    });
+
+    // Fonction pour étendre un objet
+    const handleExtendObject = useCallback((sourceObject: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => {
+        console.log('handleExtendObject appelé avec:', {
+            sourceId: sourceObject.id,
+            sourcePosition: sourceObject.position,
+            direction
+        });
+
+        // Calculer la nouvelle position en fonction de la direction
+        const getNewPosition = () => {
+            const [x, y, z] = sourceObject.position;
+            const [width, height, depth] = sourceObject.scale;
+            
+            switch (direction) {
+                case 'left':
+                    return [x - width, y, z] as [number, number, number];
+                case 'right':
+                    return [x + width, y, z] as [number, number, number];
+                case 'front':
+                    return [x, y, z - depth] as [number, number, number];
+                case 'back':
+                    return [x, y, z + depth] as [number, number, number];
+                case 'up':
+                    return [x, y + height, z] as [number, number, number];
+                case 'down':
+                    return [x, y - height, z] as [number, number, number];
+                default:
+                    return [x, y, z] as [number, number, number];
+            }
+        };
+
+        const newPosition = getNewPosition();
+        console.log('Nouvelle position calculée:', newPosition);
+
+        // Créer une copie exacte de l'objet source avec la nouvelle position
+        const newObject: ObjectData = {
+            ...sourceObject,
+            id: uuidv4(),
+            position: newPosition
+        };
+
+        // Utiliser handleAddObject du hook useObjects pour ajouter l'objet
+        objectsUtils.handleAddObjectFromData(newObject);
+
+        return newObject;
+    }, [objectsUtils]);
+
     // Fonction pour supprimer un objet
     const handleRemoveObject = useCallback((id: string) => {
         // Supprimer l'objet de la liste des objets
@@ -179,20 +242,6 @@ const MaquettePage: React.FC = () => {
             setQuote(nextQuote);
         }
     }, [objectsHistory, quoteHistory]);
-
-    // Initialiser le hook useObjects avec les états mis à jour
-    const objectsUtils = useObjects({
-        objects,
-        setObjects: setObjectsWithHistory,
-        quote,
-        setQuote: setQuoteWithHistory,
-       
-        setIsMoving,
-       
-        setShowDimensions,
-      
-        setFocusedObjectId, 
-    });
 
     // Gestionnaire pour les raccourcis clavier
     useEffect(() => {
@@ -480,20 +529,176 @@ const MaquettePage: React.FC = () => {
                     onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
                     onDeselectObject={(id) => setSelectedObjectId(null)}
                     onAddObject={objectsUtils.handleAddObjectFromData}
+                    onExtendObject={handleExtendObject}
+                    onUpdateFaces={objectsUtils.handleUpdateFaces}
                 />
             );
         }
-    }, [objectsUtils, customTextures, setCreatingWallMode, floorsUtils]);
+    }, [objectsUtils, customTextures, setCreatingWallMode, floorsUtils, handleExtendObject]);
 
     // Wrapper pour handleObjectClick qui utilise la fonction du hook
-    const onObjectClick = useCallback((id: string) => {
-        objectsUtils.handleObjectClick(id, viewMode, is2DView, renderObjectPanel);
-    }, [objectsUtils, viewMode, is2DView, renderObjectPanel]);
+    const onObjectClick = useCallback((id: string, point?: THREE.Vector3) => {
+        if (isCreatingSurface && point) {
+            if (!surfaceStartPoint) {
+                // Premier clic : définir le point de départ
+                setSurfaceStartPoint(point);
+                
+                // Créer un aperçu de la surface
+                const previewGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                const previewMaterial = new THREE.MeshStandardMaterial({ 
+                    color: '#808080',
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const preview = new THREE.Mesh(previewGeometry, previewMaterial);
+                preview.position.copy(point);
+                setSurfacePreview(preview);
+            } else {
+                // Deuxième clic : créer la surface
+                createSurface(surfaceStartPoint, point);
+            }
+        } else {
+            objectsUtils.handleObjectClick(id, viewMode, is2DView, renderObjectPanel);
+        }
+    }, [objectsUtils, viewMode, is2DView, renderObjectPanel, isCreatingSurface, surfaceStartPoint]);
 
     // Fonction pour basculer l'affichage du panneau de devis
     const toggleQuotePanel = useCallback(() => {
         setShowQuotePanel(prev => !prev);
     }, []);
+
+    // Ajouter la fonction pour créer la surface
+    const createSurface = (start: THREE.Vector3, end: THREE.Vector3) => {
+        const width = Math.abs(end.x - start.x);
+        const depth = Math.abs(end.z - start.z);
+        
+        const geometry = new THREE.BoxGeometry(width, 0.1, depth);
+        const material = new THREE.MeshStandardMaterial({ 
+            color: '#808080',
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        const centerX = (start.x + end.x) / 2;
+        const centerZ = (start.z + end.z) / 2;
+        
+        const newSurface: ObjectData = {
+            id: uuidv4(),
+            url: '',
+            price: 100,
+            details: 'Surface',
+            position: [centerX, 0.05, centerZ],
+            gltf: mesh,
+            rotation: [0, 0, 0],
+            scale: [width, 0.1, depth],
+            color: '#808080',
+            texture: ''
+        };
+
+        setObjectsWithHistory(prev => [...prev, newSurface]);
+        setQuoteWithHistory(prev => [...prev, newSurface]);
+        
+        // Réinitialiser les états
+        setSurfaceStartPoint(null);
+        setSurfaceEndPoint(null);
+        setSurfacePreview(null);
+        setIsCreatingSurface(false);
+    };
+
+    // Ajouter la fonction pour mettre à jour l'aperçu de la surface
+    const updateSurfacePreview = (start: THREE.Vector3, end: THREE.Vector3) => {
+        if (surfacePreview) {
+            const width = Math.abs(end.x - start.x);
+            const depth = Math.abs(end.z - start.z);
+            
+            surfacePreview.scale.set(width, 0.1, depth);
+            
+            const centerX = (start.x + end.x) / 2;
+            const centerZ = (start.z + end.z) / 2;
+            surfacePreview.position.set(centerX, 0.05, centerZ);
+        }
+    };
+
+    // Fonction pour gérer la sélection d'un point pour la surface
+    const handleSurfacePointSelected = useCallback((point: THREE.Vector3) => {
+        if (!surfaceStartPoint) {
+            setSurfaceStartPoint(point);
+        } else {
+            // Créer la surface finale
+            const width = Math.abs(point.x - surfaceStartPoint.x);
+            const depth = Math.abs(point.z - surfaceStartPoint.z);
+            
+            const geometry = new THREE.BoxGeometry(width, 0.1, depth);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: '#808080',
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            const centerX = (surfaceStartPoint.x + point.x) / 2;
+            const centerZ = (surfaceStartPoint.z + point.z) / 2;
+            const boundingBox = new THREE.Box3();
+            boundingBox.min.set(-width/2, -0.05, -depth/2);
+            boundingBox.max.set(width/2, 0.05, depth/2);
+            const newSurface: ObjectData = {
+                id: uuidv4(),
+                url: '',
+                price: 100,
+                details: 'Surface',
+                position: [centerX, 0.05, centerZ],
+                gltf: mesh,
+                rotation: [0, 0, 0],
+                scale: [width, 0.1, depth],
+                color: '#808080',
+                texture: ''
+            };
+
+            setObjectsWithHistory(prev => [...prev, newSurface]);
+            setQuoteWithHistory(prev => [...prev, newSurface]);
+            
+            // Réinitialiser les états
+            setSurfaceStartPoint(null);
+            setSurfaceEndPoint(null);
+            setSurfacePreview(null);
+            setIsCreatingSurface(false);
+        }
+    }, [surfaceStartPoint, setObjectsWithHistory, setQuoteWithHistory]);
+
+    // Fonction pour mettre à jour l'aperçu de la surface
+    const handleSurfacePreviewUpdate = useCallback((start: THREE.Vector3, end: THREE.Vector3) => {
+        const width = Math.abs(end.x - start.x);
+        const depth = Math.abs(end.z - start.z);
+        
+        if (!surfacePreview) {
+            // Créer un nouvel aperçu
+            const geometry = new THREE.BoxGeometry(width, 0.1, depth);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: '#808080',
+                transparent: true,
+                opacity: 0.5,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            const centerX = (start.x + end.x) / 2;
+            const centerZ = (start.z + end.z) / 2;
+            mesh.position.set(centerX, 0.05, centerZ);
+            
+            setSurfacePreview(mesh);
+        } else {
+            // Mettre à jour l'aperçu existant
+            surfacePreview.scale.set(width, 0.1, depth);
+            
+            const centerX = (start.x + end.x) / 2;
+            const centerZ = (start.z + end.z) / 2;
+            surfacePreview.position.set(centerX, 0.05, centerZ);
+        }
+        
+        setSurfaceEndPoint(end);
+    }, [surfacePreview]);
 
     return (
         <div id="page">
@@ -519,6 +724,8 @@ const MaquettePage: React.FC = () => {
                 handleAddObject={objectsUtils.handleAddObject}
                 showQuotePanel={showQuotePanel}
                 toggleQuotePanel={toggleQuotePanel}
+                isCreatingSurface={isCreatingSurface}
+                setIsCreatingSurface={setIsCreatingSurface}
             />
 
             <div className="history-controls">
@@ -597,6 +804,12 @@ const MaquettePage: React.FC = () => {
                         groundPlane={groundPlaneRef.current}
                         handleAddWall2D={blueprintUtils.handleAddWall2D}
                         creatingWallMode={creatingWallMode}
+                        isCreatingSurface={isCreatingSurface}
+                        surfaceStartPoint={surfaceStartPoint}
+                        surfaceEndPoint={surfaceEndPoint}
+                        surfacePreview={surfacePreview}
+                        onSurfacePointSelected={handleSurfacePointSelected}
+                        onSurfacePreviewUpdate={handleSurfacePreviewUpdate}
                         blueprintPoints={blueprintPoints}
                         blueprintLines={blueprintLines}
                         tempPoint={tempPoint}
@@ -604,6 +817,7 @@ const MaquettePage: React.FC = () => {
                         updateRectanglePreview={blueprintUtils.updateRectanglePreview}
                         rectangleStartPoint={rectangleStartPoint}
                         handleAddObject={objectsUtils.handleAddObject}
+                        onUpdateFaces={objectsUtils.handleUpdateFaces}
                     />
                 </div>
                             

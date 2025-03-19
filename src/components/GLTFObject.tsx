@@ -3,6 +3,17 @@ import { TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Mesh } from "three";
+import { FacesData } from '../types/ObjectData';
+
+// Mapping des faces pour les murs
+const faceIndexMapping = {
+    right: 0,  // +X
+    left: 1,   // -X
+    top: 2,    // +Y
+    bottom: 3, // -Y
+    front: 4,  // +Z
+    back: 5    // -Z
+} as const;
 
 type GLTFObjectProps = {
     id: string;
@@ -20,6 +31,9 @@ type GLTFObjectProps = {
     showDimensions: boolean; 
     color?: string;
     isSelected?: boolean;
+    faces?: FacesData;
+    type?: 'wall' | 'floor' | 'object';
+    onUpdateFaces: (id: string, faces: FacesData) => void;
 };
 
 const GLTFObject: React.FC<GLTFObjectProps> = ({
@@ -37,33 +51,19 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     showDimensions,
     color,
     isSelected = false,
+    faces,
+    type,
+    onUpdateFaces,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
     const [scene, setScene] = useState<THREE.Group | THREE.Mesh | null>(null);
-    const arrowWidthRef = useRef<THREE.Group | null>(null);
-    const arrowHeightRef = useRef<THREE.Group | null>(null);
-    const arrowDepthRef = useRef<THREE.Group | null>(null);
+    const [selectedFaceIndex, setSelectedFaceIndex] = useState<number | null>(null);
+    const materialsRef = useRef<THREE.Material[]>([]);
+     
     const defaultScaleRef = useRef([1, 1, 1]);
     const selectedMeshRef = useRef<THREE.Mesh | null>(null);
+    const prevScaleRef = useRef<[number, number, number]>([1, 1, 1]);
 
-    const createTextSprite = (text: string) => {
-        console.log("createTextSprite")
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-
-        if (context) {
-            context.font = 'Bold 30px Arial';
-            context.fillStyle = 'rgba(255, 255, 255, 1.0)';
-            context.fillText(text, 0, 50);
-        }
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-        const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(2, 1, 1);  
-        return sprite;
-    };
-    
     useEffect(() => {
         if (url !== '') {
             const loader = new GLTFLoader();
@@ -96,15 +96,6 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                     if (child.isMesh && !selectedMeshRef.current) {
                         selectedMeshRef.current = child;
                     }
-                    
-                    // Appliquer la couleur uniquement si une nouvelle couleur est spécifiée
-                    if (child.isMesh && color) {
-                        if (!child.material) {
-                            child.material = new THREE.MeshStandardMaterial();
-                        }
-                        child.material.color = new THREE.Color(color);
-                        child.material.needsUpdate = true;
-                    }
                 });
                 
                 setScene(clonedScene);
@@ -122,28 +113,24 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 geometry = new THREE.BoxGeometry(1, 1, 1);
             }
 
-            const wallColor = color ? new THREE.Color(color) : new THREE.Color(0x808080);
-            const wallMaterial = new THREE.MeshStandardMaterial({ 
-                color: wallColor,
+            const initialMaterial = new THREE.MeshStandardMaterial({ 
                 transparent: true,
                 opacity: 0.8,
-                side: THREE.DoubleSide,
-                dithering: true,
-                toneMapped: true
+                side: THREE.DoubleSide
             });
             
-            const wallMesh = new THREE.Mesh(geometry, wallMaterial);
+            const mesh = new THREE.Mesh(geometry, initialMaterial);
             if (!isFloor) {
-                wallMesh.scale.set(scale[0], scale[1], scale[2]);
+                mesh.scale.set(scale[0], scale[1], scale[2]);
             }
-            wallMesh.position.set(...position);
+            mesh.position.set(...position);
             if(rotation){
-                wallMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+                mesh.rotation.set(rotation[0], rotation[1], rotation[2]);
             }
-            selectedMeshRef.current = wallMesh;
-            setScene(wallMesh);
+            selectedMeshRef.current = mesh;
+            setScene(mesh);
         }
-    }, [url, color, position, rotation]);
+    }, [url, position, rotation, scale]);
 
     const calculatePrice = (scale: [number, number, number]) => {
         // Exemple : Calcul du prix en fonction du volume
@@ -151,8 +138,9 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         const basePricePerUnit = price; // Exemple de base
         return volume * basePricePerUnit;
     };
+
     useEffect(() => {
-        if (meshRef.current && scale && defaultScaleRef.current) {
+        if (meshRef.current && scale) {
             if (url !== '') {
                 // Pour les modèles GLTF, calculer l'échelle relative
                 const scaleX = scale[0] / defaultScaleRef.current[0];
@@ -163,160 +151,150 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 // Pour les murs et autres objets simples, appliquer l'échelle directement
                 meshRef.current.scale.set(scale[0], scale[1], scale[2]);
             }
-            
             meshRef.current.updateMatrixWorld(true);
-            
-            // Mettre à jour les dimensions et le prix
-            updateDimensionHelpers();
+
+            // Mettre à jour le prix si nécessaire
             const newPrice = calculatePrice(scale);
             updateQuotePrice(id, newPrice, scale);
         }
     }, [scale, id, updateQuotePrice, url]);
-    
-    
-    
-    
- 
-    const updateDimensionHelpers = () => {
-        if (scene && meshRef.current) { 
-            if (arrowWidthRef.current) {
-                scene.remove(arrowWidthRef.current);
-                arrowWidthRef.current = null;
-            }
-            if (arrowHeightRef.current) {
-                scene.remove(arrowHeightRef.current);
-                arrowHeightRef.current = null;
-            }
-            if (arrowDepthRef.current) {
-                scene.remove(arrowDepthRef.current);
-                arrowDepthRef.current = null;
-            }
-
-            if (showDimensions) {
-                const box = new THREE.Box3().setFromObject(meshRef.current);
-                const size = new THREE.Vector3();
-                box.getSize(size);
-                console.log(size);
-                const arrowWidthGroup = new THREE.Group();
-                const arrowHelperWidth = new THREE.ArrowHelper(
-                    new THREE.Vector3(1, 0, 0), 
-                    new THREE.Vector3(box.min.x, box.min.y, box.min.z),
-                    size.x,
-                    0xff0000
-                );
-                arrowWidthGroup.add(arrowHelperWidth);
-
-                const widthLabel = createTextSprite(`${size.x.toFixed(2)} m`);
-                widthLabel.position.set(
-                    box.min.x + size.x / 2,
-                    box.min.y,
-                    box.min.z
-                );
-                arrowWidthGroup.add(widthLabel);
-
-                scene.add(arrowWidthGroup);
-                arrowWidthRef.current = arrowWidthGroup;
-
-                // Flèche pour la hauteur (Y)
-                const arrowHeightGroup = new THREE.Group();
-                const arrowHelperHeight = new THREE.ArrowHelper(
-                    new THREE.Vector3(0, 1, 0), 
-                    new THREE.Vector3(box.min.x, box.min.y, box.min.z), 
-                    size.y,
-                    0x00ff00
-                );
-                arrowHeightGroup.add(arrowHelperHeight);
-
-                const heightLabel = createTextSprite(`${size.y.toFixed(2)} m`);
-                heightLabel.position.set(
-                    box.min.x,
-                    box.min.y + size.y / 2,
-                    box.min.z
-                );
-                arrowHeightGroup.add(heightLabel);
-
-                scene.add(arrowHeightGroup);
-                arrowHeightRef.current = arrowHeightGroup;
- 
-                const arrowDepthGroup = new THREE.Group();
-                const arrowHelperDepth = new THREE.ArrowHelper(
-                    new THREE.Vector3(0, 0, 1),  
-                    new THREE.Vector3(box.min.x, box.min.y, box.min.z),  
-                    size.z,
-                    0x0000ff 
-                );
-                arrowDepthGroup.add(arrowHelperDepth);
-
-                const depthLabel = createTextSprite(`${size.z.toFixed(2)} m`);
-                depthLabel.position.set(
-                    box.min.x,
-                    box.min.y,
-                    box.min.z + size.z / 2
-                );
-                arrowDepthGroup.add(depthLabel);
-
-                scene.add(arrowDepthGroup);
-                arrowDepthRef.current = arrowDepthGroup;
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (scene && meshRef.current) {
-            updateDimensionHelpers();
-        }
-    }, [showDimensions]);
 
     useEffect(() => {
         if (meshRef.current && rotation) {
-            // Appliquer la rotation directement à l'objet
             meshRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
-            
-            // Mettre à jour la matrice mondiale pour s'assurer que la rotation est appliquée
             meshRef.current.updateMatrixWorld(true);
-            
-            // Mettre à jour les helpers de dimension si nécessaire
-            if (showDimensions) {
-                updateDimensionHelpers();
-            }
         }
-    }, [rotation, showDimensions]);
+    }, [rotation]);
 
     useEffect(() => {
-        if (scene && texture) {
-            const loadedTexture = new THREE.TextureLoader().load(texture);
-            loadedTexture.anisotropy = 16;
-            loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
+        console.log('=== Début de l\'effet texture/faces ===');
+        console.log('Props reçues:', {
+            type,
+            texture,
+            faces,
+            color,
+            scale,
+            id
+        });
+
+        if (scene && (texture || faces)) {
+            console.log('Scene et texture/faces présentes, début du traitement');
             
-            // Détecter si c'est un sol en vérifiant si c'est un PlaneGeometry
-            let isFloor = false;
-            scene.traverse((child: any) => {
-                if (child.isMesh && child.geometry instanceof THREE.PlaneGeometry) {
-                    isFloor = true;
-                }
-            });
-            
-            if (isFloor) {
-                // Pour le sol, utiliser une répétition fixe
-                loadedTexture.repeat.set(1, 1);
-                loadedTexture.offset.set(0, 0);
-                loadedTexture.rotation = 0;
-                loadedTexture.flipY = true;
-            } else {
-                // Pour les autres objets, utiliser l'échelle
+            const loadTexture = async (textureUrl: string) => {
+                console.log('Chargement de la texture:', textureUrl);
+                return new Promise<THREE.Texture>((resolve, reject) => {
+                    new THREE.TextureLoader().load(
+                        textureUrl,
+                        (loadedTexture) => {
+                            console.log('Texture chargée avec succès:', textureUrl);
+                            loadedTexture.anisotropy = 16;
+                            loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
+
+                            if (type === 'floor' || !type) { // !type pour les surfaces
+                                // Pour les sols et surfaces, utiliser les dimensions x et z
+                                loadedTexture.repeat.set(scale[0], scale[2]);
+                            } else  {
+                                // Pour les murs, utiliser les dimensions x et y
                 loadedTexture.repeat.set(scale[0] / 2, scale[1] / 2);
-            }
+                            }
             
             loadedTexture.colorSpace = 'srgb';
             loadedTexture.minFilter = THREE.LinearFilter;
             loadedTexture.magFilter = THREE.LinearFilter;
             loadedTexture.generateMipmaps = true;
+                            resolve(loadedTexture);
+                        },
+                        undefined,
+                        (error) => {
+                            console.error('Erreur lors du chargement de la texture:', error);
+                            reject(error);
+                        }
+                    );
+                });
+            };
             
-            scene.traverse((child: any) => {
+            scene.traverse(async (child: any) => {
                 if (child.isMesh && child.material) {
-                    // Créer un nouveau matériau pour la texture
-                    const newMaterial = new THREE.MeshStandardMaterial({
-                        map: loadedTexture,
+                    console.log('Traitement du mesh:', {
+                        geometry: child.geometry.type,
+                        type: type,
+                        materialType: Array.isArray(child.material) ? 'Array' : 'Single'
+                    });
+
+                    if (child.geometry instanceof THREE.BoxGeometry && type === 'wall') {
+                        console.log('Configuration des matériaux du mur avec faces:', faces);
+                        const materials = Array(6).fill(null).map((_, index) => 
+                            new THREE.MeshStandardMaterial({
+                                side: THREE.DoubleSide,
+                                roughness: 0.8,
+                                metalness: 0.2,
+                                emissive: new THREE.Color(index === selectedFaceIndex ? 0x666666 : 0x000000),
+                                emissiveIntensity: index === selectedFaceIndex ? 0.5 : 0
+                            })
+                        );
+
+                        if (faces) {
+                            for (const [faceName, faceData] of Object.entries(faces)) {
+                                const faceIndex = faceIndexMapping[faceName as keyof typeof faceIndexMapping];
+                                console.log('Application de la face:', {
+                                    faceName,
+                                    faceIndex,
+                                    faceData
+                                });
+                                
+                                if (faceData && faceIndex !== undefined) {
+                                    if (faceData.texture) {
+                                        try {
+                                            const faceTexture = await loadTexture(faceData.texture);
+                                            materials[faceIndex].map = faceTexture;
+                                            materials[faceIndex].needsUpdate = true;
+                                            console.log(`Texture appliquée à la face ${faceName}`);
+                                        } catch (error) {
+                                            console.error(`Erreur lors de l'application de la texture à la face ${faceName}:`, error);
+                                        }
+                                    }
+                                    if (faceData.color) {
+                                        materials[faceIndex].color = new THREE.Color(faceData.color);
+                                        materials[faceIndex].needsUpdate = true;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        child.material = materials;
+                        child.material.needsUpdate = true;
+                    } else if (child.geometry instanceof THREE.PlaneGeometry && type === 'floor') {
+                        console.log('Traitement d\'un sol');
+                        if (faces?.top) {
+                            console.log('Configuration de la face supérieure du sol:', faces.top);
+                            const material = new THREE.MeshStandardMaterial({
+                                color: faces.top.color ? new THREE.Color(faces.top.color) : (color ? new THREE.Color(color) : 0x808080),
+                                transparent: true,
+                                opacity: 0.8,
+                                side: THREE.DoubleSide,
+                                dithering: true,
+                                toneMapped: true
+                            });
+
+                            if (faces.top.texture) {
+                                console.log('Application de la texture au sol:', faces.top.texture);
+                                try {
+                                    const floorTexture = await loadTexture(faces.top.texture);
+                                    material.map = floorTexture;
+                                    console.log('Texture du sol appliquée avec succès');
+                                } catch (error) {
+                                    console.error('Erreur lors du chargement de la texture du sol:', error);
+                                }
+                            }
+
+                            child.material = material;
+                        }
+                    } else if (texture) {
+                        console.log('Application de la texture globale:', texture);
+                        try {
+                            const globalTexture = await loadTexture(texture);
+                            child.material = new THREE.MeshStandardMaterial({
+                                map: globalTexture,
                         side: THREE.DoubleSide,
                         transparent: true,
                         metalness: 0,
@@ -324,16 +302,24 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         dithering: true,
                         toneMapped: true
                     });
+                            console.log('Texture globale appliquée avec succès');
+                        } catch (error) {
+                            console.error('Erreur lors du chargement de la texture globale:', error);
+                        }
+                    }
                     
-                    child.material = newMaterial;
                     child.material.needsUpdate = true;
+                    console.log('Matériau mis à jour');
                 }
             });
+        } else {
+            console.log('Pas de scene ou pas de texture/faces à appliquer');
         } 
-    }, [scene, texture, scale, color]);
+        console.log('=== Fin de l\'effet texture/faces ===');
+    }, [scene, texture, scale, color, faces, type, id, selectedFaceIndex]);
 
     useEffect(() => {
-        if (scene && color && !texture) {  // Ajouter la condition !texture
+        if (scene && color && !texture && type !== 'wall') {
             scene.traverse((child: any) => {
                 if (child.isMesh && child.material) {
                     if (color !== '') {
@@ -343,119 +329,293 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 }
             });
         }
-    }, [scene, color, texture]);  // Ajouter texture comme dépendance
+    }, [scene, color, texture, type]);
 
-    useEffect(() => {
-        if (scene) {
-            const meshes: THREE.Mesh[] = [];
-            scene.traverse((child: any) => {
-                if (child.isMesh) {
-                    meshes.push(child);
+    const meshesWithOutlines: { mesh: THREE.Mesh; helper: THREE.Group }[] = [];
+
+    // useEffect(() => {
+    //     if (scene) {
+    //         scene.traverse((child: any) => {
+    //             if (child.isMesh) {
+    //                 // Supprimer les effets visuels de sélection s'ils existent
+    //                 if (child.userData.outlineMesh) {
+    //                     if (child.userData.outlineMesh.parent) {
+    //                         child.userData.outlineMesh.parent.remove(child.userData.outlineMesh);
+    //                     }
+    //                     child.userData.outlineMesh = null;
+    //                 }
+
+    //                 // Ajouter l'effet de contour si l'objet est sélectionné
+    //                 if (isSelected) {
+    //                     let clonedMesh;
+                        
+    //                     // Vérifier si c'est un mur ou un sol
+    //                     const isWallOrFloor = !url || child.geometry instanceof THREE.PlaneGeometry || child.geometry instanceof THREE.BoxGeometry;
+                        
+    //                     if (isWallOrFloor) {
+    //                         // Pour les murs et le sol, créer une nouvelle géométrie simple
+    //                         const isFloor = rotation && rotation[0] === -Math.PI / 2;
+                            
+    //                         if (isFloor) {
+    //                             // Pour le sol, utiliser PlaneGeometry
+    //                             const geometry = new THREE.PlaneGeometry(1, 1);
+    //                             const material = new THREE.MeshBasicMaterial({ visible: false });
+    //                             clonedMesh = new THREE.Mesh(geometry, material);
+    //                             clonedMesh.scale.set(scale[0], scale[2], 1);
+    //                         } else {
+    //                             // Pour les murs, utiliser BoxGeometry
+    //                             const geometry = new THREE.BoxGeometry(1, 1, 1);
+    //                             const material = new THREE.MeshBasicMaterial({ visible: false });
+    //                             clonedMesh = new THREE.Mesh(geometry, material);
+    //                             clonedMesh.scale.set(scale[0], scale[1], scale[2]);
+    //                         }
+                            
+    //                         clonedMesh.position.set(
+    //                             position[0] / 2,
+    //                             position[1] / 2,
+    //                             position[2] / 2
+    //                         );
+                            
+    //                         if (rotation) {
+    //                             clonedMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+    //                         }
+    //                     } else {
+    //                         // Pour les objets 3D importés, cloner comme avant
+    //                         clonedMesh = child.clone();
+    //                         clonedMesh.position.set(
+    //                             child.position.x / 2,
+    //                             child.position.y / 2,
+    //                             child.position.z / 2
+    //                         );
+    //                         if (child.parent) {
+    //                             clonedMesh.matrix.copy(child.parent.matrix);
+    //                         }
+    //                     }
+                        
+    //                     clonedMesh.updateMatrix();
+                        
+    //                     // Créer la boîte de sélection basée sur le clone
+    //                     const box = new THREE.Box3().setFromObject(clonedMesh);
+    //                     const boxHelper = new THREE.Box3Helper(box, new THREE.Color(0x000000));
+    //                     const material = boxHelper.material as THREE.LineBasicMaterial;
+    //                     material.linewidth = 2;
+    //                     material.transparent = true;
+    //                     material.opacity = 1;
+
+    //                     // Créer un groupe pour contenir le BoxHelper et le clone
+    //                     const group = new THREE.Group();
+    //                     group.add(boxHelper);
+    //                     group.add(clonedMesh);
+                        
+    //                     scene.add(group);
+    //                     child.userData.outlineMesh = group;
+    //                     child.userData.clonedMesh = clonedMesh;
+    //                     meshesWithOutlines.push({ mesh: child, helper: group });
+    //                 }
+    //             }
+    //         });
+
+    //         // Nettoyage lors du démontage
+    //         return () => {
+    //             meshesWithOutlines.forEach(({ mesh, helper }) => {
+    //                 if (helper.parent) {
+    //                     helper.parent.remove(helper);
+    //                     mesh.userData.outlineMesh = null;
+    //                 }
+    //             });
+    //         };
+    //     }
+    // }, [scene, isSelected, url]);
+
+    // // Modifier le useEffect pour la mise à jour du contour
+    // useEffect(() => {
+    //     if (scene && isSelected) {
+    //         scene.traverse((child: any) => {
+    //             if (child.isMesh && child.userData.outlineMesh && child.userData.clonedMesh) {
+    //                 const group = child.userData.outlineMesh;
+    //                 const clonedMesh = child.userData.clonedMesh;
                     
-                    // S'assurer que le matériau est du bon type pour les transformations
-                    if (!(child.material instanceof THREE.MeshStandardMaterial)) {
-                        const oldMaterial = child.material;
-                        const newMaterial = new THREE.MeshStandardMaterial({
-                            color: oldMaterial.color ? oldMaterial.color.clone() : new THREE.Color(0xffffff),
-                            map: oldMaterial.map,
-                            transparent: oldMaterial.transparent,
-                            opacity: oldMaterial.opacity,
-                            side: oldMaterial.side
-                        });
+    //                 // Vérifier si c'est un mur ou un sol
+    //                 const isWallOrFloor = !url || child.geometry instanceof THREE.PlaneGeometry || child.geometry instanceof THREE.BoxGeometry;
+                    
+    //                 if (isWallOrFloor) {
+    //                     const isFloor = rotation && rotation[0] === -Math.PI / 2;
                         
-                        // Copier d'autres propriétés si elles existent
-                        if (oldMaterial.roughness !== undefined) newMaterial.roughness = oldMaterial.roughness;
-                        if (oldMaterial.metalness !== undefined) newMaterial.metalness = oldMaterial.metalness;
+    //                     if (isFloor) {
+    //                         clonedMesh.scale.set(scale[0], scale[2], 1);
+    //                     } else {
+    //                         clonedMesh.scale.set(scale[0], scale[1], scale[2]);
+    //                     }
                         
-                        child.material = newMaterial;
-                        child.material.needsUpdate = true;
-                    }
+    //                     clonedMesh.position.set(
+    //                         position[0] / 2,
+    //                         position[1] / 2,
+    //                         position[2] / 2
+    //                     );
+                        
+    //                     if (rotation) {
+    //                         clonedMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
+    //                     }
+    //                 } else {
+    //                     clonedMesh.position.set(
+    //                         child.position.x / 2,
+    //                         child.position.y / 2,
+    //                         child.position.z / 2
+    //                     );
+    //                 }
+                    
+    //                 clonedMesh.updateMatrix();
+                    
+    //                 // Mettre à jour la boîte
+    //                 const boxHelper = group.children[0] as THREE.Box3Helper;
+    //                 const box = new THREE.Box3().setFromObject(clonedMesh);
+    //                 boxHelper.box.copy(box);
+    //             }
+    //         });
+    //     }
+    // }, [scene, isSelected, scale, position, rotation]);
 
-                    // Supprimer les effets visuels de sélection s'ils existent
-                    if (child.userData.outlineMesh) {
-                        child.parent.remove(child.userData.outlineMesh);
-                        child.userData.outlineMesh = null;
-                    }
+    // Effet pour mettre à jour la position
+    useEffect(() => {
+        if (meshRef.current && position) {
+            meshRef.current.position.set(position[0], position[1], position[2]);
+            meshRef.current.updateMatrixWorld(true);
+        }
+    }, [position]);
 
-                    // Ajouter l'effet de contour si l'objet est sélectionné
-                    if (isSelected) {
-                        const geometry = child.geometry;
-                        const edges = new THREE.EdgesGeometry(geometry);
-                        const outlineMaterial = new THREE.LineDashedMaterial({
-                            color: 0x000000,
-                            dashSize: 0.3,
-                            gapSize: 0.1,
-                            linewidth: 3,
-                            scale: 1,
-                            transparent: true,
-                            opacity: 1
-                        });
-                        const outlineMesh = new THREE.LineSegments(edges, outlineMaterial);
-                        outlineMesh.computeLineDistances();
-                        
-                        // Créer un groupe pour le contour
-                        const outlineGroup = new THREE.Group();
-                        outlineGroup.add(outlineMesh);
-                        
-                        // Appliquer une légère augmentation d'échelle pour décaler le contour
-                        const scaleFactor = 1.02; // 2% plus grand
-                        outlineGroup.scale.set(
-                            child.scale.x * scaleFactor,
-                            child.scale.y * scaleFactor,
-                            child.scale.z * scaleFactor
-                        );
-                        
-                        outlineGroup.position.copy(child.position);
-                        outlineGroup.rotation.copy(child.rotation);
-                        
-                        child.parent.add(outlineGroup);
-                        child.userData.outlineMesh = outlineGroup;
-                    }
+    // Nouvel effet simplifié pour la mise à jour des textures des faces
+    useEffect(() => {
+        console.log('=== Début de l\'effet de mise à jour des textures des faces ===');
+        console.log('État actuel:', {
+            meshRef: meshRef.current ? 'Existe' : 'Null',
+            faces,
+            type,
+            id
+        });
+
+        if (!meshRef.current || !faces || !type) {
+            console.log('Conditions non remplies pour la mise à jour:', {
+                hasMesh: !!meshRef.current,
+                hasFaces: !!faces,
+                hasType: !!type
+            });
+            return;
+        }
+
+        const mesh = meshRef.current;
+        if (!(mesh instanceof THREE.Mesh)) {
+            console.log('meshRef.current n\'est pas une instance de THREE.Mesh');
+            return;
+        }
+
+        console.log('Mise à jour texture face:', { type, faces });
+
+        const textureLoader = new THREE.TextureLoader();
+
+        if (type === 'wall') {
+            console.log('Traitement d\'un mur');
+            // Créer un tableau de matériaux si ce n'est pas déjà fait
+            if (!Array.isArray(mesh.material)) {
+                console.log('Création du tableau de matériaux pour le mur');
+                mesh.material = Array(6).fill(null).map(() => (
+                    new THREE.MeshStandardMaterial({
+                        transparent: true,
+                        opacity: 0.8,
+                        side: THREE.DoubleSide
+                    })
+                ));
+            }
+
+            // S'assurer que le matériau est un tableau
+            const materials = mesh.material as THREE.Material[];
+
+            // Mettre à jour les matériaux pour chaque face
+            Object.entries(faces).forEach(([faceName, faceData]) => {
+                const faceIndex = faceIndexMapping[faceName as keyof typeof faceIndexMapping];
+                console.log('Traitement de la face:', {
+                    faceName,
+                    faceIndex,
+                    faceData
+                });
+
+                if (faceIndex === undefined || !faceData) {
+                    console.log('Face invalide ou données manquantes');
+                    return;
                 }
+
+                const material = materials[faceIndex] as THREE.MeshStandardMaterial;
+                
+                if (faceData.texture) {
+                    console.log('Chargement de la texture pour la face:', faceName);
+                    textureLoader.load(faceData.texture, (texture) => {
+                        console.log('Texture chargée avec succès pour la face:', faceName);
+                        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                        texture.repeat.set(1, 1);
+                        material.map = texture;
+                        material.needsUpdate = true;
+                    });
+                }
+
+                if (faceData.color) {
+                    console.log('Application de la couleur pour la face:', faceName);
+                    material.color = new THREE.Color(faceData.color);
+                }
+                material.needsUpdate = true;
             });
 
-            // Nettoyage lors du démontage
-            return () => {
-                meshes.forEach((mesh) => {
-                    if (mesh) {
-                        if (mesh.userData.outlineMesh && mesh.parent) {
-                            mesh.parent.remove(mesh.userData.outlineMesh);
-                            mesh.userData.outlineMesh = null;
-                        }
-                    }
+        } else if (type === 'floor') {
+            console.log('Traitement d\'un sol');
+            // Pour les sols, créer un seul matériau
+            if (!mesh.material || Array.isArray(mesh.material)) {
+                console.log('Création du matériau pour le sol');
+                mesh.material = new THREE.MeshStandardMaterial({
+                    transparent: true,
+                    opacity: 0.8,
+                    side: THREE.DoubleSide
                 });
-            };
-        }
-    }, [scene, isSelected, url]);
+            }
 
-    // Modifier le useEffect pour la mise à jour du contour
+            const material = mesh.material as THREE.MeshStandardMaterial;
+
+            if (faces.top?.texture) {
+                console.log('Chargement de la texture pour le sol');
+                textureLoader.load(faces.top.texture, (texture) => {
+                    console.log('Texture du sol chargée avec succès');
+                    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                    texture.repeat.set(1, 1);
+                    material.map = texture;
+                    material.needsUpdate = true;
+                });
+            }
+
+            if (faces.top?.color) {
+                console.log('Application de la couleur pour le sol');
+                material.color = new THREE.Color(faces.top.color);
+            }
+            material.needsUpdate = true;
+        }
+
+        console.log('=== Fin de l\'effet de mise à jour des textures des faces ===');
+    }, [faces, type, id]);
+
     useEffect(() => {
-        if (scene && isSelected) {
+        if (scene && type === 'wall') {
             scene.traverse((child: any) => {
-                if (child.isMesh && child.userData.outlineMesh) {
-                    const outlineGroup = child.userData.outlineMesh;
-                    const scaleFactor = 1.06; // 2% plus grand
-                    
-                    // Mettre à jour l'échelle avec le facteur d'augmentation
-                    outlineGroup.scale.set(
-                        child.scale.x * scaleFactor,
-                        child.scale.y * scaleFactor,
-                        child.scale.z * scaleFactor
-                    );
-                    
-                    outlineGroup.position.copy(child.position);
-                    outlineGroup.rotation.copy(child.rotation);
-                    
-                    // Mettre à jour les distances des lignes en pointillés
-                    outlineGroup.children.forEach((outlineMesh: any) => {
-                        if (outlineMesh instanceof THREE.LineSegments) {
-                            outlineMesh.computeLineDistances();
+                if (child.isMesh && Array.isArray(child.material)) {
+                    child.material.forEach((mat: THREE.MeshStandardMaterial, index: number) => {
+                        if (index === selectedFaceIndex) {
+                            mat.emissive = new THREE.Color(0x666666);
+                            mat.emissiveIntensity = 0.5;
+                        } else {
+                            mat.emissive = new THREE.Color(0x000000);
+                            mat.emissiveIntensity = 0;
                         }
+                        mat.needsUpdate = true;
                     });
                 }
             });
         }
-    }, [scene, isSelected, scale, position, rotation]);
+    }, [scene, selectedFaceIndex, type]);
 
     return (
         scene && (
@@ -466,13 +626,14 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 showX={false}
                 showY={false}
                 showZ={false}
-                onObjectChange={() => {
+                onObjectChange={(e) => {
                     if (meshRef.current) {
                         const newPos: [number, number, number] = [
                             meshRef.current.position.x,
                             meshRef.current.position.y,
                             meshRef.current.position.z,
                         ];
+                        console.log("Updating position to:", newPos);
                         onUpdatePosition(id, newPos);
                     }
                 }}
@@ -483,6 +644,15 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                     ref={meshRef}
                     onClick={(event: any) => {
                         event.stopPropagation();
+                        
+                        // Détecter la face cliquée
+                        if (event.faceIndex !== undefined && event.object.geometry instanceof THREE.BoxGeometry) {
+                            // Convertir l'index de face (0-11 pour un cube) en index de matériau (0-5)
+                            const materialIndex = Math.floor(event.faceIndex / 2);
+                            setSelectedFaceIndex(materialIndex);
+                            console.log('Face cliquée:', materialIndex);
+                        }
+
                         console.log('Objet cliqué:', {
                             id: id,
                             type: url ? 'Modèle 3D' : 'Mur',
@@ -493,7 +663,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                                 mesh: event.object,
                                 material: event.object.material,
                                 geometry: event.object.geometry,
-                                color: color
+                                color: color,
+                                faceIndex: event.faceIndex
                             }
                         });
                         onClick();

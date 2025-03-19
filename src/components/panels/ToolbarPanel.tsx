@@ -21,6 +21,8 @@ interface ToolbarProps {
   handleAddObject: (url: string) => Promise<void>;
   showQuotePanel: boolean;
   toggleQuotePanel: () => void;
+  isCreatingSurface: boolean;
+  setIsCreatingSurface: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -40,14 +42,24 @@ const Toolbar: React.FC<ToolbarProps> = ({
   is2DView,
   handleAddObject,
   showQuotePanel,
-  toggleQuotePanel
+  toggleQuotePanel,
+  isCreatingSurface,
+  setIsCreatingSurface
 }) => {
   return (
     <div className="banner">
       {is2DView && (
-        <button onClick={() => setCreatingWallMode(!creatingWallMode)}>
-          {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
-        </button>
+        <>
+          <button onClick={() => setCreatingWallMode(!creatingWallMode)}>
+            {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
+          </button>
+          <button 
+            onClick={() => setIsCreatingSurface(!isCreatingSurface)}
+            className={`bouton ${isCreatingSurface ? 'active' : ''}`}
+          >
+            {isCreatingSurface ? 'Terminer la surface' : 'Créer une surface'}
+          </button>
+        </>
       )}
 
       <select 
