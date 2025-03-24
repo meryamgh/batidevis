@@ -136,7 +136,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         // Exemple : Calcul du prix en fonction du volume
         const volume = scale[0] * scale[1] * scale[2];
         const basePricePerUnit = price; // Exemple de base
-        return volume * basePricePerUnit;
+        return Math.round(volume * basePricePerUnit);
     };
 
     useEffect(() => {

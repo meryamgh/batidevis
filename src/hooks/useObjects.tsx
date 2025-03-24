@@ -260,52 +260,103 @@ export const useObjects = ({
   }, [setObjects]);
 
   const handleUpdateScale = (id: string, newScale: [number, number, number]) => {
-    console.log("Updating scale in useObjects:", newScale);
     setObjects((prevObjects) => {
       return prevObjects.map((obj) => {
         if (obj.id === id) {
           console.log("Found object to update scale:", obj.id);
-          if (obj.boundingBox) {
-            // Calculate the scale factors
-            const scaleFactors = [
-              newScale[0] / obj.scale[0],
-              newScale[1] / obj.scale[1],
-              newScale[2] / obj.scale[2]
+          // Vérifier si l'objet a une boundingBox et une échelle existante
+          if (obj.boundingBox && obj.scale) {
+            // Arrondir les nouvelles valeurs d'échelle au millimètre près
+            const roundedScale: [number, number, number] = [
+              Math.round(newScale[0] * 1000) / 1000,
+              Math.round(newScale[1] * 1000) / 1000,
+              Math.round(newScale[2] * 1000) / 1000
             ];
 
-            // Update the bounding box with the new scale
+            // Calculate the scale factors with rounded values
+            const scaleFactors = [
+              roundedScale[0] / obj.scale[0],
+              roundedScale[1] / obj.scale[1],
+              roundedScale[2] / obj.scale[2]
+            ];
+
+            // Update the bounding box with the rounded scale
             const newBoundingBox = {
               min: [
-                obj.boundingBox.min[0] * scaleFactors[0],
-                obj.boundingBox.min[1] * scaleFactors[1],
-                obj.boundingBox.min[2] * scaleFactors[2]
+                Math.round(obj.boundingBox.min[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.min[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.min[2] * scaleFactors[2] * 1000) / 1000
               ] as [number, number, number],
               max: [
-                obj.boundingBox.max[0] * scaleFactors[0],
-                obj.boundingBox.max[1] * scaleFactors[1],
-                obj.boundingBox.max[2] * scaleFactors[2]
+                Math.round(obj.boundingBox.max[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.max[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.max[2] * scaleFactors[2] * 1000) / 1000
               ] as [number, number, number],
               size: [
-                obj.boundingBox.size[0] * scaleFactors[0],
-                obj.boundingBox.size[1] * scaleFactors[1],
-                obj.boundingBox.size[2] * scaleFactors[2]
+                Math.round(obj.boundingBox.size[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.size[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.size[2] * scaleFactors[2] * 1000) / 1000
               ] as [number, number, number],
               center: [
-                obj.boundingBox.center[0] * scaleFactors[0],
-                obj.boundingBox.center[1] * scaleFactors[1],
-                obj.boundingBox.center[2] * scaleFactors[2]
+                Math.round(obj.boundingBox.center[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.center[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.center[2] * scaleFactors[2] * 1000) / 1000
               ] as [number, number, number]
             };
 
+            // Calculer le nouveau prix arrondi
+            let newPrice = obj.price;
+            if (obj.type === 'wall') {
+              // Prix basé sur la surface du mur
+              newPrice = Math.round(roundedScale[0] * roundedScale[1] * 15);
+            } else if (obj.type === 'floor') {
+              // Prix basé sur la surface du sol
+              newPrice = Math.round(roundedScale[0] * roundedScale[2] * 25);
+            }
+
             return {
               ...obj,
-              scale: newScale,
-              boundingBox: newBoundingBox
+              scale: roundedScale,
+              boundingBox: newBoundingBox,
+              price: newPrice
             };
           }
-          return { ...obj, scale: newScale };
+          // Si l'objet n'a pas de boundingBox ou d'échelle, simplement mettre à jour l'échelle arrondie
+          return {
+            ...obj,
+            scale: [
+              Math.round(newScale[0] * 1000) / 1000,
+              Math.round(newScale[1] * 1000) / 1000,
+              Math.round(newScale[2] * 1000) / 1000
+            ]
+          };
         }
         return obj;
+      });
+    });
+
+    // Mettre à jour le devis avec les nouvelles valeurs arrondies
+    setQuote((prevQuote) => {
+      return prevQuote.map((item) => {
+        if (item.id === id) {
+          const matchingObject = objects.find(obj => obj.id === id);
+          if (matchingObject) {
+            return {
+              ...item,
+              scale: [
+                Math.round(newScale[0] * 1000) / 1000,
+                Math.round(newScale[1] * 1000) / 1000,
+                Math.round(newScale[2] * 1000) / 1000
+              ],
+              price: matchingObject.type === 'wall' 
+                ? Math.round(newScale[0] * newScale[1] * 15)
+                : matchingObject.type === 'floor'
+                ? Math.round(newScale[0] * newScale[2] * 25)
+                : item.price
+            };
+          }
+        }
+        return item;
       });
     });
     console.log("Objects after update:", objects);

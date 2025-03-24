@@ -18,6 +18,7 @@ import FloorSelector from '../components/panels/FloorSelectorPanel';
 import { useBlueprint } from '../hooks/useBlueprint';
 import { useHistory } from '../hooks/useHistory';
 import { v4 as uuidv4 } from 'uuid';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 const MaquettePage: React.FC = () => {
     const [objects, setObjects] = useState<ObjectData[]>([]);
@@ -538,6 +539,7 @@ const MaquettePage: React.FC = () => {
 
     // Wrapper pour handleObjectClick qui utilise la fonction du hook
     const onObjectClick = useCallback((id: string, point?: THREE.Vector3) => {
+        alert('onObjectClick function called');
         if (isCreatingSurface && point) {
             if (!surfaceStartPoint) {
                 // Premier clic : définir le point de départ
@@ -569,6 +571,7 @@ const MaquettePage: React.FC = () => {
 
     // Ajouter la fonction pour créer la surface
     const createSurface = (start: THREE.Vector3, end: THREE.Vector3) => {
+   
         const width = Math.abs(end.x - start.x);
         const depth = Math.abs(end.z - start.z);
         
@@ -582,18 +585,32 @@ const MaquettePage: React.FC = () => {
 
         const centerX = (start.x + end.x) / 2;
         const centerZ = (start.z + end.z) / 2;
+        const box = new THREE.Box3().setFromObject(mesh);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        // Stocker les informations de la bounding box
+        const boundingBox = {
+            min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
+            max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
+            size: [size.x, size.y, size.z] as [number, number, number],
+            center: [center.x, center.y, center.z] as [number, number, number]
+        };
         
         const newSurface: ObjectData = {
             id: uuidv4(),
             url: '',
             price: 100,
             details: 'Surface',
-            position: [centerX, 0.05, centerZ],
+            position: [centerX / 2, 0.05, centerZ / 2],
             gltf: mesh,
             rotation: [0, 0, 0],
             scale: [width, 0.1, depth],
             color: '#808080',
-            texture: ''
+            texture: '',
+            boundingBox: boundingBox
         };
 
         setObjectsWithHistory(prev => [...prev, newSurface]);
@@ -604,20 +621,6 @@ const MaquettePage: React.FC = () => {
         setSurfaceEndPoint(null);
         setSurfacePreview(null);
         setIsCreatingSurface(false);
-    };
-
-    // Ajouter la fonction pour mettre à jour l'aperçu de la surface
-    const updateSurfacePreview = (start: THREE.Vector3, end: THREE.Vector3) => {
-        if (surfacePreview) {
-            const width = Math.abs(end.x - start.x);
-            const depth = Math.abs(end.z - start.z);
-            
-            surfacePreview.scale.set(width, 0.1, depth);
-            
-            const centerX = (start.x + end.x) / 2;
-            const centerZ = (start.z + end.z) / 2;
-            surfacePreview.position.set(centerX, 0.05, centerZ);
-        }
     };
 
     // Fonction pour gérer la sélection d'un point pour la surface
@@ -639,20 +642,32 @@ const MaquettePage: React.FC = () => {
 
             const centerX = (surfaceStartPoint.x + point.x) / 2;
             const centerZ = (surfaceStartPoint.z + point.z) / 2;
-            const boundingBox = new THREE.Box3();
-            boundingBox.min.set(-width/2, -0.05, -depth/2);
-            boundingBox.max.set(width/2, 0.05, depth/2);
+            const box = new THREE.Box3().setFromObject(mesh);
+            const size = new THREE.Vector3();
+            const center = new THREE.Vector3();
+            box.getSize(size);
+            box.getCenter(center);
+
+            // Stocker les informations de la bounding box
+            const boundingBox = {
+                min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
+                max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
+                size: [size.x, size.y, size.z] as [number, number, number],
+                center: [center.x, center.y, center.z] as [number, number, number]
+            };
+
             const newSurface: ObjectData = {
                 id: uuidv4(),
                 url: '',
                 price: 100,
                 details: 'Surface',
-                position: [centerX, 0.05, centerZ],
+                position: [centerX / 2, 0.05, centerZ / 2],
                 gltf: mesh,
                 rotation: [0, 0, 0],
                 scale: [width, 0.1, depth],
                 color: '#808080',
-                texture: ''
+                texture: '',
+                boundingBox: boundingBox
             };
 
             setObjectsWithHistory(prev => [...prev, newSurface]);
@@ -668,12 +683,17 @@ const MaquettePage: React.FC = () => {
 
     // Fonction pour mettre à jour l'aperçu de la surface
     const handleSurfacePreviewUpdate = useCallback((start: THREE.Vector3, end: THREE.Vector3) => {
+        // Calculer les dimensions en fonction des points de départ et d'arrivée
         const width = Math.abs(end.x - start.x);
         const depth = Math.abs(end.z - start.z);
         
+        // Calculer le centre de la surface
+        const centerX = (start.x + end.x) / 2;
+        const centerZ = (start.z + end.z) / 2;
+        
         if (!surfacePreview) {
-            // Créer un nouvel aperçu
-            const geometry = new THREE.BoxGeometry(width, 0.1, depth);
+            // Créer un nouvel aperçu avec une géométrie unitaire
+            const geometry = new THREE.BoxGeometry(1, 0.1, 1);
             const material = new THREE.MeshStandardMaterial({ 
                 color: '#808080',
                 transparent: true,
@@ -683,22 +703,110 @@ const MaquettePage: React.FC = () => {
             });
             const mesh = new THREE.Mesh(geometry, material);
             
-            const centerX = (start.x + end.x) / 2;
-            const centerZ = (start.z + end.z) / 2;
+            // Appliquer l'échelle et la position
+            mesh.scale.set(width, 0.1, depth);
             mesh.position.set(centerX, 0.05, centerZ);
             
             setSurfacePreview(mesh);
         } else {
             // Mettre à jour l'aperçu existant
             surfacePreview.scale.set(width, 0.1, depth);
-            
-            const centerX = (start.x + end.x) / 2;
-            const centerZ = (start.z + end.z) / 2;
             surfacePreview.position.set(centerX, 0.05, centerZ);
         }
         
         setSurfaceEndPoint(end);
     }, [surfacePreview]);
+
+    const reconstructMaquette = async () => {
+        try {
+            // Charger les données depuis le backend
+            const response = await fetch('http://127.0.0.1:5000/load-maquette');
+            if (!response.ok) throw new Error('Erreur lors du chargement');
+            
+            const data = await response.json();
+            
+            // Vider la scène actuelle
+            setObjectsWithHistory([]);
+            setQuoteWithHistory([]);
+            
+            // Créer un tableau temporaire pour stocker tous les objets
+            const newObjects: ObjectData[] = [];
+            
+            // Reconstruire chaque objet
+            for (const objData of data.objects) {
+                // Diviser les positions par 2 pour la compatibilité avec GLTFObject
+                const adjustedPosition: [number, number, number] = [
+                    objData.position[0] / 2,
+                    objData.position[1] / 2,
+                    objData.position[2] / 2
+                ];
+
+                if (objData.url) {
+                    // Pour les objets GLTF
+                    try {
+                        const loader = new GLTFLoader();
+                        const gltf = await loader.loadAsync(objData.url);
+                        
+                        // Créer le nouvel objet avec toutes les propriétés
+                        const newObject: ObjectData = {
+                            id: objData.id,
+                            url: objData.url,
+                            position: adjustedPosition, // Utiliser la position ajustée
+                            scale: objData.scale,
+                            rotation: objData.rotation,
+                            texture: objData.texture || '',
+                            color: objData.color || '',
+                            type: objData.type,
+                            faces: objData.faces,
+                            gltf: gltf,
+                            price: objData.price || 100,
+                            details: objData.details || 'Objet importé',
+                            boundingBox: objData.boundingBox // Conserver la boundingBox si elle existe
+                        };
+                        
+                        newObjects.push(newObject);
+                    } catch (error) {
+                        console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
+                    }
+                } else {
+                    // Pour les murs et sols
+                    const geometry = objData.type === 'floor' 
+                        ? new THREE.PlaneGeometry(1, 1)
+                        : new THREE.BoxGeometry(1, 1, 1);
+                    
+                    const material = new THREE.MeshStandardMaterial();
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    const newObject: ObjectData = {
+                        ...objData,
+                        position: adjustedPosition, // Utiliser la position ajustée
+                        gltf: mesh,
+                        price: objData.price || 100,
+                        details: objData.details || `${objData.type === 'floor' ? 'Sol' : 'Mur'}`
+                    };
+                    
+                    newObjects.push(newObject);
+                }
+            }
+            
+            // Mettre à jour la scène avec tous les objets d'un coup
+            setObjectsWithHistory(newObjects);
+            setQuoteWithHistory(newObjects);
+            
+            // Appliquer les textures et faces après que tous les objets sont chargés
+            for (const obj of newObjects) {
+                if (obj.texture) {
+                    objectsUtils.handleUpdateTexture(obj.id, obj.texture);
+                }
+                if (obj.faces) {
+                    objectsUtils.handleUpdateFaces(obj.id, obj.faces);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Erreur lors de la reconstruction:', error);
+        }
+    };
 
     return (
         <div id="page">
@@ -726,6 +834,7 @@ const MaquettePage: React.FC = () => {
                 toggleQuotePanel={toggleQuotePanel}
                 isCreatingSurface={isCreatingSurface}
                 setIsCreatingSurface={setIsCreatingSurface}
+                reconstructMaquette={reconstructMaquette}
             />
 
             <div className="history-controls">

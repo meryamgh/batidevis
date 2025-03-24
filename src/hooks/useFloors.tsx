@@ -136,10 +136,20 @@ export const useFloors = ({
     ];
 
     // Ajouter le sol
-    setObjects((prevObjects: ObjectData[]) => [...prevObjects, floorObject]);
+    const roundedFloorScale: [number, number, number] = [
+      Math.round(roomConfig.width * 1000) / 1000,
+      Math.round(WALL_THICKNESS * 1000) / 1000,
+      Math.round(roomConfig.length * 1000) / 1000
+    ];
+
+    setObjects((prevObjects: ObjectData[]) => [...prevObjects, {
+      ...floorObject,
+      scale: roundedFloorScale
+    }]);
     setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
       ...floorObject,
-      price: (roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
+      scale: roundedFloorScale,
+      price: Math.round(roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
     }]);
 
     // Ajouter les murs
@@ -150,10 +160,18 @@ export const useFloors = ({
       const boundingBox = new THREE.Box3();
       boundingBox.min.set(-wall.scale[0]/2, -wall.scale[1]/2, -wall.scale[2]/2);
       boundingBox.max.set(wall.scale[0]/2, wall.scale[1]/2, wall.scale[2]/2);
+
+      // Arrondir les valeurs d'échelle au millimètre près
+      const roundedWallScale: [number, number, number] = [
+        Math.round(wall.scale[0] * 1000) / 1000,
+        Math.round(wall.scale[1] * 1000) / 1000,
+        Math.round(wall.scale[2] * 1000) / 1000
+      ];
+
       const newWallObject: ObjectData = {
         id: uuidv4(),
         url: '',
-        price: WALL_PRICE,
+        price: Math.round(WALL_PRICE),
         details: 'Mur (Rez-de-chaussée)',
         position: [
           wall.position[0],
@@ -162,7 +180,7 @@ export const useFloors = ({
         ],
         gltf: wallMesh,
         rotation: wall.rotation as [number, number, number],
-        scale: wall.scale as [number, number, number],
+        scale: roundedWallScale,
         color: '',
         texture: '',
         type: 'wall',
@@ -282,10 +300,20 @@ export const useFloors = ({
     ];
 
     // Ajouter le sol
-    setObjects((prevObjects: ObjectData[]) => [...prevObjects, floorObject]);
+    const roundedFloorScale: [number, number, number] = [
+      Math.round(roomConfig.width * 1000) / 1000,
+      Math.round(WALL_THICKNESS * 1000) / 1000,
+      Math.round(roomConfig.length * 1000) / 1000
+    ];
+
+    setObjects((prevObjects: ObjectData[]) => [...prevObjects, {
+      ...floorObject,
+      scale: roundedFloorScale
+    }]);
     setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
       ...floorObject,
-      price: (roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
+      scale: roundedFloorScale,
+      price: Math.round(roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
     }]);
 
     // Ajouter les murs
@@ -296,10 +324,18 @@ export const useFloors = ({
       const boundingBox = new THREE.Box3();
       boundingBox.min.set(-wall.scale[0]/2, -wall.scale[1]/2, -wall.scale[2]/2);
       boundingBox.max.set(wall.scale[0]/2, wall.scale[1]/2, wall.scale[2]/2);
+
+      // Arrondir les valeurs d'échelle au millimètre près
+      const roundedWallScale: [number, number, number] = [
+        Math.round(wall.scale[0] * 1000) / 1000,
+        Math.round(wall.scale[1] * 1000) / 1000,
+        Math.round(wall.scale[2] * 1000) / 1000
+      ];
+
       const newWallObject: ObjectData = {
         id: uuidv4(),
         url: '',
-        price: WALL_PRICE,
+        price: Math.round(WALL_PRICE),
         details: `Mur (Étage ${nextFloorNumber})`,
         position: [
           wall.position[0],
@@ -308,7 +344,7 @@ export const useFloors = ({
         ],
         gltf: wallMesh,
         rotation: wall.rotation as [number, number, number],
-        scale: wall.scale as [number, number, number],
+        scale: roundedWallScale,
         color: wallColor,
         texture: '',
         type: 'wall',
@@ -355,101 +391,81 @@ export const useFloors = ({
 
   // Nouvelle fonction pour mettre à jour les dimensions d'une pièce existante
   const updateRoomDimensions = useCallback((floorId: string, newWidth: number, newLength: number, newHeight: number) => {
-    // Trouver l'étage concerné
-    const floorObject = objects.find((obj: ObjectData) => obj.id === floorId);
-    if (!floorObject || !floorObject.details.includes('Sol')) return;
-    
-    // Déterminer le numéro d'étage
-    const floorNumberMatch = floorObject.details.match(/Étage (\d+)/);
-    const floorNumber = floorNumberMatch ? parseInt(floorNumberMatch[1]) : 0;
-    
-    // Trouver tous les objets de cet étage (sol et murs)
-    const floorObjects = objects.filter((obj: ObjectData) => {
-      const isCurrentFloor = floorNumber === 0 
-        ? obj.details.includes('Rez-de-chaussée')
-        : obj.details.includes(`Étage ${floorNumber}`);
-      return isCurrentFloor;
-    });
-    
-    // Mettre à jour les objets
+    // Arrondir les nouvelles dimensions au millimètre près
+    const roundedWidth = Math.round(newWidth * 1000) / 1000;
+    const roundedLength = Math.round(newLength * 1000) / 1000;
+    const roundedHeight = Math.round(newHeight * 1000) / 1000;
+
     setObjects((prevObjects: ObjectData[]) => prevObjects.map((obj: ObjectData) => {
-      // Vérifier si l'objet appartient à l'étage concerné
-      const isCurrentFloor = floorNumber === 0 
-        ? obj.details.includes('Rez-de-chaussée')
-        : obj.details.includes(`Étage ${floorNumber}`);
-      
-      if (!isCurrentFloor) return obj;
-      
-      // Calculer la hauteur de base de l'étage
-      const baseHeight = floorNumber * newHeight;
-      
-      // Mettre à jour le sol
-      if (obj.details.includes('Sol')) {
+      if (!obj.details.includes(floorId === '0' ? 'Rez-de-chaussée' : `Étage ${floorId}`)) return obj;
+
+      if (obj.type === 'floor') {
+        const roundedScale: [number, number, number] = [
+          roundedWidth,
+          obj.scale[1],
+          roundedLength
+        ];
+
         return {
           ...obj,
-          scale: [newWidth, WALL_THICKNESS, newLength],
-          position: [0, (baseHeight + WALL_THICKNESS/2)/2, 0]
+          scale: roundedScale,
+          price: Math.round(roundedWidth * roundedLength * FLOOR_PRICE_PER_SQUARE_METER)
         };
       }
-      
-      // Mettre à jour les murs
-      if (obj.details.includes('Mur')) {
-        // Déterminer quel mur est concerné en fonction de sa position et rotation
+
+      if (obj.type === 'wall') {
         const rotation = obj.rotation || [0, 0, 0];
-        const isVerticalWall = Math.abs(Math.sin(rotation[1])) > 0.5;
-        const isPositivePosition = obj.position[isVerticalWall ? 0 : 2] > 0;
-        
-        if (isVerticalWall) {
-          // Murs gauche et droit
-          return {
-            ...obj,
-            scale: [newLength, newHeight, WALL_THICKNESS],
-            position: [
-              (isPositivePosition ? 1 : -1) * newWidth/WALL_POSITION_DIVISOR,
-              (baseHeight + newHeight/2)/2,
-              0
-            ]
-          };
-        } else {
-          // Murs avant et arrière
-          return {
-            ...obj,
-            scale: [newWidth, newHeight, WALL_THICKNESS],
-            position: [
-              0,
-              (baseHeight + newHeight/2)/2,
-              (isPositivePosition ? 1 : -1) * newLength/WALL_POSITION_DIVISOR
-            ]
-          };
-        }
+        const isHorizontalWall = Math.abs(rotation[1]) < 0.1 || Math.abs(rotation[1] - Math.PI) < 0.1;
+        const roundedScale: [number, number, number] = isHorizontalWall
+          ? [roundedWidth, roundedHeight, obj.scale[2]]
+          : [roundedLength, roundedHeight, obj.scale[2]];
+
+        return {
+          ...obj,
+          scale: roundedScale,
+          price: Math.round(roundedScale[0] * roundedScale[1] * 15)
+        };
       }
-      
+
       return obj;
     }));
-    
-    // Mettre à jour les prix dans le devis
+
+    // Mettre à jour les prix dans le devis avec les valeurs arrondies
     setQuote((prevQuote: ObjectData[]) => prevQuote.map((item: ObjectData) => {
       const matchingObject = objects.find((obj: ObjectData) => obj.id === item.id);
       if (!matchingObject) return item;
-      
+
       // Vérifier si l'objet appartient à l'étage concerné
-      const isCurrentFloor = floorNumber === 0 
+      const isCurrentFloor = floorId === '0'
         ? matchingObject.details.includes('Rez-de-chaussée')
-        : matchingObject.details.includes(`Étage ${floorNumber}`);
-      
+        : matchingObject.details.includes(`Étage ${floorId}`);
+
       if (!isCurrentFloor) return item;
-      
-      // Mettre à jour le prix du sol
-      if (matchingObject.details.includes('Sol')) {
+
+      if (matchingObject.type === 'floor') {
         return {
           ...item,
-          price: newWidth * newLength * FLOOR_PRICE_PER_SQUARE_METER
+          scale: [roundedWidth, item.scale[1], roundedLength],
+          price: Math.round(roundedWidth * roundedLength * FLOOR_PRICE_PER_SQUARE_METER)
         };
       }
-      
+
+      if (matchingObject.type === 'wall') {
+        const rotation = matchingObject.rotation || [0, 0, 0];
+        const isHorizontalWall = Math.abs(rotation[1]) < 0.1 || Math.abs(rotation[1] - Math.PI) < 0.1;
+        const roundedScale: [number, number, number] = isHorizontalWall
+          ? [roundedWidth, roundedHeight, matchingObject.scale[2]]
+          : [roundedLength, roundedHeight, matchingObject.scale[2]];
+
+        return {
+          ...item,
+          scale: roundedScale,
+          price: Math.round(roundedScale[0] * roundedScale[1] * 15)
+        };
+      }
+
       return item;
     }));
-    
   }, [objects, setObjects, setQuote]);
 
   return {

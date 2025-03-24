@@ -9,7 +9,7 @@ import MesDevisFactures from './pages/MesDevisFactures'
 function App() {
     return (
         <Routes>
-            <Route path="/" element={<MaquettePage />} />
+            <Route path="/maquette" element={<MaquettePage />} />
             <Route path="/full-quote" element={<FullQuote />} />
             <Route path="/" element={<Home />} />
             <Route path="/tarifs" element={<Tarifs />} />

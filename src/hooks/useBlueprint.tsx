@@ -93,7 +93,7 @@ export const useBlueprint = ({
         const wallWidth = 0.2;
         const wallLength = start.distanceTo(end);
         const pricePerUnitLength = 10;
-        const wallPrice = wallLength * pricePerUnitLength;
+        const wallPrice = Math.round(wallLength * pricePerUnitLength);
         const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallWidth);
         const wallMaterial = new THREE.MeshStandardMaterial();
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -103,51 +103,57 @@ export const useBlueprint = ({
         const direction = new THREE.Vector3().subVectors(end, start).normalize();
         const angle = Math.atan2(direction.z, direction.x);
         const boundingBox = new THREE.Box3();
-        boundingBox.min.set(-wallLength/2, -wallHeight/2, -wallWidth/2);
-        boundingBox.max.set(wallLength/2, wallHeight/2, wallWidth/2);
+        boundingBox.setFromObject(wallMesh);
+        const center = new THREE.Vector3();
+        boundingBox.getCenter(center);
+
+        // Arrondir les dimensions au millimètre près
+        const roundedScale: [number, number, number] = [
+            Math.round(wallLength * 1000) / 1000,
+            Math.round(wallHeight * 1000) / 1000,
+            Math.round(wallWidth * 1000) / 1000
+        ];
+
         const newWallObject: ObjectData = {
             id: uuidv4(),
             url: '',
             price: wallPrice,
             details: `Mur (Étage ${currentFloor})`,
-            position: [midPoint.x/2, (wallPositionY + wallHeight/2)/2, midPoint.z/2], // Corriger la position
+            position: [midPoint.x/2, (wallPositionY + wallHeight/2)/2, midPoint.z/2],
             gltf: wallMesh,
             rotation: [0, -angle, 0],
-            scale: [wallLength, wallHeight, wallWidth],
-           // Ajouter une propriété texture vide pour permettre l'application de textures
-            color: '', // Enlever la couleur par défaut
+            scale: roundedScale,
+            color: '',
             type: 'wall',
             faces: {
-                front: {
-                    color: '',
-                    texture: ''
-                },
-                back: {
-                    color: '',
-                    texture: ''
-                },
-                left: {
-                    color: '',
-                    texture: ''
-                },
-                right: {
-                    color: '',
-                    texture: ''
-                },
-                top: {
-                    color: '',
-                    texture: ''
-                },
-                bottom: {
-                    color: '',
-                    texture: ''
-                }
+                front: { color: '', texture: '' },
+                back: { color: '', texture: '' },
+                left: { color: '', texture: '' },
+                right: { color: '', texture: '' },
+                top: { color: '', texture: '' },
+                bottom: { color: '', texture: '' }
             },
             boundingBox: {
-                min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
-                max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
-                size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
-                center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+                min: [
+                    Math.round(boundingBox.min.x * 1000) / 1000,
+                    Math.round(boundingBox.min.y * 1000) / 1000,
+                    Math.round(boundingBox.min.z * 1000) / 1000
+                ],
+                max: [
+                    Math.round(boundingBox.max.x * 1000) / 1000,
+                    Math.round(boundingBox.max.y * 1000) / 1000,
+                    Math.round(boundingBox.max.z * 1000) / 1000
+                ],
+                size: [
+                    Math.round((boundingBox.max.x - boundingBox.min.x) * 1000) / 1000,
+                    Math.round((boundingBox.max.y - boundingBox.min.y) * 1000) / 1000,
+                    Math.round((boundingBox.max.z - boundingBox.min.z) * 1000) / 1000
+                ],
+                center: [
+                    Math.round(center.x * 1000) / 1000,
+                    Math.round(center.y * 1000) / 1000,
+                    Math.round(center.z * 1000) / 1000
+                ]
             }
         };
 
@@ -274,34 +280,56 @@ export const useBlueprint = ({
         
         const wallMaterial = new THREE.MeshStandardMaterial();
         
+        // Arrondir les dimensions au millimètre près
+        const roundedWidth = Math.round(width * 1000) / 1000;
+        const roundedLength = Math.round(length * 1000) / 1000;
+        const roundedHeight = Math.round(height * 1000) / 1000;
+        const roundedThickness = Math.round(wallThickness * 1000) / 1000;
+
         // Créer le sol
         const floorGeometry = new THREE.BoxGeometry(1, 1, 1);
         const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
-        const boundingBox = new THREE.Box3();
-        boundingBox.min.set(-width/2, -wallThickness/2, -length/2);
-        boundingBox.max.set(width/2, wallThickness/2, length/2);
+        const floorBoundingBox = new THREE.Box3();
+        floorBoundingBox.setFromObject(floorMesh);
+        const floorCenter = new THREE.Vector3();
+        floorBoundingBox.getCenter(floorCenter);
+
         const floorObject: ObjectData = {
             id: uuidv4(),
             url: '',
-            price: width * length * 25, // Prix basé sur la surface
-            details: `Sol (${currentFloor === 0 ? 'Rez-de-chaussée' : `Étage ${currentFloor}`})`,
+            price: Math.round(roundedWidth * roundedLength * 25),
+            details: `Sol (Étage ${currentFloor})`,
             position: [centerX / 2, floorPositionY / 2, centerZ / 2],
             gltf: floorMesh,
             rotation: [0, 0, 0],
-            scale: [width, wallThickness, length],
-            color: '#' + floorColor.toString(16).padStart(6, '0'),
+            scale: [roundedWidth, roundedThickness, roundedLength],
+            color: '',
             type: 'floor',
             faces: {
-                top: {
-                    color: '#' + floorColor.toString(16).padStart(6, '0'),
-                    texture: ''
-                }
+                front: { color: '', texture: '' },
+                back: { color: '', texture: '' },
+                left: { color: '', texture: '' },
+                right: { color: '', texture: '' },
+                top: { color: '', texture: '' },
+                bottom: { color: '', texture: '' }
             },
             boundingBox: {
-                min: [boundingBox.min.x, boundingBox.min.y, boundingBox.min.z],
-                max: [boundingBox.max.x, boundingBox.max.y, boundingBox.max.z],
-                size: [boundingBox.max.x - boundingBox.min.x, boundingBox.max.y - boundingBox.min.y, boundingBox.max.z - boundingBox.min.z],
-                center: [boundingBox.min.x + (boundingBox.max.x - boundingBox.min.x) / 2, boundingBox.min.y + (boundingBox.max.y - boundingBox.min.y) / 2, boundingBox.min.z + (boundingBox.max.z - boundingBox.min.z) / 2]
+                min: [
+                    Math.round(floorBoundingBox.min.x * roundedWidth * 1000) / 1000,
+                    Math.round(floorBoundingBox.min.y * roundedThickness * 1000) / 1000,
+                    Math.round(floorBoundingBox.min.z * roundedLength * 1000) / 1000
+                ],
+                max: [
+                    Math.round(floorBoundingBox.max.x * roundedWidth * 1000) / 1000,
+                    Math.round(floorBoundingBox.max.y * roundedThickness * 1000) / 1000,
+                    Math.round(floorBoundingBox.max.z * roundedLength * 1000) / 1000
+                ],
+                size: [roundedWidth, roundedThickness, roundedLength],
+                center: [
+                    Math.round(floorCenter.x * 1000) / 1000,
+                    Math.round(floorCenter.y * 1000) / 1000,
+                    Math.round(floorCenter.z * 1000) / 1000
+                ]
             }
         };
         
@@ -656,7 +684,7 @@ export const useBlueprint = ({
             const floorObject: ObjectData = {
                 id: uuidv4(),
                 url: '',
-                price: floorWidth * floorLength * 25, // Prix basé sur la surface
+                price: Math.round(floorWidth * floorLength * 25), // Prix basé sur la surface
                 details: `Sol (${currentFloor === 0 ? 'Rez-de-chaussée' : `Étage ${currentFloor}`})`,
                 position: [(minX + maxX) / 4, floorPositionY / 2, (minZ + maxZ) / 4],
                 gltf: floorMesh,
