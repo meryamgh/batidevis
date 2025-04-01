@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import '../styles/Quote.css';
+import { useMaquetteStore } from '../store/maquetteStore';
+import { ObjectData } from '../types/ObjectData';
 
 type QuoteItem = {
     id: number;
@@ -15,12 +17,11 @@ type AggregatedQuoteItem = {
 };
 
 const FullQuote: React.FC = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    const initialQuote: QuoteItem[] = location.state?.quote || []; 
+    const { quote } = useMaquetteStore();
 
     // Agrégation initiale des articles
-    const initialAggregated: AggregatedQuoteItem[] = initialQuote.reduce((acc, item) => {
+    const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
         const existingItem = acc.find(
             (i) => i.details === item.details && i.price === item.price
         );
@@ -45,7 +46,7 @@ const FullQuote: React.FC = () => {
     const resteAPayer = totalTTC - acompte;
 
     const handleBack = () => {
-        navigate('/', { state: { quote: initialQuote } }); 
+        navigate('/maquette'); 
     };
 
     // Gestion de l'édition des cellules du tableau de produits
@@ -143,8 +144,8 @@ const FullQuote: React.FC = () => {
     };
 
     // Liste des champs textuels à rendre modifiables
-    // Informations DEVO
-    const [devoTitle, setDevoTitle] = useState<string>('DEVO');
+    // Informations BatiDevis
+    const [devoTitle, setDevoTitle] = useState<string>('BatiDevis');
     const [devoName, setDevoName] = useState<string>('Chen Emma');
     const [devoAddress, setDevoAddress] = useState<string>('73 Rue Rateau');
     const [devoCity, setDevoCity] = useState<string>('93120 La Courneuve, France');
@@ -489,7 +490,7 @@ const FullQuote: React.FC = () => {
           </div>
           <br/>
           <footer>
-            <p>Les marchandises vendues restent notre propriété, jusqu’au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
+            <p>Les marchandises vendues restent notre propriété, jusqu'au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
           </footer>
         </div>
       </div>

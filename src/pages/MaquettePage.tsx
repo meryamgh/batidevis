@@ -16,13 +16,12 @@ import { useFloors } from '../hooks/useFloors';
 import RoomConfigPanel from '../components/panels/RoomConfigPanel';
 import FloorSelector from '../components/panels/FloorSelectorPanel';
 import { useBlueprint } from '../hooks/useBlueprint';
-import { useHistory } from '../hooks/useHistory';
 import { v4 as uuidv4 } from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { useMaquetteStore } from '../store/maquetteStore';
 
 const MaquettePage: React.FC = () => {
-    const [objects, setObjects] = useState<ObjectData[]>([]);
-    const [quote, setQuote] = useState<ObjectData[]>([]); 
+    const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
     const raycaster = useRef(new THREE.Raycaster()); 
     const [showUpload, setShowUpload] = useState(false);
     const [showObjectUpload, setShowObjectUpload] = useState(false);
@@ -66,17 +65,15 @@ const MaquettePage: React.FC = () => {
         length: number
     } | null>(null);
 
-    // const [currentWall, setCurrentWall] = useState<THREE.Line | null>(null);
     const [creatingWallMode, setCreatingWallMode] = useState(false);
     const [walls2D, setWalls2D] = useState<THREE.Line[]>([]);
-    //const [wallStart, setWallStart] = useState<THREE.Vector3 | null>(null);
     const lineHelper = useRef<THREE.Line | null>(null);
 
     const [showRoomConfig, setShowRoomConfig] = useState(false);
     const [roomConfig, setRoomConfig] = useState({
-        width: 10,    // Valeur qui fonctionnait
-        length: 8,    // Valeur qui fonctionnait
-        height: 3     // Valeur qui fonctionnait
+        width: 10,
+        length: 8,
+        height: 3
     });
  
     const [currentFloor, setCurrentFloor] = useState(0);
@@ -86,60 +83,21 @@ const MaquettePage: React.FC = () => {
     const [customTextures] = useState<Record<string, string>>({});
 
     const [showNavigationHelp, setShowNavigationHelp] = useState(false);
- 
-
-    // Initialiser le hook useObjects avec les états
-    const objectsHistory = useHistory<ObjectData[]>([]);
-    const quoteHistory = useHistory<ObjectData[]>([]);
-
-    // Modification du setter d'objets pour sauvegarder l'historique
-    const setObjectsWithHistory = useCallback((newObjects: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => {
-        const updatedObjects = typeof newObjects === 'function' ? newObjects(objects) : newObjects;
-        
-        // Sauvegarder l'état des objets
-        objectsHistory.saveState(updatedObjects);
-        setObjects(updatedObjects);
-        
-        // Ne pas filtrer le devis lors de l'ajout de nouveaux objets
-        // On ne filtre que si un objet a été supprimé
-        const removedObjectIds = objects.filter(obj => 
-            !updatedObjects.some(newObj => newObj.id === obj.id)
-        ).map(obj => obj.id);
-
-        if (removedObjectIds.length > 0) {
-            // Si des objets ont été supprimés, mettre à jour le devis
-            const updatedQuote = quote.filter(quoteItem => 
-                !removedObjectIds.includes(quoteItem.id)
-            );
-
-            if (updatedQuote.length !== quote.length) {
-                quoteHistory.saveState(updatedQuote);
-                setQuote(updatedQuote);
-            }
-        }
-    }, [objectsHistory, objects, quote, quoteHistory]);
-
-    // Modification du setter de devis pour sauvegarder l'historique
-    const setQuoteWithHistory = useCallback((newQuote: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => {
-        const currentQuote = typeof newQuote === 'function' ? newQuote(quote) : newQuote;
-        
-        // Sauvegarder l'état du devis directement sans filtrage
-        quoteHistory.saveState(currentQuote);
-        setQuote(currentQuote);
-    }, [quoteHistory, quote]);
 
     // Initialiser le hook useObjects avec les états mis à jour
     const objectsUtils = useObjects({
-        objects,
-        setObjects: setObjectsWithHistory,
-        quote,
-        setQuote: setQuoteWithHistory,
+        objects, 
+        quote, 
+        setObjects,
+        setQuote,
         setIsMoving,
         setShowDimensions,
         setFocusedObjectId,
-        quoteHistory,
-        objectsHistory,
     });
+
+    useEffect(() => {
+        console.log('quote', quote);
+    }, [quote]);
 
     // Fonction pour étendre un objet
     const handleExtendObject = useCallback((sourceObject: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => {
@@ -190,91 +148,8 @@ const MaquettePage: React.FC = () => {
 
     // Fonction pour supprimer un objet
     const handleRemoveObject = useCallback((id: string) => {
-        // Supprimer l'objet de la liste des objets
-        const newObjects = objects.filter(obj => obj.id !== id);
-        setObjectsWithHistory(newObjects);
-        
-        // Forcer la mise à jour du devis également
-        const newQuote = quote.filter(item => item.id !== id);
-        setQuoteWithHistory(newQuote);
-    }, [objects, quote, setObjectsWithHistory, setQuoteWithHistory]);
-
-    // Fonctions pour gérer l'annulation/rétablissement
-    const handleUndo = useCallback(() => {
-        if (objectsHistory.canUndo) {
-            objectsHistory.undo();
-            quoteHistory.undo();
-            
-            const previousObjects = objectsHistory.state;
-            const previousQuote = quoteHistory.state;
-            
-            // Vérifier la cohérence entre les objets et le devis
-            const validQuote = previousQuote.filter(quoteItem => 
-                previousObjects.some(obj => obj.id === quoteItem.id)
-            );
-            
-            setObjects(previousObjects);
-            setQuote(validQuote);
-        }
-    }, [objectsHistory, quoteHistory]);
-
-    const handleRedo = useCallback(() => {
-        console.log('handleRedo appelé, canRedo:', objectsHistory.canRedo);
-        if (objectsHistory.canRedo) {
-            console.log('Avant redo - État actuel:', {
-                objects: objects,
-                quote: quote
-            });
-
-            // Effectuer le redo sur les deux historiques
-            objectsHistory.redo();
-            quoteHistory.redo();
-            
-            const nextObjects = objectsHistory.state;
-            const nextQuote = quoteHistory.state;
-            
-            console.log('Après redo - Nouveaux états:', {
-                nextObjects: nextObjects,
-                nextQuote: nextQuote
-            });
-
-            // Mettre à jour les états directement sans passer par les setters avec historique
-            setObjects(nextObjects);
-            setQuote(nextQuote);
-        }
-    }, [objectsHistory, quoteHistory]);
-
-    // Gestionnaire pour les raccourcis clavier
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            console.log('Touche pressée:', {
-                key: e.key,
-                ctrlKey: e.ctrlKey,
-                canRedo: objectsHistory.canRedo
-            });
-
-            if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'z') {
-                    // Ctrl+Z ou Cmd+Z pour Undo
-                    console.log('Tentative de Undo');
-                    handleUndo();
-                } else if (e.key === 'y') {
-                    // Ctrl+Y ou Cmd+Y pour Redo
-                    console.log('Tentative de Redo');
-                    handleRedo();
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleUndo, handleRedo]);
-
-    // Initialiser l'historique avec l'état initial
-    useEffect(() => {
-        objectsHistory.saveState(objects);
-        quoteHistory.saveState(quote);
-    }, []);
+        removeObject(id);
+    }, [removeObject]);
 
     const floorsUtils = useFloors({
         setObjects,
@@ -537,9 +412,13 @@ const MaquettePage: React.FC = () => {
         }
     }, [objectsUtils, customTextures, setCreatingWallMode, floorsUtils, handleExtendObject]);
 
+    // Fonction pour basculer l'affichage du panneau de devis
+    const toggleQuotePanel = useCallback(() => {
+        setShowQuotePanel(prev => !prev);
+    }, []);
+
     // Wrapper pour handleObjectClick qui utilise la fonction du hook
-    const onObjectClick = useCallback((id: string, point?: THREE.Vector3) => {
-        alert('onObjectClick function called');
+    const onObjectClick = useCallback((id: string, point?: THREE.Vector3) => { 
         if (isCreatingSurface && point) {
             if (!surfaceStartPoint) {
                 // Premier clic : définir le point de départ
@@ -563,15 +442,11 @@ const MaquettePage: React.FC = () => {
             objectsUtils.handleObjectClick(id, viewMode, is2DView, renderObjectPanel);
         }
     }, [objectsUtils, viewMode, is2DView, renderObjectPanel, isCreatingSurface, surfaceStartPoint]);
-
-    // Fonction pour basculer l'affichage du panneau de devis
-    const toggleQuotePanel = useCallback(() => {
-        setShowQuotePanel(prev => !prev);
-    }, []);
-
+    
+     
+    
     // Ajouter la fonction pour créer la surface
     const createSurface = (start: THREE.Vector3, end: THREE.Vector3) => {
-   
         const width = Math.abs(end.x - start.x);
         const depth = Math.abs(end.z - start.z);
         
@@ -591,7 +466,6 @@ const MaquettePage: React.FC = () => {
         box.getSize(size);
         box.getCenter(center);
 
-        // Stocker les informations de la bounding box
         const boundingBox = {
             min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
             max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
@@ -613,8 +487,8 @@ const MaquettePage: React.FC = () => {
             boundingBox: boundingBox
         };
 
-        setObjectsWithHistory(prev => [...prev, newSurface]);
-        setQuoteWithHistory(prev => [...prev, newSurface]);
+        setObjects((prev: ObjectData[]) => [...prev, newSurface]);
+        setQuote((prev: ObjectData[]) => [...prev, newSurface]);
         
         // Réinitialiser les états
         setSurfaceStartPoint(null);
@@ -622,13 +496,12 @@ const MaquettePage: React.FC = () => {
         setSurfacePreview(null);
         setIsCreatingSurface(false);
     };
-
+    
     // Fonction pour gérer la sélection d'un point pour la surface
     const handleSurfacePointSelected = useCallback((point: THREE.Vector3) => {
         if (!surfaceStartPoint) {
             setSurfaceStartPoint(point);
         } else {
-            // Créer la surface finale
             const width = Math.abs(point.x - surfaceStartPoint.x);
             const depth = Math.abs(point.z - surfaceStartPoint.z);
             
@@ -648,7 +521,6 @@ const MaquettePage: React.FC = () => {
             box.getSize(size);
             box.getCenter(center);
 
-            // Stocker les informations de la bounding box
             const boundingBox = {
                 min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
                 max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
@@ -670,8 +542,8 @@ const MaquettePage: React.FC = () => {
                 boundingBox: boundingBox
             };
 
-            setObjectsWithHistory(prev => [...prev, newSurface]);
-            setQuoteWithHistory(prev => [...prev, newSurface]);
+            setObjects((prev: ObjectData[]) => [...prev, newSurface]);
+            setQuote((prev: ObjectData[]) => [...prev, newSurface]);
             
             // Réinitialiser les états
             setSurfaceStartPoint(null);
@@ -679,8 +551,8 @@ const MaquettePage: React.FC = () => {
             setSurfacePreview(null);
             setIsCreatingSurface(false);
         }
-    }, [surfaceStartPoint, setObjectsWithHistory, setQuoteWithHistory]);
-
+    }, [surfaceStartPoint, setObjects, setQuote]);
+    
     // Fonction pour mettre à jour l'aperçu de la surface
     const handleSurfacePreviewUpdate = useCallback((start: THREE.Vector3, end: THREE.Vector3) => {
         // Calculer les dimensions en fonction des points de départ et d'arrivée
@@ -726,8 +598,8 @@ const MaquettePage: React.FC = () => {
             const data = await response.json();
             
             // Vider la scène actuelle
-            setObjectsWithHistory([]);
-            setQuoteWithHistory([]);
+            setObjects([]);
+            setQuote([]);
             
             // Créer un tableau temporaire pour stocker tous les objets
             const newObjects: ObjectData[] = [];
@@ -790,8 +662,8 @@ const MaquettePage: React.FC = () => {
             }
             
             // Mettre à jour la scène avec tous les objets d'un coup
-            setObjectsWithHistory(newObjects);
-            setQuoteWithHistory(newObjects);
+            setObjects(newObjects);
+            setQuote(newObjects);
             
             // Appliquer les textures et faces après que tous les objets sont chargés
             for (const obj of newObjects) {
@@ -837,25 +709,6 @@ const MaquettePage: React.FC = () => {
                 reconstructMaquette={reconstructMaquette}
             />
 
-            <div className="history-controls">
-                <button 
-                    onClick={handleUndo}
-                    disabled={!objectsHistory.canUndo}
-                    className="history-button"
-                    title="Annuler (Ctrl+Z)"
-                >
-                    ↩ Annuler
-                </button>
-                <button 
-                    onClick={handleRedo}
-                    disabled={!objectsHistory.canRedo}
-                    className="history-button"
-                    title="Rétablir (Ctrl+Y)"
-                >
-                    ↪ Rétablir
-                </button>
-            </div>
-
             {/* Contenu principal */}
             <div id="container">
                 <div ref={leftPanelRef} className={`left-panel ${!showQuotePanel ? 'left-panel-expanded' : ''}`}>
@@ -875,21 +728,15 @@ const MaquettePage: React.FC = () => {
                         objects={objects.filter(obj => {
                             if (!is2DView) return true;
                             
-                            // En vue 2D, filtrer les objets selon l'étage sélectionné
                             const objectHeight = obj.position[1] * 2;
                             
                             if (selectedFloor2D === 0) {
-                                // Pour le rez-de-chaussée
                                 return objectHeight <= roomConfig.height;
                             } else {
-                                // Pour les étages supérieurs
                                 const floorStart = selectedFloor2D * roomConfig.height;
                                 const floorEnd = (selectedFloor2D + 1) * roomConfig.height;
                                 
-                                // Vérifier si l'objet appartient à cet étage
                                 const isInFloor = objectHeight > floorStart && objectHeight <= floorEnd;
-                                
-                                // Vérifier si c'est un sol d'étage (qui a une position légèrement décalée)
                                 const isFloor = obj.details.includes('Sol') && 
                                               obj.details.includes(`Étage ${selectedFloor2D}`);
                                 
@@ -944,8 +791,8 @@ const MaquettePage: React.FC = () => {
                         >
                             <QuotePanel 
                                 quote={quote} 
-                                setObjects={setObjectsWithHistory}
-                                setQuote={setQuoteWithHistory}
+                                setObjects={setObjects}
+                                setQuote={setQuote}
                                 getSerializableQuote={objectsUtils.getSerializableQuote}
                                 handleRemoveObject={handleRemoveObject}
                             />

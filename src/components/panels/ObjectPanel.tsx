@@ -263,8 +263,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     };
 
     // Fonction pour mettre à jour les dimensions de la pièce
-    const handleUpdateRoomDimensions = () => {
-        alert("test");
+    const handleUpdateRoomDimensions = () => { 
         if (onUpdateRoomDimensions && isFloor) {
             onUpdateRoomDimensions(object.id, roomWidth, roomLength, roomHeight);
         }

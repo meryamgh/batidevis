@@ -57,6 +57,7 @@ const TextureUpload = ({ onClose }: { onClose?: () => void }) => {
       setMessage("");
       const response = await axios.post("http://127.0.0.1:5000/api/textures/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        
       });
       setMessage(response.data.message);
       // Clear form after successful upload

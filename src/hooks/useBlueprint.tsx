@@ -718,9 +718,7 @@ export const useBlueprint = ({
         
         // Passer en mode 3D après la conversion
         setViewMode('3D');
-        
-        // Optionnel: afficher un message de confirmation
-        alert(`${blueprintLines.length} lignes ont été converties en murs 3D avec un sol ajouté`);
+         
     };
 
     const handleAddNewFloorBlueprint = () => {
@@ -744,8 +742,6 @@ export const useBlueprint = ({
         setRectanglePreview(null);
         setWalls2D([]);
         
-        // Afficher un message de confirmation
-        alert(`Étage ${currentFloor + 1} ajouté. Vous pouvez maintenant dessiner le plan pour l'étage ${currentFloor + 1}.`);
     };
 
 

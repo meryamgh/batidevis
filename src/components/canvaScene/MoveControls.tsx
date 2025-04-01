@@ -199,9 +199,7 @@ const MoveControls: React.FC<MoveControlsProps> = ({
                             orbitControlsRef.current.setPolarAngle?.(newPolar);
                             orbitControlsRef.current.update();
                         }
-                    } else {
-                        // En mode déplacement, incliner la caméra vers le haut
-                        const upVector = new THREE.Vector3(0, 1, 0);
+                    } else { 
                         const axis = new THREE.Vector3().crossVectors(camera.up, forward).normalize();
                         const rotationMatrix = new THREE.Matrix4().makeRotationAxis(axis, rotateSpeed);
                         const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -225,9 +223,7 @@ const MoveControls: React.FC<MoveControlsProps> = ({
                             orbitControlsRef.current.setPolarAngle?.(newPolar);
                             orbitControlsRef.current.update();
                         }
-                    } else {
-                        // En mode déplacement, incliner la caméra vers le bas
-                        const upVector = new THREE.Vector3(0, 1, 0);
+                    } else { 
                         const axis = new THREE.Vector3().crossVectors(camera.up, forward).normalize();
                         const rotationMatrix = new THREE.Matrix4().makeRotationAxis(axis, -rotateSpeed);
                         const cameraDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);

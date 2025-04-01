@@ -5,18 +5,15 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 interface UseObjectsProps {
-  objects: ObjectData[];
+  objects: ObjectData[]; 
+  quote: ObjectData[]; 
   setObjects: React.Dispatch<React.SetStateAction<ObjectData[]>>;
-  quote: ObjectData[];
   setQuote: React.Dispatch<React.SetStateAction<ObjectData[]>>;
- 
   setIsMoving: React.Dispatch<React.SetStateAction<string | null>>;
   
   setShowDimensions: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
  
   setFocusedObjectId: React.Dispatch<React.SetStateAction<string | null>>;
-  quoteHistory: any;
-  objectsHistory: any;
 }
 
 // Interface pour définir les propriétés retournées par le hook
@@ -42,15 +39,13 @@ interface UseObjectsReturn {
 }
 
 export const useObjects = ({
-  objects,
+  objects, 
+  quote, 
   setObjects,
-  quote,
-  setQuote, 
+  setQuote,
   setIsMoving, 
   setShowDimensions, 
-  setFocusedObjectId,
-  quoteHistory,
-  objectsHistory,
+  setFocusedObjectId, 
 }: UseObjectsProps): UseObjectsReturn => {
 
   const handleAddObject = useCallback(async (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => {

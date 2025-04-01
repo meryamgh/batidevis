@@ -24,10 +24,12 @@
     "three-js-csg": "^72.0.0",
     "three-stdlib": "^2.34.0",
     "troika-three-text": "^0.52.2",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@types/aos": "^3.0.7",
     "@types/lodash": "^4.17.13",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

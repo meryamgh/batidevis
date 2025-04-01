@@ -31,7 +31,12 @@ const formatTextureName = (filename: string): string => {
 export const fetchTextures = async (): Promise<TextureItem[]> => {
   try {
     console.log("Fetching textures from API...");
-    const response = await fetch("http://127.0.0.1:5000/api/textures");
+    const response = await fetch("http://127.0.0.1:5000/api/textures", {
+      method: "GET", 
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
     const data = await response.json();
     
     // Afficher la structure complète de la réponse pour le débogage
@@ -40,16 +45,20 @@ export const fetchTextures = async (): Promise<TextureItem[]> => {
     if (response.ok) {
       // Format spécifique basé sur la réponse partagée par l'utilisateur
       if (data.textures && Array.isArray(data.textures)) {
+        
+
+
+        
         return data.textures.map((item: TextureApiItem) => {
           const filename = item.filename || item.url.split('/').pop() || 'Texture';
+
           return {
-            url: item.url,
-            name: formatTextureName(filename),
-            fullUrl: item.url.startsWith('http') 
-              ? item.url 
-              : `http://127.0.0.1:5000${item.url}`
+              // Remplace directement l'URL publique par ton API Flask en proxy
+              url: `http://127.0.0.1:5000/api/textures/${filename}`,
+              name: formatTextureName(filename),
+              fullUrl: `http://127.0.0.1:5000/api/textures/${filename}`
           };
-        });
+      });
       }
       
       // Aucun format reconnu

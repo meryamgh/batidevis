@@ -211,10 +211,7 @@ const RaycasterHandler: React.FC<{
 
                 if (!wallStart) {
                     setWallStart(point);
-                } else {
-                    const isAligned = isWallAligned(wallStart, point);
-                    const hasIntersection = checkWallIntersection(wallStart, point);
-                    
+                } else { 
                     handleAddWall2D(wallStart, point);
 
                     setWallStart(null);
