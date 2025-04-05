@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Quote.css';
 import { useMaquetteStore } from '../store/maquetteStore';
@@ -14,11 +14,19 @@ type AggregatedQuoteItem = {
     details: string;
     price: number;
     quantity: number;
+    isNew?: boolean; // Add this flag to track new items
 };
+
+// Interface for API response
+interface ApiSuggestionResponse {
+    suggestions?: string[];
+    status?: number;
+}
 
 const FullQuote: React.FC = () => {
     const navigate = useNavigate();
     const { quote } = useMaquetteStore();
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
@@ -34,6 +42,13 @@ const FullQuote: React.FC = () => {
     }, [] as AggregatedQuoteItem[]);
 
     const [aggregatedQuote, setAggregatedQuote] = useState<AggregatedQuoteItem[]>(initialAggregated);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [isFetchingSuggestions, setIsFetchingSuggestions] = useState<boolean>(false);
+
+    // Monitor suggestions changes
+    useEffect(() => {
+        console.log("Suggestions state updated:", suggestions);
+    }, [suggestions]);
 
     // Paramètres de TVA, Acompte
     const tvaRate = 0.20; 
@@ -49,28 +64,221 @@ const FullQuote: React.FC = () => {
         navigate('/maquette'); 
     };
 
+    // Function to add a new empty row to the quote
+    const handleAddRow = () => {
+        const newItem: AggregatedQuoteItem = {
+            details: "Nouveau produit",
+            price: 0,
+            quantity: 1,
+            isNew: true
+        };
+        setAggregatedQuote([...aggregatedQuote, newItem]);
+        
+        // Automatically start editing the new row
+        const newIndex = aggregatedQuote.length;
+        setEditingCell({rowIndex: newIndex, field: 'details'});
+        setEditValue("Nouveau produit");
+    };
+
+    // Debug utility to display current state (for development)
+    const debugState = () => {
+        console.group("Current State Debug");
+        console.log("Editing Cell:", editingCell);
+        console.log("Edit Value:", editValue);
+        console.log("Suggestions:", suggestions);
+        console.log("Selected Index:", selectedSuggestionIndex);
+        console.log("Aggregated Quote:", aggregatedQuote);
+        console.groupEnd();
+    };
+
+
+    // Function to fetch suggestions from API
+    const fetchSuggestions = async (query: string) => {
+        if (!query || query.length < 3) {
+            setSuggestions([]);
+            return;
+        }
+
+        console.log("Fetching suggestions for:", query);
+        setIsFetchingSuggestions(true);
+        try {
+            const response = await fetch('http://localhost:5000/api/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                mode: 'cors',
+                body: JSON.stringify({ query }),
+            });
+
+            console.log("API response status:", response.status);
+            
+            if (response.ok) {
+                const data: ApiSuggestionResponse = await response.json();
+                console.log("API response data:", data);
+                
+                if (data.suggestions && data.suggestions.length > 0) {
+                    console.log("Setting suggestions:", data.suggestions);
+                    setSuggestions(data.suggestions);
+                } else {
+                    console.log("No suggestions found in response");
+                    // Fallback to mock suggestions for testing
+                    provideMockSuggestions(query);
+                }
+            } else {
+                console.log('No suggestions found - response not OK');
+                // Fallback to mock suggestions for testing
+                provideMockSuggestions(query);
+            }
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+            // Fallback to mock suggestions for testing
+            provideMockSuggestions(query);
+        } finally {
+            setIsFetchingSuggestions(false);
+        }
+    };
+
+    // Provide mock suggestions for testing if API is not available
+    const provideMockSuggestions = (query: string) => {
+        console.log("Providing mock suggestions for:", query);
+        const mockSuggestions = [
+            `${query} d'une fenêtre PVC`,
+            `${query} d'une porte d'entrée`,
+            `${query} d'un volet roulant`,
+            `${query} et installation complète`,
+            `${query} sur mesure`
+        ];
+        setSuggestions(mockSuggestions);
+    };
+
     // Gestion de l'édition des cellules du tableau de produits
     const [editingCell, setEditingCell] = useState<{rowIndex: number; field: 'details' | 'quantity' | 'price'} | null>(null);
     const [editValue, setEditValue] = useState<string>('');
+    const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
+    const [isSuggestionClicking, setIsSuggestionClicking] = useState<boolean>(false);
 
     const handleCellClick = (rowIndex: number, field: 'details' | 'quantity' | 'price') => {
         setEditingCell({rowIndex, field});
         const currentValue = aggregatedQuote[rowIndex][field].toString();
         setEditValue(currentValue);
+        
+        // If editing details field, fetch suggestions
+        if (field === 'details' && currentValue.length >= 3) {
+            fetchSuggestions(currentValue);
+        } else {
+            setSuggestions([]);
+        }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEditValue(e.target.value);
+        const value = e.target.value;
+        setEditValue(value);
+        
+        // If editing details field, fetch suggestions
+        if (editingCell?.field === 'details' && value.length >= 3) {
+            fetchSuggestions(value);
+        } else {
+            setSuggestions([]);
+        }
+        
+        // Reset suggestion selection
+        setSelectedSuggestionIndex(-1);
     };
 
-    const handleBlur = () => {
-        saveCellChanges();
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        // Give time for suggestion clicks to process
+        setTimeout(() => {
+            // Don't save if a suggestion is being clicked
+            if (editingCell && !isSuggestionClicking) {
+                saveCellChanges();
+                setSuggestions([]);
+            }
+        }, 200);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            saveCellChanges();
+            if (selectedSuggestionIndex >= 0 && suggestions.length > 0) {
+                // If a suggestion is selected, use it
+                setEditValue(suggestions[selectedSuggestionIndex]);
+                setSuggestions([]);
+                setSelectedSuggestionIndex(-1);
+            } else {
+                // Otherwise, save as normal
+                saveCellChanges();
+                setSuggestions([]);
+            }
+        } else if (e.key === 'ArrowDown' && suggestions.length > 0) {
+            // Navigate down through suggestions
+            e.preventDefault();
+            setSelectedSuggestionIndex(prev => 
+                prev < suggestions.length - 1 ? prev + 1 : 0
+            );
+        } else if (e.key === 'ArrowUp' && suggestions.length > 0) {
+            // Navigate up through suggestions
+            e.preventDefault();
+            setSelectedSuggestionIndex(prev => 
+                prev > 0 ? prev - 1 : suggestions.length - 1
+            );
+        } else if (e.key === 'Escape') {
+            // Close suggestions without selecting
+            setSuggestions([]);
+            setSelectedSuggestionIndex(-1);
+        } else if (e.key === 'Tab') {
+            // Using tab to accept suggestion
+            if (selectedSuggestionIndex >= 0 && suggestions.length > 0) {
+                e.preventDefault();
+                setEditValue(suggestions[selectedSuggestionIndex]);
+                setSuggestions([]);
+                setSelectedSuggestionIndex(-1);
+            }
         }
+    };
+
+    const handleSuggestionClick = (suggestion: string) => {
+        // Log that a suggestion was clicked
+        console.log("Suggestion clicked:", suggestion);
+        
+        if (!editingCell) {
+            console.error("No cell is being edited");
+            return;
+        }
+        
+        // Get row and field being edited
+        const {rowIndex, field} = editingCell;
+        
+        console.log(`Applying suggestion "${suggestion}" to row ${rowIndex}`);
+        
+        // Set flag to prevent blur handler from saving
+        setIsSuggestionClicking(true);
+        
+        // Create a new copy of the quote with direct application of the suggestion
+        const newItems = aggregatedQuote.map((item, index) => {
+            if (index === rowIndex) {
+                return { 
+                    ...item, 
+                    details: field === 'details' ? suggestion : item.details 
+                };
+            }
+            return item;
+        });
+        
+        // Update the state
+        setAggregatedQuote(newItems);
+        
+        // Clear the edit state immediately
+        setEditingCell(null);
+        setEditValue('');
+        setSuggestions([]);
+        
+        console.log("Updated quote:", newItems);
+        
+        // Reset the flag after a short delay
+        setTimeout(() => {
+            setIsSuggestionClicking(false);
+        }, 300);
     };
 
     const saveCellChanges = () => {
@@ -90,6 +298,12 @@ const FullQuote: React.FC = () => {
         const newAggregated = [...aggregatedQuote];
         // @ts-ignore
         newAggregated[rowIndex][field] = newValue;
+        
+        // Remove the isNew flag if it was set
+        if (newAggregated[rowIndex].isNew && field === 'details') {
+            newAggregated[rowIndex].isNew = false;
+        }
+        
         setAggregatedQuote(newAggregated);
         setEditingCell(null);
         setEditValue('');
@@ -268,6 +482,7 @@ const FullQuote: React.FC = () => {
         <button className='full-quote-button' onClick={handleBack}>
           retour maquette
         </button>
+         
         <div className="container">
           <header>
             <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
@@ -380,17 +595,87 @@ const FullQuote: React.FC = () => {
                     <td 
                       className='size_description' 
                       onClick={() => handleCellClick(index, 'details')}
+                      style={{ position: 'relative' }}
                     >
-                      {isEditingDetails ? 
-                        <input
-                          type="text"
-                          value={editValue}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          onKeyDown={handleKeyDown}
-                          autoFocus
-                        /> 
-                        : item.details}
+                      {isEditingDetails ? (
+                        <>
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            ref={inputRef}
+                            autoFocus
+                            style={{ width: '100%' }}
+                          />
+                          {suggestions.length > 0 && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              backgroundColor: 'white',
+                              border: '2px solid #007bff',
+                              borderRadius: '4px',
+                              zIndex: 1000,
+                              width: '100%',
+                              maxHeight: '200px',
+                              overflowY: 'auto',
+                              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                            }}>
+                              {suggestions.map((suggestion, i) => {
+                                // Function to handle click within this closure
+                                const handleClick = (e: React.MouseEvent) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  
+                                  // Set flag to prevent blur handler from saving
+                                  setIsSuggestionClicking(true);
+                                  
+                                  if (editingCell) {
+                                    const {rowIndex, field} = editingCell;
+                                    
+                                    // Create updated copy with suggestion applied
+                                    const newQuote = [...aggregatedQuote];
+                                    newQuote[rowIndex].details = suggestion;
+                                    
+                                    // Update state directly
+                                    setAggregatedQuote(newQuote);
+                                    setSuggestions([]);
+                                    setEditingCell(null);
+                                    
+                                    console.log(`Applied suggestion "${suggestion}" to row ${rowIndex}`);
+                                    
+                                    // Reset the flag after a short delay
+                                    setTimeout(() => {
+                                      setIsSuggestionClicking(false);
+                                    }, 300);
+                                  }
+                                };
+                                
+                                return (
+                                  <div
+                                    key={i}
+                                    onClick={handleClick}
+                                    style={{
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      backgroundColor: i === selectedSuggestionIndex ? '#e9f5ff' : 'white',
+                                      color: '#333',
+                                      fontWeight: i === selectedSuggestionIndex ? 'bold' : 'normal',
+                                      borderBottom: i < suggestions.length - 1 ? '1px solid #eee' : 'none'
+                                    }}
+                                  >
+                                    {suggestion}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        item.details
+                      )}
                     </td>
                     <td
                       onClick={() => handleCellClick(index, 'quantity')}
@@ -427,6 +712,25 @@ const FullQuote: React.FC = () => {
                   </tr>
                 );
               })}
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '10px' }}>
+                  <button 
+                    onClick={handleAddRow} 
+                    style={{ 
+                      fontSize: '18px', 
+                      backgroundColor: '#007bff', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '50%', 
+                      width: '30px', 
+                      height: '30px', 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    +
+                  </button>
+                </td>
+              </tr>
             </tbody>
           </table>
 

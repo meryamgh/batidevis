@@ -5,6 +5,7 @@ import { useTextures } from '../../services/TextureService';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import '../../styles/ObjectPanel.css';
+import Select, { SingleValue } from 'react-select';
 
 type ObjectPanelProps = {
     object: ObjectData;
@@ -23,6 +24,7 @@ type ObjectPanelProps = {
     onAddObject: (object: ObjectData) => void;
     onExtendObject: (object: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => ObjectData;
     onUpdateFaces?: (id: string, faces: FacesData) => void;
+    parametricData?: any;
 };
 
 // Type pour les noms des faces
@@ -45,6 +47,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     onAddObject,
     onExtendObject,
     onUpdateFaces,
+    parametricData,
 }) => {
     const [width, setWidth] = useState(object.scale[0]);
     const [height, setHeight] = useState(object.scale[1]);
@@ -951,6 +954,62 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     {showDimensions ? 'masquer les dimensions' : 'afficher les dimensions'}
                 </button>
             </div>
+
+            {parametricData && (
+                <div className="panel-section">
+                    <h3 className="section-title">Données Paramétriques</h3>
+                    
+                    {/* Item details section with improved display */}
+                    {parametricData.item_details && (
+                        <div className="item-details">
+                            <h4>Détails de l'article</h4>
+                            <div className="item-property">
+                                <span className="item-label">Description:</span>
+                                <p className="item-description">{parametricData.item_details.libtech}</p>
+                            </div>
+                            <div className="item-property">
+                                <span className="item-label">Prix:</span>
+                                <span className="item-value">{parametricData.item_details.prix.toFixed(2)} €</span>
+                            </div>
+                            <div className="item-property">
+                                <span className="item-label">Unité:</span>
+                                <span className="item-value">{parametricData.item_details.unite}</span>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Variables by position section with dropdown selectors */}
+                    {parametricData.variables_by_position && (
+                        <div className="variables-section">
+                            <h4>Variantes disponibles</h4>
+                            {Object.entries(parametricData.variables_by_position).map(([position, options]) => (
+                                <div key={position} className="variable-position">
+                                    <span className="position-label">Position {position}:</span>
+                                    <Select
+                                        className="position-select"
+                                        options={Array.isArray(options) ? options.map(option => ({ value: option, label: option })) : []}
+                                        defaultValue={Array.isArray(options) && options.length > 0 ? { value: options[0], label: options[0] } : null}
+                                        onChange={(selectedOption: SingleValue<{value: string, label: string}>) => {
+                                            console.log(`Changed position ${position} to:`, selectedOption);
+                                            // Here you could implement functionality to update the object based on selection
+                                        }}
+                                        isSearchable={false}
+                                        isDisabled={Array.isArray(options) && options.length <= 1}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {/* Template section for reference */}
+                    {parametricData.template && (
+                        <div className="template-section">
+                            <h4>Modèle complet</h4>
+                            <p className="template-text">{parametricData.template}</p>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

@@ -17,7 +17,7 @@ import RoomConfigPanel from '../components/panels/RoomConfigPanel';
 import FloorSelector from '../components/panels/FloorSelectorPanel';
 import { useBlueprint } from '../hooks/useBlueprint';
 import { v4 as uuidv4 } from 'uuid';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useMaquetteStore } from '../store/maquetteStore';
 
 const MaquettePage: React.FC = () => {
@@ -385,30 +385,92 @@ const MaquettePage: React.FC = () => {
             if (!panelRootRef.current) {
                 panelRootRef.current = createRoot(panel);
             }
-            panelRootRef.current.render(
-                <ObjectPanel
-                    object={selectedObject}
-                    onUpdateTexture={objectsUtils.handleUpdateTexture}
-                    onUpdateColor={objectsUtils.handleUpdateColor}
-                    onUpdateScale={objectsUtils.handleUpdateScale}
-                    onUpdatePosition={objectsUtils.handleUpdatePosition}
-                    onRemoveObject={objectsUtils.handleRemoveObject}
-                    customTextures={customTextures}
-                    onMoveObject={() => setIsMoving(selectedObject.id)}
-                    onClosePanel={() => {
-                        closePanel();
-                        setIsMoving(null);
-                        setSelectedObjectId(null); // Réinitialiser l'objet sélectionné
-                    }}
-                    onRotateObject={objectsUtils.handleRotateObject}
-                    onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
-                    onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
-                    onDeselectObject={(id) => setSelectedObjectId(null)}
-                    onAddObject={objectsUtils.handleAddObjectFromData}
-                    onExtendObject={handleExtendObject}
-                    onUpdateFaces={objectsUtils.handleUpdateFaces}
-                />
-            );
+            
+            // Faire une requête au backend pour obtenir les données paramétriques
+            const fetchParametricData = async () => {
+                try {
+                    console.log("Fetching parametric data for:", selectedObject.details);
+                    const response = await fetch('http://localhost:5000/api/parametric_data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: selectedObject.details
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log("Received parametric data:", data);
+                        
+                        // Render the panel with parametric data
+                        panelRootRef.current?.render(
+                            <ObjectPanel
+                                object={selectedObject}
+                                onUpdateTexture={objectsUtils.handleUpdateTexture}
+                                onUpdateColor={objectsUtils.handleUpdateColor}
+                                onUpdateScale={objectsUtils.handleUpdateScale}
+                                onUpdatePosition={objectsUtils.handleUpdatePosition}
+                                onRemoveObject={objectsUtils.handleRemoveObject}
+                                customTextures={customTextures}
+                                onMoveObject={() => setIsMoving(selectedObject.id)}
+                                onClosePanel={() => {
+                                    closePanel();
+                                    setIsMoving(null);
+                                    setSelectedObjectId(null); // Réinitialiser l'objet sélectionné
+                                }}
+                                onRotateObject={objectsUtils.handleRotateObject}
+                                onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
+                                onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
+                                onDeselectObject={(id) => setSelectedObjectId(null)}
+                                onAddObject={objectsUtils.handleAddObjectFromData}
+                                onExtendObject={handleExtendObject}
+                                onUpdateFaces={objectsUtils.handleUpdateFaces}
+                                parametricData={data}
+                            />
+                        );
+                    } else {
+                        console.error("Failed to fetch parametric data. Status:", response.status);
+                        // Render the panel without parametric data
+                        renderPanelWithoutParametricData();
+                    }
+                } catch (error) {
+                    console.error("Error fetching parametric data:", error);
+                    // Render the panel without parametric data
+                    renderPanelWithoutParametricData();
+                }
+            };
+            
+            const renderPanelWithoutParametricData = () => {
+                panelRootRef.current?.render(
+                    <ObjectPanel
+                        object={selectedObject}
+                        onUpdateTexture={objectsUtils.handleUpdateTexture}
+                        onUpdateColor={objectsUtils.handleUpdateColor}
+                        onUpdateScale={objectsUtils.handleUpdateScale}
+                        onUpdatePosition={objectsUtils.handleUpdatePosition}
+                        onRemoveObject={objectsUtils.handleRemoveObject}
+                        customTextures={customTextures}
+                        onMoveObject={() => setIsMoving(selectedObject.id)}
+                        onClosePanel={() => {
+                            closePanel();
+                            setIsMoving(null);
+                            setSelectedObjectId(null); // Réinitialiser l'objet sélectionné
+                        }}
+                        onRotateObject={objectsUtils.handleRotateObject}
+                        onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
+                        onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
+                        onDeselectObject={(id) => setSelectedObjectId(null)}
+                        onAddObject={objectsUtils.handleAddObjectFromData}
+                        onExtendObject={handleExtendObject}
+                        onUpdateFaces={objectsUtils.handleUpdateFaces}
+                    />
+                );
+            };
+            
+            // Start the fetch operation
+            fetchParametricData();
         }
     }, [objectsUtils, customTextures, setCreatingWallMode, floorsUtils, handleExtendObject]);
 
