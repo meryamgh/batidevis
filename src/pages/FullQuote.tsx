@@ -3,6 +3,115 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/Quote.css';
 import { useMaquetteStore } from '../store/maquetteStore';
 import { ObjectData } from '../types/ObjectData';
+import axios from 'axios';
+import { jsPDF } from 'jspdf';
+
+// YouSign API client
+class YouSignClient {
+  private BASE_URL = 'https://api-sandbox.yousign.app/v3';
+  private API_KEY: string;
+
+  constructor(apiKey: string) {
+    this.API_KEY = apiKey;
+  }
+
+  async request(endpoint = '', options = {}, headers = {}) {
+    const url = `${this.BASE_URL}/${endpoint}`;
+    const config = {
+      url,
+      headers: {
+        Authorization: `Bearer ${this.API_KEY}`,
+        ...headers
+      },
+      ...options
+    }
+
+    try {
+      const res = await axios(config);
+      return res.data;
+    } catch (e) {
+      console.error('YouSign API error:', e);
+      throw new Error(`Error on API call`);
+    }
+  }
+
+  // Initiate Signature Request
+  async initiateSignatureRequest(name: string) {
+    const body = {
+      name,
+      delivery_mode: 'email',
+      timezone: 'Europe/Paris',
+    };
+    const options = {
+      method: 'POST',
+      data: JSON.stringify(body),
+    };
+    const headers = {
+      'Content-type': 'application/json',
+    };
+    return this.request('signature_requests', options, headers);
+  }
+
+  // Upload Document
+  async uploadDocument(signatureRequestId: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file, 'devis.pdf');
+    formData.append('nature', 'signable_document');
+    formData.append('parse_anchors', 'true');
+
+    const options = {
+      method: 'POST',
+      data: formData,
+    };
+    
+    return this.request(`signature_requests/${signatureRequestId}/documents`, options);
+  }
+
+  // Add Signer
+  async addSigner(signatureRequestId: string, documentId: string, signerInfo: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone_number: string;
+  }) {
+    const body = {
+      info: {
+        ...signerInfo,
+        locale: 'fr',
+      },
+      signature_level: 'electronic_signature',
+      signature_authentication_mode: 'no_otp',
+      fields: [
+        {
+          document_id: documentId,
+          type: 'signature',
+          page: 1,
+          x: 77,
+          y: 581,
+        }
+      ]
+    };
+    
+    const options = {
+      method: 'POST',
+      data: JSON.stringify(body),
+    };
+    
+    const headers = {
+      'Content-type': 'application/json',
+    };
+    
+    return this.request(`signature_requests/${signatureRequestId}/signers`, options, headers);
+  }
+
+  // Activate Signature Request
+  async activateSignatureRequest(signatureRequestId: string) {
+    const options = {
+      method: 'POST',
+    }
+    return this.request(`signature_requests/${signatureRequestId}/activate`, options);
+  }
+}
 
 type QuoteItem = {
     id: number;
@@ -27,6 +136,21 @@ const FullQuote: React.FC = () => {
     const navigate = useNavigate();
     const { quote } = useMaquetteStore();
     const inputRef = useRef<HTMLInputElement>(null);
+    const quoteRef = useRef<HTMLDivElement>(null);
+
+    // YouSign API integration
+    const apiKey = import.meta.env.VITE_APP_YOUSIGN_API_KEY ;
+    const [youSignClient] = useState<YouSignClient>(() => new YouSignClient(apiKey));
+    const [signatureStatus, setSignatureStatus] = useState<'idle' | 'preparing' | 'sent' | 'error'>('idle');
+    const [signatureRequestId, setSignatureRequestId] = useState<string | null>(null);
+    const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+
+    // New state for signer info
+    const [signerFirstName, setSignerFirstName] = useState<string>('');
+    const [signerLastName, setSignerLastName] = useState<string>('');
+    const [signerEmail, setSignerEmail] = useState<string>('');
+    const [signerPhone, setSignerPhone] = useState<string>('');
+    const [showSignerForm, setShowSignerForm] = useState<boolean>(false);
 
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
@@ -477,13 +601,151 @@ const FullQuote: React.FC = () => {
         );
     };
 
+    // Function to prepare a proper PDF document for signature
+    const prepareDocumentForSignature = (): Promise<File> => {
+        return new Promise((resolve) => {
+            // Create a PDF document
+            const doc = new jsPDF();
+            
+            // Set font
+            doc.setFont("helvetica", "normal");
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text(`DEVIS N° ${devisNumero}`, 105, 20, { align: 'center' });
+            
+            // Client information
+            doc.setFontSize(12);
+            doc.text(`Client: ${societeBatiment}`, 20, 40);
+            doc.text(`Adresse: ${clientAdresse}, ${clientCodePostal}`, 20, 50);
+            doc.text(`Tel: ${clientTel}`, 20, 60);
+            doc.text(`Email: ${clientEmail}`, 20, 70);
+            
+            // Devis information
+            doc.text(`Date: ${enDateDu}`, 140, 40);
+            doc.text(`Valable jusqu'au: ${valableJusquau}`, 140, 50);
+            
+            // Headers for items table
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("N°", 20, 90);
+            doc.text("DÉSIGNATION", 40, 90);
+            doc.text("QTÉ", 130, 90);
+            doc.text("PRIX U.", 150, 90);
+            doc.text("TOTAL HT", 180, 90);
+            
+            // Draw a line under headers
+            doc.setLineWidth(0.5);
+            doc.line(20, 95, 190, 95);
+            
+            // Items
+            doc.setFont("helvetica", "normal");
+            let y = 105;
+            
+            aggregatedQuote.forEach((item, idx) => {
+                doc.text((idx + 1).toString(), 20, y);
+                
+                // Handle long descriptions - wrap text
+                const lines = doc.splitTextToSize(item.details, 80);
+                doc.text(lines, 40, y);
+                
+                // Calculate correct Y position after multiline text
+                y += (lines.length - 1) * 10;
+                
+                doc.text(item.quantity.toString(), 130, y);
+                doc.text(`${item.price.toFixed(2)} €`, 150, y);
+                doc.text(`${(item.price * item.quantity).toFixed(2)} €`, 180, y);
+                
+                y += 15;
+                
+                // Add a new page if we're running out of space
+                if (y > 260) {
+                    doc.addPage();
+                    y = 20;
+                }
+            });
+            
+            // Draw a line under items
+            doc.line(20, y, 190, y);
+            y += 10;
+            
+            // Totals
+            doc.text(`Total HT: ${totalHT.toFixed(2)} €`, 140, y+10);
+            doc.text(`TVA (${(tvaRate * 100).toFixed(2)}%): ${totalTVA.toFixed(2)} €`, 140, y+20);
+            doc.text(`Total TTC: ${totalTTC.toFixed(2)} €`, 140, y+30);
+            doc.text(`Acompte (${(acompteRate * 100).toFixed(2)}%): ${acompte.toFixed(2)} €`, 140, y+40);
+            doc.text(`Reste à payer: ${resteAPayer.toFixed(2)} €`, 140, y+50);
+            
+            // Signature area
+            y += 70;
+            doc.text("Signature du client:", 20, y);
+            doc.rect(20, y+5, 80, 40);
+            
+            // Convert to blob
+            const pdfBlob = doc.output('blob');
+            const file = new File([pdfBlob], 'devis.pdf', { type: 'application/pdf' });
+            
+            resolve(file);
+        });
+    };
+
+    // Function to start the signature process
+    const handleRequestSignature = async () => {
+        setShowSignerForm(true);
+    };
+
+    // Function to submit the signature request
+    const handleSubmitSignatureRequest = async () => {
+        if (!signerEmail || !signerFirstName || !signerLastName || !signerPhone) {
+            alert('Veuillez remplir tous les champs du signataire');
+            return;
+        }
+
+        setSignatureStatus('preparing');
+        try {
+            // 1. Prepare proper PDF document
+            const file = await prepareDocumentForSignature();
+            
+            // 2. Initiate the signature request
+            const signatureRequest = await youSignClient.initiateSignatureRequest(`Devis n° ${devisNumero} - ${societeBatiment}`);
+            setSignatureRequestId(signatureRequest.id);
+
+            // 3. Upload the document
+            const documentResponse = await youSignClient.uploadDocument(signatureRequest.id, file);
+
+            // 4. Add the signer
+            const signerInfo = {
+                first_name: signerFirstName,
+                last_name: signerLastName,
+                email: signerEmail,
+                phone_number: signerPhone
+            };
+            const signerResponse = await youSignClient.addSigner(signatureRequest.id, documentResponse.id, signerInfo);
+
+            // 5. Activate the signature request
+            await youSignClient.activateSignatureRequest(signatureRequest.id);
+
+            setSignatureStatus('sent');
+            setSignatureUrl(signerResponse.signature_link);
+            setShowSignerForm(false);
+        } catch (error) {
+            console.error('Error in signature process:', error);
+            setSignatureStatus('error');
+        }
+    };
+
+    // Function to handle close of signer form
+    const handleCloseSignerForm = () => {
+        setShowSignerForm(false);
+    };
+
     return (
       <div>
         <button className='full-quote-button' onClick={handleBack}>
           retour maquette
         </button>
          
-        <div className="container">
+        <div className="container" ref={quoteRef}>
           <header>
             <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
               <img src={logoSrc} alt="Logo" />
@@ -797,6 +1059,159 @@ const FullQuote: React.FC = () => {
             <p>Les marchandises vendues restent notre propriété, jusqu'au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
           </footer>
         </div>
+        
+        {/* Electronic Signature Button */}
+        <div className="signature-actions" style={{ textAlign: 'center', margin: '20px 0' }}>
+          {signatureStatus === 'idle' && (
+            <button 
+              onClick={handleRequestSignature}
+              style={{ 
+                padding: '10px 20px', 
+                backgroundColor: '#007bff', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
+            >
+              Demander signature électronique
+            </button>
+          )}
+          
+          {signatureStatus === 'preparing' && (
+            <div>Préparation de la demande de signature...</div>
+          )}
+          
+          {signatureStatus === 'sent' && (
+            <div>
+              <p style={{ color: 'green', fontWeight: 'bold' }}>
+                Demande de signature envoyée avec succès!
+              </p>
+              {signatureUrl && (
+                <a 
+                  href={signatureUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    display: 'inline-block',
+                    margin: '10px 0',
+                    padding: '10px 20px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    textDecoration: 'none',
+                    borderRadius: '4px'
+                  }}
+                >
+                  Voir la demande de signature
+                </a>
+              )}
+            </div>
+          )}
+          
+          {signatureStatus === 'error' && (
+            <div style={{ color: 'red' }}>
+              Une erreur est survenue lors de la demande de signature. Veuillez réessayer.
+            </div>
+          )}
+        </div>
+        
+        {/* Signer Information Modal */}
+        {showSignerForm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Informations du signataire</h3>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Prénom</label>
+                <input
+                  type="text"
+                  value={signerFirstName}
+                  onChange={e => setSignerFirstName(e.target.value)}
+                  style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                />
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Nom</label>
+                <input
+                  type="text"
+                  value={signerLastName}
+                  onChange={e => setSignerLastName(e.target.value)}
+                  style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                />
+              </div>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Email</label>
+                <input
+                  type="email"
+                  value={signerEmail}
+                  onChange={e => setSignerEmail(e.target.value)}
+                  style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                />
+              </div>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Téléphone (format international: +33...)</label>
+                <input
+                  type="tel"
+                  value={signerPhone}
+                  onChange={e => setSignerPhone(e.target.value)}
+                  placeholder="+33601020304"
+                  style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                />
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <button
+                  onClick={handleCloseSignerForm}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annuler
+                </button>
+                
+                <button
+                  onClick={handleSubmitSignatureRequest}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Envoyer la demande
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
 };
