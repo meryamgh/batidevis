@@ -39,4 +39,5 @@ export type ObjectData = {
     };
     faces?: FacesData;  // Définition des faces pour les murs et sols
     type?: 'wall' | 'floor' | 'object';  // Type d'objet pour différencier le comportement
+    parametricData?: any; // Données paramétriques récupérées depuis l'API
 };

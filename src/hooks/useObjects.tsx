@@ -3,6 +3,7 @@ import { ObjectData, FacesData } from '../types/ObjectData';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { useParametricDataService } from '../services/ParametricDataService';
 
 interface UseObjectsProps {
   objects: ObjectData[]; 
@@ -47,6 +48,8 @@ export const useObjects = ({
   setShowDimensions, 
   setFocusedObjectId, 
 }: UseObjectsProps): UseObjectsReturn => {
+
+  const { fetchParametricData } = useParametricDataService();
 
   const handleAddObject = useCallback(async (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => {
     try {
@@ -127,6 +130,22 @@ export const useObjects = ({
         boundingBox
       };
 
+      // Fetch parametric data from the API
+      if (details) {
+        try {
+          const parametricData = await fetchParametricData(details);
+          if (parametricData) {
+            newObject.parametricData = parametricData;
+            const prix = parametricData.item_details.prix;
+            newObject.price = prix;
+             
+          }
+        } catch (error) {
+          console.error('Error fetching parametric data:', error);
+        }
+      }
+      console.log("New object:", newObject);
+      
       // Ajouter d'abord au devis
       setQuote(prevQuote => [...prevQuote, newObject]);
       
@@ -136,15 +155,36 @@ export const useObjects = ({
     } catch (error) {
       console.error('Error loading GLTF file:', error);
     }
-  }, [setQuote]);
+  }, [setQuote, fetchParametricData]);
 
   const handleAddObjectFromData = useCallback((object: ObjectData) => {
+    // Fetch parametric data if not already present
+    if (object.details && !object.parametricData) {
+      // Use an immediately invoked async function to handle the async operation
+      (async () => {
+        try {
+          const parametricData = await fetchParametricData(object.details);
+          if (parametricData) {
+            // Update the object with parametric data
+            setObjects(prevObjects => prevObjects.map(obj => 
+              obj.id === object.id ? { ...obj, parametricData } : obj
+            ));
+            setQuote(prevQuote => prevQuote.map(obj => 
+              obj.id === object.id ? { ...obj, parametricData } : obj
+            ));
+          }
+        } catch (error) {
+          console.error('Error fetching parametric data:', error);
+        }
+      })();
+    }
+
     // Ajouter d'abord au devis
     setQuote(prevQuote => [...prevQuote, object]);
     
     // Puis ajouter à la scène
     setObjects(prevObjects => [...prevObjects, object]);
-  }, [ setQuote]);
+  }, [setQuote, fetchParametricData]);
 
   const handleRemoveObject = useCallback((id: string) => {
     setObjects((prevObjects) => prevObjects.filter((obj) => obj.id !== id));

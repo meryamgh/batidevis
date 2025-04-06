@@ -54,7 +54,9 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <span>
-                {item.details} {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} €
+                {/* arrondir les prix à 2 chiffres après la virgule */}
+                {item.details}, {item.parametricData.item_details.libtech} , {item.price.toFixed(2)} €
+                {/* {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} € */}
               </span>
               <div>
                 <button 
@@ -89,7 +91,8 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
           </li>
         ))}
       </ul>
-      <p>Total: {quote.reduce((sum, item) => sum + item.price, 0)} €</p>
+      {/* arrondir le total à 2 chiffres après la virgule */}
+      <p>Total: {quote.reduce((sum, item) => sum + item.price, 0).toFixed(2)} €</p>
       <div className="parent-container">
         <button onClick={navigateToFullQuote} className="full-quote-button">
           consulter le devis complet

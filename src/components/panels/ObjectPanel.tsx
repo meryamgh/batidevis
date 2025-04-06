@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import '../../styles/ObjectPanel.css';
 import Select, { SingleValue } from 'react-select';
+import ParametricDataPanel from '../ParametricDataPanel';
 
 type ObjectPanelProps = {
     object: ObjectData;
@@ -1009,6 +1010,11 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* Add Parametric Data Panel */}
+            {object.parametricData && (
+                <ParametricDataPanel parametricData={object.parametricData} />
             )}
         </div>
     );

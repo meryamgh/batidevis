@@ -1,8 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Quote.css';
-import { useMaquetteStore } from '../store/maquetteStore';
-import { ObjectData } from '../types/ObjectData';
+import { useMaquetteStore } from '../store/maquetteStore'; 
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 
@@ -155,12 +154,12 @@ const FullQuote: React.FC = () => {
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
         const existingItem = acc.find(
-            (i) => i.details === item.details && i.price === item.price
+            (i) => i.details === item.parametricData.item_details.libtech && i.price === item.price
         );
         if (existingItem) {
             existingItem.quantity += 1; 
         } else {
-            acc.push({ details: item.details, price: item.price, quantity: 1 }); 
+            acc.push({ details: item.parametricData.item_details.libtech, price: item.price, quantity: 1 }); 
         }
         return acc;
     }, [] as AggregatedQuoteItem[]);
