@@ -164,6 +164,7 @@ export const useObjects = ({
       (async () => {
         try {
           const parametricData = await fetchParametricData(object.details);
+          console.log("Parametric data:", parametricData);
           if (parametricData) {
             // Update the object with parametric data
             setObjects(prevObjects => prevObjects.map(obj => 

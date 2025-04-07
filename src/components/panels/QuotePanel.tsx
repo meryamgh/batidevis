@@ -55,7 +55,10 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <span>
                 {/* arrondir les prix à 2 chiffres après la virgule */}
-                {item.details}, {item.parametricData.item_details.libtech} , {item.price.toFixed(2)} €
+                
+                {/* si parametricData est défini, afficher item.parametricData.item_details.libtech, sinon afficher item.details */}
+                {item.parametricData ? item.parametricData.item_details.libtech : item.details}, 
+                {item.price.toFixed(2)} €
                 {/* {item.scale[0]}m, {item.scale[1]}m, {item.scale[2]}m : {item.price} € */}
               </span>
               <div>

@@ -15,7 +15,8 @@ export const useParametricDataService = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch parametric data: ${response.statusText}`);
+        console.error(`Failed to fetch parametric data: ${response.statusText}`);
+        return null;
       }
 
       const data = await response.json();

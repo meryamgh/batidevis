@@ -74,6 +74,56 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [selectedFace, setSelectedFace] = useState<FaceName>('front');
     const [faces, setFaces] = useState<FacesData>(object.faces || {});
     
+    // Fonction pour extraire les variantes à partir du libtech en utilisant le template
+    const extractSelectedVariants = () => {
+        if (!parametricData || !parametricData.template || !parametricData.item_details?.libtech) {
+            return {};
+        }
+        
+        const template = parametricData.template_bis;
+        const libtech = parametricData.item_details.libtech;
+        const selectedVariants: Record<string, string> = {};
+        
+        // Trouver les positions des underscores dans le template
+        const templateParts = template.split('_');
+        let libtechCopy = libtech;
+        
+        // Pour chaque partie du template sauf la dernière
+        for (let i = 0; i < templateParts.length - 1; i++) {
+            // Extraire la partie fixe du template
+            const fixedPart = templateParts[i];
+            
+            // Trouver l'index de cette partie fixe dans le libtech
+            const fixedPartIndex = libtechCopy.indexOf(fixedPart);
+            
+            if (fixedPartIndex !== -1) {
+                // Avancer dans le libtech
+                libtechCopy = libtechCopy.substring(fixedPartIndex + fixedPart.length);
+                
+                // Si nous ne sommes pas à la fin du template
+                if (i < templateParts.length - 1) {
+                    // Trouver la prochaine partie fixe
+                    const nextFixedPart = templateParts[i + 1];
+                    
+                    // Extraire la variante entre les parties fixes
+                    const nextFixedPartIndex = libtechCopy.indexOf(nextFixedPart);
+                    
+                    if (nextFixedPartIndex !== -1) {
+                        const variant = libtechCopy.substring(0, nextFixedPartIndex).trim();
+                        
+                        // Enregistrer la variante pour cette position
+                        selectedVariants[i.toString()] = variant;
+                    }
+                }
+            }
+        }
+        console.log("selectedVariants", selectedVariants)
+        return selectedVariants;
+    };
+    
+    // Extraire les variantes sélectionnées à partir du libtech
+    const selectedVariants = extractSelectedVariants();
+    
     // Vérifier si l'objet est un sol ou un mur
     const isFloor = object.details.includes('Sol');
     const isWall = object.details.includes('Mur');
@@ -966,7 +1016,48 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                             <h4>Détails de l'article</h4>
                             <div className="item-property">
                                 <span className="item-label">Description:</span>
-                                <p className="item-description">{parametricData.item_details.libtech}</p>
+                                {parametricData.template_bis ? (
+                                    <p className="item-description">
+                                        {(() => {
+                                            const template = parametricData.template_bis;
+                                            const libtech = parametricData.item_details.libtech;
+                                            const parts = template.split('_');
+                                            const result = [];
+                                            
+                                            let currentLibtech = libtech;
+                                            let currentIndex = 0;
+
+                                            for (let i = 0; i < parts.length; i++) {
+                                                const part = parts[i];
+                                                const partIndex = currentLibtech.indexOf(part, currentIndex);
+                                                
+                                                if (partIndex !== -1) {
+                                                    // Si ce n'est pas le début, il y a une variante avant
+                                                    if (partIndex > 0 && i > 0) {
+                                                        const variant = currentLibtech.substring(0, partIndex);
+                                                        result.push(<strong key={`variant-${i}`}>{variant}</strong>);
+                                                    }
+                                                    
+                                                    // Ajouter la partie fixe
+                                                    result.push(<span key={`fixed-${i}`}>{part}</span>);
+                                                    
+                                                    // Avancer dans le libtech
+                                                    currentLibtech = currentLibtech.substring(partIndex + part.length);
+                                                    currentIndex = 0;
+                                                }
+                                            }
+                                            
+                                            // Si il reste du texte après la dernière partie fixe
+                                            if (currentLibtech.length > 0) {
+                                                result.push(<strong key="variant-last">{currentLibtech}</strong>);
+                                            }
+                                            
+                                            return result;
+                                        })()}
+                                    </p>
+                                ) : (
+                                    <p className="item-description">{parametricData.item_details.libtech}</p>
+                                )}
                             </div>
                             <div className="item-property">
                                 <span className="item-label">Prix:</span>
@@ -983,13 +1074,18 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     {parametricData.variables_by_position && (
                         <div className="variables-section">
                             <h4>Variantes disponibles</h4>
-                            {Object.entries(parametricData.variables_by_position).map(([position, options]) => (
+                            {Object.entries(parametricData.variables_by_position).map(([position, options]) => {
+                                // Déterminer la valeur par défaut
+                                const defaultOption = selectedVariants[position] || 
+                                    (Array.isArray(options) && options.length > 0 ? options[0] : null);
+                                
+                                return (
                                 <div key={position} className="variable-position">
                                     <span className="position-label">Position {position}:</span>
                                     <Select
                                         className="position-select"
                                         options={Array.isArray(options) ? options.map(option => ({ value: option, label: option })) : []}
-                                        defaultValue={Array.isArray(options) && options.length > 0 ? { value: options[0], label: options[0] } : null}
+                                        defaultValue={defaultOption ? { value: defaultOption, label: defaultOption } : null}
                                         onChange={(selectedOption: SingleValue<{value: string, label: string}>) => {
                                             console.log(`Changed position ${position} to:`, selectedOption);
                                             // Here you could implement functionality to update the object based on selection
@@ -998,7 +1094,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                         isDisabled={Array.isArray(options) && options.length <= 1}
                                     />
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
                     
