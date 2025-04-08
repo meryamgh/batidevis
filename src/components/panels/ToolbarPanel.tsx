@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ObjectSelector from './ObjectSelectorPanel';
 import TextureUpload from './TextureUploadPanel';
 import ObjectUpload from './ObjectUploadPanel';
+import AIGenerationPanel from './AIGenerationPanel';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as THREE from 'three';
 import { FacesData, ObjectData } from '../../types/ObjectData';
+import '../../styles/AIGenerationPanel.css';
 
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
@@ -63,6 +65,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setIsCreatingSurface,
   reconstructMaquette
 }) => {
+  const [showAIGeneration, setShowAIGeneration] = useState(false);
+
   const handleExport = async () => {
     const exportData = {
         objects: objects.map(obj => ({
@@ -102,6 +106,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
         link.click();
     } catch (error) {
         console.error('Erreur lors de l\'export:', error);
+    }
+  };
+
+  const handleObjectGenerated = async (objectUrl: string) => {
+    try {
+      await handleAddObject(objectUrl);
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de l\'objet généré:', error);
     }
   };
 
@@ -158,6 +170,21 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </button>
 
       {showObjectUpload && <ObjectUpload onClose={() => setShowObjectUpload(false)} />}
+
+      <button 
+        onClick={() => setShowAIGeneration(true)}
+        className="bouton ai-button"
+        title="Générer un objet 3D avec l'IA"
+      >
+        Générer votre objet 3D avec l'IA
+      </button>
+
+      {showAIGeneration && (
+        <AIGenerationPanel 
+          onClose={() => setShowAIGeneration(false)} 
+          onObjectGenerated={handleObjectGenerated}
+        />
+      )}
 
       <button onClick={() => setShowRoomConfig(true)} className="bouton">
         Générer une pièce
