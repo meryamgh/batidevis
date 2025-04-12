@@ -36,7 +36,6 @@ type FaceName = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
     object,
     onUpdateTexture,
-    onUpdateColor,
     onUpdateScale,
     onUpdatePosition,
     onRemoveObject,
@@ -57,7 +56,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [height, setHeight] = useState(object.scale[1]);
     const [depth, setDepth] = useState(object.scale[2]);
     const [texture, setTexture] = useState(object.texture);
-    const [color, setColor] = useState<string | undefined>(object.color);
+    const [color] = useState<string | undefined>(object.color);
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
     const [showDimensions, setShowDimensions] = useState(false);
@@ -192,51 +191,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         }
     };
     
-    // Fonction pour obtenir l'ordre des variantes dans la phrase
-    const getVariantsOrder = () => {
-        if (!parametricData || !parametricData.template_bis || !parametricData.item_details?.libtech) {
-            return [];
-        }
-        
-        const template = parametricData.template_bis;
-        const libtech = parametricData.item_details.libtech;
-        const order: string[] = [];
-        
-        // Trouver les positions des underscores dans le template
-        const templateParts = template.split('_');
-        let libtechCopy = libtech;
-        
-        // Pour chaque partie du template sauf la dernière
-        for (let i = 0; i < templateParts.length - 1; i++) {
-            // Extraire la partie fixe du template
-            const fixedPart = templateParts[i];
-            
-            // Trouver l'index de cette partie fixe dans le libtech
-            const fixedPartIndex = libtechCopy.indexOf(fixedPart);
-            
-            if (fixedPartIndex !== -1) {
-                // Avancer dans le libtech
-                libtechCopy = libtechCopy.substring(fixedPartIndex + fixedPart.length);
-                
-                // Si nous ne sommes pas à la fin du template
-                if (i < templateParts.length - 1) {
-                    // Trouver la prochaine partie fixe
-                    const nextFixedPart = templateParts[i + 1];
-                    
-                    // Extraire la variante entre les parties fixes
-                    const nextFixedPartIndex = libtechCopy.indexOf(nextFixedPart);
-                    
-                    if (nextFixedPartIndex !== -1) {
-                        
-                        // Ajouter la position à l'ordre
-                        order.push(i.toString());
-                    }
-                }
-            }
-        }
-        
-        return order;
-    };
      
     // Fonction pour construire la carte des combinaisons valides
     const buildValidCombinationsMap = () => {
@@ -363,6 +317,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         // Remplacer les underscores par les variantes sélectionnées
         Object.entries(selectedVariantsState).forEach(([position, variant]) => {
             description = description.replace('_', variant);
+            console.log("position", position, "variant", variant)
         });
         
         return description;

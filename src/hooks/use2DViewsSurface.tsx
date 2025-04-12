@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import * as THREE from 'three';
 import { ObjectData } from '../types/ObjectData';
-import { v4 as uuidv4 } from 'uuid';
 
 interface Use2DViewsSurfaceProps {  
     viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
@@ -80,23 +79,14 @@ export const use2DViewsSurface = ({
             metalness: 0.2
         });
         const mesh = new THREE.Mesh(geometry, material);
-    
-        const centerX = (start.x + end.x) / 2;
-        const centerZ = (start.z + end.z) / 2;
+     
         const box = new THREE.Box3().setFromObject(mesh);
         const size = new THREE.Vector3();
         const center = new THREE.Vector3();
         box.getSize(size);
         box.getCenter(center);
     
-        // Stocker les informations de la bounding box
-        const boundingBox = {
-            min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
-            max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
-            size: [size.x, size.y, size.z] as [number, number, number],
-            center: [center.x, center.y, center.z] as [number, number, number]
-        };
-        
+      
        
      
         setSurfaceStartPoint(null);
@@ -122,21 +112,13 @@ export const use2DViewsSurface = ({
             });
             const mesh = new THREE.Mesh(geometry, material);
     
-            const centerX = (surfaceStartPoint.x + point.x) / 2;
-            const centerZ = (surfaceStartPoint.z + point.z) / 2;
             const box = new THREE.Box3().setFromObject(mesh);
             const size = new THREE.Vector3();
             const center = new THREE.Vector3();
             box.getSize(size);
             box.getCenter(center);
     
-            // Stocker les informations de la bounding box
-            const boundingBox = {
-                min: [box.min.x, box.min.y, box.min.z] as [number, number, number],
-                max: [box.max.x, box.max.y, box.max.z] as [number, number, number],
-                size: [size.x, size.y, size.z] as [number, number, number],
-                center: [center.x, center.y, center.z] as [number, number, number]
-            };
+      
     
            
      

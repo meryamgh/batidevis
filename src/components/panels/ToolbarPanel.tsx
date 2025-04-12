@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
 import ObjectSelector from './ObjectSelectorPanel';
-import { FacesData, ObjectData } from '../../types/ObjectData';
+import {  ObjectData } from '../../types/ObjectData';
 import '../../styles/AIGenerationPanel.css';
 import { BACKEND_URL } from '../../config/env';
 interface ToolbarProps {
