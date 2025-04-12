@@ -13,7 +13,7 @@ interface Document {
 }
 
 const MesDevisFactures: React.FC = () => {
-    const [scrollPosition, setScrollPosition] = useState(0);
+    const [scrollPosition] = useState(0);
     const [ongletActif, setOngletActif] = useState<'devis' | 'factures'>('devis');
     const [recherche, setRecherche] = useState('');
     const [filtreStatut, setFiltreStatut] = useState('tous');

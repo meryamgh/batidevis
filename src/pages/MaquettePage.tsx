@@ -212,7 +212,7 @@ const MaquettePage: React.FC = () => {
     useEffect(() => {
         const handleMouseMoveCallback = (e: MouseEvent) => {
             if (isMoving !== null && cameraRef.current) {
-                handleMouseMove(e, isMoving, mouse, raycaster, objects, setObjects, cameraRef.current);
+                handleMouseMove(e, isMoving, mouse, raycaster, setObjects, cameraRef.current);
             }
         };
 
@@ -423,7 +423,7 @@ const MaquettePage: React.FC = () => {
                                 onRotateObject={objectsUtils.handleRotateObject}
                                 onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
                                 onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
-                                onDeselectObject={(id) => setSelectedObjectId(null)}
+                                onDeselectObject={() => setSelectedObjectId(null)}
                                 onAddObject={objectsUtils.handleAddObjectFromData}
                                 onExtendObject={handleExtendObject}
                                 onUpdateFaces={objectsUtils.handleUpdateFaces}
@@ -462,7 +462,7 @@ const MaquettePage: React.FC = () => {
                         onRotateObject={objectsUtils.handleRotateObject}
                         onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
                         onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
-                        onDeselectObject={(id) => setSelectedObjectId(null)}
+                        onDeselectObject={() => setSelectedObjectId(null)}
                         onAddObject={objectsUtils.handleAddObjectFromData}
                         onExtendObject={handleExtendObject}
                         onUpdateFaces={objectsUtils.handleUpdateFaces}

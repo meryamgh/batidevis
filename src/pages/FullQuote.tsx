@@ -111,12 +111,7 @@ class YouSignClient {
     return this.request(`signature_requests/${signatureRequestId}/activate`, options);
   }
 }
-
-type QuoteItem = {
-    id: number;
-    price: number;
-    details: string;
-};
+ 
 
 type AggregatedQuoteItem = {
     details: string;
@@ -224,16 +219,7 @@ const FullQuote: React.FC = () => {
         setEditValue("Nouveau produit");
     };
 
-    // Debug utility to display current state (for development)
-    const debugState = () => {
-        console.group("Current State Debug");
-        console.log("Editing Cell:", editingCell);
-        console.log("Edit Value:", editValue);
-        console.log("Suggestions:", suggestions);
-        console.log("Selected Index:", selectedSuggestionIndex);
-        console.log("Aggregated Quote:", aggregatedQuote);
-        console.groupEnd();
-    };
+    
 
     // Modifier le state pour stocker toutes les suggestions
     const [currentSuggestionData, setCurrentSuggestionData] = useState<ApiSuggestionResponse['matches'] | null>(null);
@@ -247,7 +233,9 @@ const FullQuote: React.FC = () => {
         }
 
         console.log("Fetching suggestions for:", query);
+        console.log("fetchSuggestions", fetchSuggestions)
         setIsFetchingSuggestions(true);
+        console.log("isFetchingSuggestions", isFetchingSuggestions)
         try {
               const response = await fetch(`${BACKEND_URL}/api/search`, {
                 method: 'POST',
@@ -327,8 +315,9 @@ const FullQuote: React.FC = () => {
         setSelectedSuggestionIndex(-1);
     };
 
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleBlur = () => {
         // Ne rien faire si on clique sur une suggestion
+
         if (isSuggestionClicking) {
             return;
         }
@@ -383,46 +372,7 @@ const FullQuote: React.FC = () => {
         }
     };
 
-    // Modifier handleSuggestionClick pour utiliser currentSuggestionData
-    const handleSuggestionClick = (suggestion: string) => {
-        console.log("handleSuggestionClick called with suggestion:", suggestion);
-        console.log("currentSuggestionData:", currentSuggestionData);
-        console.log("editingCell:", editingCell);
-
-        if (!editingCell || !currentSuggestionData) {
-            console.error("No cell is being edited or no suggestion data available");
-            return;
-        }
-        
-        const {rowIndex} = editingCell;
-        console.log("Updating row at index:", rowIndex);
-        
-        // Créer une nouvelle copie du devis avec les informations mises à jour
-        const newItems = [...aggregatedQuote];
-        newItems[rowIndex] = {
-            ...newItems[rowIndex],
-            details: currentSuggestionData[selectedSuggestionIndex].libtech,
-            price: currentSuggestionData[selectedSuggestionIndex].prix,
-            quantity: 1,
-            isNew: false
-        };
-        
-        console.log("New items after update:", newItems);
-        
-        // Mettre à jour l'état
-        setAggregatedQuote(newItems);
-        
-        // Clear the edit state
-        setEditingCell(null);
-        setEditValue('');
-        setSuggestions([]);
-        setCurrentSuggestionData(null);
-        
-        // Reset the flag after a short delay
-        setTimeout(() => {
-            setIsSuggestionClicking(false);
-        }, 300);
-    };
+   
 
     const saveCellChanges = () => {
         if (!editingCell) return;
@@ -780,7 +730,7 @@ const FullQuote: React.FC = () => {
             // 2. Initiate the signature request
             const signatureRequest = await youSignClient.initiateSignatureRequest(`Devis n° ${devisNumero} - ${societeBatiment}`);
             setSignatureRequestId(signatureRequest.id);
-
+            console.log("signatureRequest", signatureRequestId)
             // 3. Upload the document
             const documentResponse = await youSignClient.uploadDocument(signatureRequest.id, file);
 

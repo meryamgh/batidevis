@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
-import { ObjectData, FacesData } from '../types/ObjectData';
+import { ObjectData } from '../types/ObjectData';
 
 // Constantes globales
 // 8 10 5 ==> 8
@@ -28,8 +28,7 @@ const WALL_COLORS = [
   '#3CB371'  // Vert mer moyen
 ];
 
-const FLOOR_OPACITY = 0.8;
-const WALL_OPACITY = 1.0;
+const FLOOR_OPACITY = 0.8; 
 
 interface RoomConfig {
   width: number;

@@ -151,8 +151,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         // Créer une copie de la description actuelle
         let updatedLibtech = libtech;
         
-        // Trouver la position de la variante à remplacer
-        let currentPosition = 0;
         let startIndex = 0;
         
         for (let i = 0; i < templateParts.length - 1; i++) {
@@ -229,7 +227,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     const nextFixedPartIndex = libtechCopy.indexOf(nextFixedPart);
                     
                     if (nextFixedPartIndex !== -1) {
-                        const variant = libtechCopy.substring(0, nextFixedPartIndex).trim();
                         
                         // Ajouter la position à l'ordre
                         order.push(i.toString());
@@ -240,10 +237,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         
         return order;
     };
-    
-    // Obtenir l'ordre des variantes dans la phrase
-    const variantsOrder = getVariantsOrder();
-    
+     
     // Fonction pour construire la carte des combinaisons valides
     const buildValidCombinationsMap = () => {
         if (!parametricData || !parametricData.similar_libtechs_details) {
@@ -646,13 +640,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         setTexture(textureUrl);
         onUpdateTexture(object.id, textureUrl);
     };
-
-    // Fonction pour appliquer une couleur
-    const applyColor = (colorValue: string) => {
-        setColor(colorValue);
-        onUpdateColor(object.id, colorValue);
-    };
-
+ 
     // Fonction pour gérer les erreurs de chargement d'image
     const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
         const target = e.target as HTMLImageElement;
@@ -711,39 +699,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         onAddObject(newDoor);
     };
 
-    // Modifier la fonction handleWallDimensionChange
-    const handleWallDimensionChange = (e: React.ChangeEvent<HTMLInputElement>, dimension: 'width' | 'height' | 'depth') => {
-        const value = parseFloat(e.target.value);
-        if (isNaN(value)) return;
-
-        console.log('Input value changed:', dimension, value);
-
-        // Créer une copie des dimensions actuelles
-        let newDimensions: [number, number, number] = [width, height, depth];
-
-        // Mettre à jour la dimension appropriée
-        switch (dimension) {
-            case 'width':
-                newDimensions[0] = Math.max(0.5, value);
-                break;
-            case 'height':
-                newDimensions[1] = Math.max(0.5, value);
-                break;
-            case 'depth':
-                newDimensions[2] = Math.max(0.1, value);
-                break;
-        }
-
-        console.log('New dimensions:', newDimensions);
-
-        // Mettre à jour l'état local
-        setWidth(newDimensions[0]);
-        setHeight(newDimensions[1]);
-        setDepth(newDimensions[2]);
-
-        // Mettre à jour l'objet
-        onUpdateScale(object.id, newDimensions);
-    };
+    
 
     const renderDimensionsInputs = () => {
         

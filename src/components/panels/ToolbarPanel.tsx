@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
 import ObjectSelector from './ObjectSelectorPanel';
-import TextureUpload from './TextureUploadPanel';
-import ObjectUpload from './ObjectUploadPanel';
-import AIGenerationPanel from './AIGenerationPanel';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import * as THREE from 'three';
 import { FacesData, ObjectData } from '../../types/ObjectData';
 import '../../styles/AIGenerationPanel.css';
 import { BACKEND_URL } from '../../config/env';
@@ -30,18 +25,7 @@ interface ToolbarProps {
   setIsCreatingSurface: React.Dispatch<React.SetStateAction<boolean>>;
   reconstructMaquette: () => Promise<void>;
 }
-
-interface ExportedObjectData {
-    id: string;
-    url: string;
-    position: [number, number, number];
-    scale: [number, number, number];
-    rotation: [number, number, number];
-    texture?: string;
-    faces?: FacesData;
-    type?: 'wall' | 'floor' | 'object';
-    color?: string;
-}
+ 
 
 const Toolbar: React.FC<ToolbarProps> = ({
   viewMode,
@@ -49,7 +33,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setShowNavigationHelp,
   setShowUpload,
   setShowObjectUpload,
-  showUpload,
   showObjectUpload,
   setShowRoomConfig,
   addNewFloor,
@@ -59,14 +42,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setCreatingWallMode,
   is2DView,
   handleAddObject,
-  showQuotePanel,
-  toggleQuotePanel,
   isCreatingSurface,
   setIsCreatingSurface,
   reconstructMaquette
 }) => {
-  const [showAIGeneration, setShowAIGeneration] = useState(false);
-
   const handleExport = async () => {
     const exportData = {
         objects: objects.map(obj => ({

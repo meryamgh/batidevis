@@ -64,7 +64,6 @@ export const handleMouseMove = (
   objectId: string, 
   mouse: React.MutableRefObject<THREE.Vector2>, 
   raycaster: React.MutableRefObject<THREE.Raycaster>, 
-  objects: ObjectData[], 
   setObjects: React.Dispatch<React.SetStateAction<ObjectData[]>>, 
   camera: THREE.Camera
 ): void => {

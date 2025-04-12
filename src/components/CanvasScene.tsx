@@ -140,7 +140,6 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     creatingWallMode,
     isCreatingSurface,
     surfaceStartPoint,
-    surfaceEndPoint,
     surfacePreview,
     onSurfacePointSelected,
     onSurfacePreviewUpdate,

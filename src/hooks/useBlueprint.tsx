@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { ObjectData } from '../types/ObjectData';
@@ -57,19 +56,14 @@ export const useBlueprint = ({
     lineHelper,
     blueprintLines,
     creationMode,
-    setCreationMode,
     isCreatingRectangle,
     setIsCreatingRectangle,
     rectangleStartPoint,
     setRectangleStartPoint,
-    rectangleEndPoint,
     setRectangleEndPoint,
-    rectanglePreview,
     setRectanglePreview,
     setBlueprintLines,
-    blueprintPoints,
     setBlueprintPoints,
-    tempPoint,
     setTempPoint,
     currentLinePoints,
     setCurrentLinePoints,
@@ -284,7 +278,6 @@ export const useBlueprint = ({
         // Arrondir les dimensions au millimètre près
         const roundedWidth = Math.round(width * 1000) / 1000;
         const roundedLength = Math.round(length * 1000) / 1000;
-        const roundedHeight = Math.round(height * 1000) / 1000;
         const roundedThickness = Math.round(wallThickness * 1000) / 1000;
 
         // Créer le sol

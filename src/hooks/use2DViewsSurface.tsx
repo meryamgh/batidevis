@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import * as THREE from 'three';
 import { ObjectData } from '../types/ObjectData';
 import { v4 as uuidv4 } from 'uuid';
@@ -97,20 +97,7 @@ export const use2DViewsSurface = ({
             center: [center.x, center.y, center.z] as [number, number, number]
         };
         
-        const newSurface: ObjectData = {
-            id: uuidv4(),
-            url: '',
-            price: 100,
-            details: 'Surface',
-            position: [centerX / 2, 0.05, centerZ / 2],
-            gltf: mesh,
-            rotation: [0, 0, 0],
-            scale: [width, 0.1, depth],
-            color: '#808080',
-            texture: '',
-            boundingBox: boundingBox,
-            isBatiChiffrageObject: false
-        };
+       
      
         setSurfaceStartPoint(null);
         setSurfaceEndPoint(null);
@@ -151,20 +138,7 @@ export const use2DViewsSurface = ({
                 center: [center.x, center.y, center.z] as [number, number, number]
             };
     
-            const newSurface: ObjectData = {
-                id: uuidv4(),
-                url: '',
-                price: 100,
-                details: 'Surface',
-                position: [centerX / 2, 0.05, centerZ / 2],
-                gltf: mesh,
-                rotation: [0, 0, 0],
-                scale: [width, 0.1, depth],
-                color: '#808080',
-                texture: '',
-                boundingBox: boundingBox,
-                isBatiChiffrageObject: false
-            };
+           
      
             setSurfaceStartPoint(null);
             setSurfaceEndPoint(null);

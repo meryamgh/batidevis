@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import '../../styles/Controls.css';
-import * as THREE from 'three';
+import '../../styles/Controls.css'; 
 import ObjectUpload from './ObjectUploadPanel';
 import AIGenerationPanel from './AIGenerationPanel';
 import { BACKEND_URL } from '../../config/env';

@@ -12,7 +12,6 @@ interface QuotePanelProps {
 
 const QuotePanel: React.FC<QuotePanelProps> = ({ 
   quote, 
-  setObjects, 
   setQuote, 
   getSerializableQuote,
   handleRemoveObject

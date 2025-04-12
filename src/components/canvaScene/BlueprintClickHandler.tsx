@@ -78,7 +78,7 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
             // Vérifier si l'angle est aligné
             const aligned = isAngleAligned(angle);
             setIsAligned(aligned);
-            
+            console.log("isAligned", isAligned)
             // Supprimer l'ancienne ligne si elle existe
             if (lineRef.current) {
                 scene.remove(lineRef.current);

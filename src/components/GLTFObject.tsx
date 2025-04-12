@@ -48,22 +48,18 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     texture,
     price,
     updateQuotePrice,
-    showDimensions,
     color,
-    isSelected = false,
     faces,
     type,
-    onUpdateFaces,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
     const [scene, setScene] = useState<THREE.Group | THREE.Mesh | null>(null);
     const [selectedFaceIndex, setSelectedFaceIndex] = useState<number | null>(null);
-    const materialsRef = useRef<THREE.Material[]>([]);
+    
      
     const defaultScaleRef = useRef([1, 1, 1]);
     const selectedMeshRef = useRef<THREE.Mesh | null>(null);
-    const prevScaleRef = useRef<[number, number, number]>([1, 1, 1]);
-
+   
     useEffect(() => {
         if (url !== '') {
             const loader = new GLTFLoader();
@@ -331,7 +327,6 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         }
     }, [scene, color, texture, type]);
 
-    const meshesWithOutlines: { mesh: THREE.Mesh; helper: THREE.Group }[] = [];
 
     // useEffect(() => {
     //     if (scene) {
@@ -626,7 +621,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 showX={false}
                 showY={false}
                 showZ={false}
-                onObjectChange={(e) => {
+                onObjectChange={() => {
                     if (meshRef.current) {
                         const newPos: [number, number, number] = [
                             meshRef.current.position.x,
