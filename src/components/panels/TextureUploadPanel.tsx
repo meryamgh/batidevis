@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-
+import { BACKEND_URL } from '../../config/env';
 const TextureUpload = ({ onClose }: { onClose?: () => void }) => {
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState("");
@@ -55,7 +55,7 @@ const TextureUpload = ({ onClose }: { onClose?: () => void }) => {
     try {
       setUploading(true);
       setMessage("");
-      const response = await axios.post("http://127.0.0.1:5000/api/textures/upload", formData, {
+      const response = await axios.post(`${BACKEND_URL}/api/textures/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         
       });

@@ -3,7 +3,7 @@ import '../../styles/Controls.css';
 import * as THREE from 'three';
 import ObjectUpload from './ObjectUploadPanel';
 import AIGenerationPanel from './AIGenerationPanel';
-
+import { BACKEND_URL } from '../../config/env';
 interface ObjectFile {
     name: string;
     imageUrl: string;
@@ -35,12 +35,12 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                     }
                 }
 
-                const response = await fetch("http://127.0.0.1:5000/list_files");
+                const response = await fetch(`${BACKEND_URL}/list_files`);
                 const data = await response.json();
                 if (response.ok) {
                     const newObjects = data.objects || data.files.map((file: string) => ({
                         name: file,
-                        imageUrl: `http://127.0.0.1:5000/previews/${file}`
+                        imageUrl: `${BACKEND_URL}/previews/${file}`
                     }));
                     setObjects(newObjects);
                     
@@ -61,7 +61,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
     }, []);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, file: string) => {
-        e.dataTransfer.setData('text/plain', `http://127.0.0.1:5000/files/${file}`);
+        e.dataTransfer.setData('text/plain', `${BACKEND_URL}/files/${file}`);
     };
 
     return (

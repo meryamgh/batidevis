@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import '../../styles/ObjectPanel.css';
 import Select, { SingleValue } from 'react-select';
 import ParametricDataPanel from '../ParametricDataPanel';
-
+import { BACKEND_URL } from '../../config/env';
+        
 type ObjectPanelProps = {
     object: ObjectData;
     onUpdateTexture: (id: string, newTexture: string) => void;
@@ -673,7 +674,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
         const newWindow: ObjectData = {
             id: uuidv4(),
-            url: 'http://127.0.0.1:5000/files/fenêtre.glb',
+            url: `${BACKEND_URL}/files/fenêtre.glb`,
             price: 200,
             details: 'Fenêtre',
             position: object.position,
@@ -695,7 +696,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
         const newDoor: ObjectData = {
             id: uuidv4(),
-            url: 'http://127.0.0.1:5000/files/porte.glb',
+            url: `${BACKEND_URL}/files/porte.glb`,
             price: 500,
             details: 'Porte',
             position: object.position,

@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
-
+import { BACKEND_URL } from '../config/env';
 /**
  * Service to fetch parametric data from the API
  */
 export const useParametricDataService = () => {
   const fetchParametricData = useCallback(async (name: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/parametric_data', {
+        const response = await fetch(`${BACKEND_URL}/api/parametric_data`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

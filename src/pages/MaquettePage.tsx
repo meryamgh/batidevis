@@ -19,7 +19,7 @@ import { useBlueprint } from '../hooks/useBlueprint';
 import { v4 as uuidv4 } from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useMaquetteStore } from '../store/maquetteStore';
-
+import { BACKEND_URL } from '../config/env';
 const MaquettePage: React.FC = () => {
     const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
     const raycaster = useRef(new THREE.Raycaster()); 
@@ -390,7 +390,7 @@ const MaquettePage: React.FC = () => {
             const fetchParametricData = async () => {
                 try {
                     console.log("Fetching parametric data for:", selectedObject.details);
-                    const response = await fetch('http://localhost:5000/api/parametric_data', {
+                    const response = await fetch(`${BACKEND_URL}/api/parametric_data`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -658,7 +658,7 @@ const MaquettePage: React.FC = () => {
     const reconstructMaquette = async () => {
         try {
             // Charger les données depuis le backend
-            const response = await fetch('http://127.0.0.1:5000/load-maquette');
+            const response = await fetch(`${BACKEND_URL}/load-maquette`);
             if (!response.ok) throw new Error('Erreur lors du chargement');
             
             const data = await response.json();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-
+import { BACKEND_URL } from '../../config/env';
 const ObjectUpload = ({ onClose }: { onClose?: () => void }) => {
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState("");
@@ -60,7 +60,7 @@ const ObjectUpload = ({ onClose }: { onClose?: () => void }) => {
     try {
       setUploading(true);
       setMessage("");
-      const response = await axios.post("http://127.0.0.1:5000/api/objects/upload", formData, {
+      const response = await axios.post(`${BACKEND_URL}/api/objects/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setMessage(response.data.message);

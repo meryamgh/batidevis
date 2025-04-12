@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
+import { BACKEND_URL } from '../config/env';
 
 interface CharacterProps {
     isEnabled: boolean;
@@ -27,7 +28,7 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
     const { camera } = useThree();
     
     // Load the GLTF model
-    const { scene: characterModel } = useGLTF('http://127.0.0.1:5000/files/character.gltf');
+    const { scene: characterModel } = useGLTF(`${BACKEND_URL}/files/character.gltf`);
     
     // Référence pour le lissage des mouvements de caméra
     const targetRotation = useRef<THREE.Euler>(new THREE.Euler(0, 0, 0));

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+import { BACKEND_URL } from '../config/env';
 // Type pour les textures
 export interface TextureItem {
   url: string;
@@ -31,7 +31,7 @@ const formatTextureName = (filename: string): string => {
 export const fetchTextures = async (): Promise<TextureItem[]> => {
   try {
     console.log("Fetching textures from API...");
-    const response = await fetch("http://127.0.0.1:5000/api/textures", {
+        const response = await fetch(`${BACKEND_URL}/api/textures`, {
       method: "GET", 
       headers: {
         "Content-Type": "application/json"
@@ -54,9 +54,9 @@ export const fetchTextures = async (): Promise<TextureItem[]> => {
 
           return {
               // Remplace directement l'URL publique par ton API Flask en proxy
-              url: `http://127.0.0.1:5000/api/textures/${filename}`,
+              url: `${BACKEND_URL}/api/textures/${filename}`,
               name: formatTextureName(filename),
-              fullUrl: `http://127.0.0.1:5000/api/textures/${filename}`
+              fullUrl: `${BACKEND_URL}/api/textures/${filename}`
           };
       });
       }

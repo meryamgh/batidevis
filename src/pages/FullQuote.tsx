@@ -4,7 +4,7 @@ import '../styles/Quote.css';
 import { useMaquetteStore } from '../store/maquetteStore'; 
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
-
+import { BACKEND_URL } from '../config/env';
 // YouSign API client
 class YouSignClient {
   private BASE_URL = 'https://api-sandbox.yousign.app/v3';
@@ -249,7 +249,7 @@ const FullQuote: React.FC = () => {
         console.log("Fetching suggestions for:", query);
         setIsFetchingSuggestions(true);
         try {
-            const response = await fetch('http://localhost:5000/api/search', {
+              const response = await fetch(`${BACKEND_URL}/api/search`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -537,7 +537,7 @@ const FullQuote: React.FC = () => {
     // Fonction pour récupérer les frais divers depuis l'API
     const fetchFraisDivers = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/list_libtech/frais_divers');
+            const response = await fetch(`${BACKEND_URL}/api/list_libtech/frais_divers`);
             if (response.ok) {
                 const data = await response.json();
                 setFraisDivers(data);

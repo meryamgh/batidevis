@@ -7,7 +7,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import * as THREE from 'three';
 import { FacesData, ObjectData } from '../../types/ObjectData';
 import '../../styles/AIGenerationPanel.css';
-
+import { BACKEND_URL } from '../../config/env';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'Blueprint' | 'ObjectOnly'>>;
@@ -89,7 +89,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
     // Envoyer au backend
     try {
         console.log('🔄 Exportation de la maquette en cours...');
-        const response = await fetch('http://127.0.0.1:5000/save-maquette', {
+          const response = await fetch(`${BACKEND_URL}/save-maquette`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

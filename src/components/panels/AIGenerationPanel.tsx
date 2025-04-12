@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { BACKEND_URL } from '../../config/env';
 interface AIGenerationPanelProps {
   onClose: () => void;
   onObjectGenerated: (objectUrl: string) => void;
@@ -25,7 +25,7 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
     setPreviewImage(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/generate_3d_model', {
+      const response = await fetch(`${BACKEND_URL}/api/generate_3d_model`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
