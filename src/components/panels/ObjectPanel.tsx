@@ -25,6 +25,7 @@ type ObjectPanelProps = {
     onAddObject: (object: ObjectData) => void;
     onExtendObject: (object: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => ObjectData;
     onUpdateFaces?: (id: string, faces: FacesData) => void;
+    handleUpdateObjectParametricData: (id: string, object : any) => void;
     parametricData?: any;
 };
 
@@ -49,6 +50,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     onExtendObject,
     onUpdateFaces,
     parametricData,
+    handleUpdateObjectParametricData
 }) => {
     const [width, setWidth] = useState(object.scale[0]);
     const [height, setHeight] = useState(object.scale[1]);
@@ -380,11 +382,17 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         const currentDescription = generateCurrentDescription();
         
         // Vérifier si la description existe exactement
-        const exactMatch = parametricData.similar_libtechs_details.some((detail: { libtech?: string }) => 
+        const matchingDetail = parametricData.similar_libtechs_details.find((detail: { libtech?: string, prix?: number }) => 
             detail.libtech && detail.libtech.trim() === currentDescription.trim()
         );
         
-        if (exactMatch) {
+        if (matchingDetail) {
+            // Mettre à jour la description et le prix dans l'objet
+            if (parametricData.item_details) {
+                parametricData.item_details.libtech = matchingDetail.libtech;
+                parametricData.item_details.prix = matchingDetail.prix;
+                handleUpdateObjectParametricData(object.id, parametricData);
+            }
             return { exists: true, suggestions: [] };
         }
         
@@ -674,7 +682,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             scale: [1, 1, 1],
             color: '#FFFFFF',
             parentScale: object.scale,
-            texture: ''
+            texture: '',
+            isBatiChiffrageObject: false
         };
         onAddObject(newWindow);
     };
@@ -695,7 +704,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             scale: [1, 1, 1],
             color: '#8B4513',
             parentScale: object.scale,
-            texture: ''
+            texture: '',
+            isBatiChiffrageObject: false
         };
         onAddObject(newDoor);
     };

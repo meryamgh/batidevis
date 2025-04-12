@@ -108,7 +108,8 @@ export const use2DViewsSurface = ({
             scale: [width, 0.1, depth],
             color: '#808080',
             texture: '',
-            boundingBox: boundingBox
+            boundingBox: boundingBox,
+            isBatiChiffrageObject: false
         };
      
         setSurfaceStartPoint(null);
@@ -161,7 +162,8 @@ export const use2DViewsSurface = ({
                 scale: [width, 0.1, depth],
                 color: '#808080',
                 texture: '',
-                boundingBox: boundingBox
+                boundingBox: boundingBox,
+                isBatiChiffrageObject: false
             };
      
             setSurfaceStartPoint(null);

@@ -89,6 +89,7 @@ export const useFloors = ({
       details: 'Sol (Rez-de-chaussée)',
       position: [0, WALL_THICKNESS/2, 0], // Ajuster la position Y pour l'épaisseur du sol
       gltf: floorMesh,
+      isBatiChiffrageObject: false,
       rotation: [0, 0, 0],
       scale: [roomConfig.width, WALL_THICKNESS, roomConfig.length],
       color: FLOOR_COLORS[0], // Ajouter la couleur comme propriété
@@ -173,6 +174,7 @@ export const useFloors = ({
         url: '',
         price: Math.round(WALL_PRICE),
         details: 'Mur (Rez-de-chaussée)',
+        isBatiChiffrageObject: false,
         position: [
           wall.position[0],
           (wall.position[1] + WALL_THICKNESS/2)/2,
@@ -252,6 +254,7 @@ export const useFloors = ({
       price: FLOOR_PRICE_PER_SQUARE_METER,
       details: `Sol (Étage ${nextFloorNumber})`,
       position: [0, (floorHeight + WALL_THICKNESS/2)/2, 0],
+      isBatiChiffrageObject: false,
       gltf: floorMesh,
       rotation: [0, 0, 0],
       scale: [roomConfig.width, WALL_THICKNESS, roomConfig.length],
@@ -337,6 +340,7 @@ export const useFloors = ({
         url: '',
         price: Math.round(WALL_PRICE),
         details: `Mur (Étage ${nextFloorNumber})`,
+        isBatiChiffrageObject: false,
         position: [
           wall.position[0],
           wall.position[1],

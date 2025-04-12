@@ -37,44 +37,66 @@ html, body {
 }
 
 .dragger {
-    width: 10px;
-    cursor: col-resize;
-    background: #888;
+    width: 16px;
+    cursor: pointer;
+    background: linear-gradient(to right, #888, #777);
     user-select: none;
     z-index: 10; 
     position: relative;
-    transition: background-color 0.2s ease;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100%; /* S'assurer que le dragger prend toute la hauteur */
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .dragger::after {
     content: "";
-    height: 50px; /* Augmenter la hauteur de l'indicateur */
-    width: 3px; /* Augmenter l'épaisseur de l'indicateur */
-    background-color: #555;
-    border-radius: 1.5px;
+    height: 60px; /* Augmenter la hauteur de l'indicateur */
+    width: 4px; /* Augmenter l'épaisseur de l'indicateur */
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
     display: block;
+    position: absolute;
 }
 
 .dragger:hover {
-    background-color: #777;
+    background: linear-gradient(to right, #777, #666);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
 }
 
 .dragger:hover::after {
-    background-color: #333; /* Indicateur plus foncé au survol */
+    background-color: rgba(255, 255, 255, 0.7); /* Indicateur plus clair au survol */
 }
 
 .dragger-active {
-    background-color: #555 !important;
+    background: linear-gradient(to right, #666, #555) !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }
 
 .dragger-active::after {
-    background-color: #333;
-    width: 4px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    background-color: rgba(255, 255, 255, 0.8);
+    width: 5px;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+/* Style pour le texte du dragger */
+.dragger span {
+    position: absolute;
+    z-index: 11;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+.dragger:hover span {
+    transform: scale(1.2);
 }
 
 .right-panel {

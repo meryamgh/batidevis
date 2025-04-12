@@ -428,6 +428,7 @@ const MaquettePage: React.FC = () => {
                                 onExtendObject={handleExtendObject}
                                 onUpdateFaces={objectsUtils.handleUpdateFaces}
                                 parametricData={data}
+                                handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                             />
                         );
                     } else {
@@ -465,6 +466,7 @@ const MaquettePage: React.FC = () => {
                         onAddObject={objectsUtils.handleAddObjectFromData}
                         onExtendObject={handleExtendObject}
                         onUpdateFaces={objectsUtils.handleUpdateFaces}
+                        handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                     />
                 );
             };
@@ -545,6 +547,7 @@ const MaquettePage: React.FC = () => {
             rotation: [0, 0, 0],
             scale: [width, 0.1, depth],
             color: '#808080',
+            isBatiChiffrageObject: false,
             texture: '',
             boundingBox: boundingBox
         };
@@ -597,6 +600,7 @@ const MaquettePage: React.FC = () => {
                 details: 'Surface',
                 position: [centerX / 2, 0.05, centerZ / 2],
                 gltf: mesh,
+                isBatiChiffrageObject: false,
                 rotation: [0, 0, 0],
                 scale: [width, 0.1, depth],
                 color: '#808080',
@@ -689,6 +693,7 @@ const MaquettePage: React.FC = () => {
                             scale: objData.scale,
                             rotation: objData.rotation,
                             texture: objData.texture || '',
+                            isBatiChiffrageObject: false,
                             color: objData.color || '',
                             type: objData.type,
                             faces: objData.faces,
@@ -839,27 +844,29 @@ const MaquettePage: React.FC = () => {
                     />
                 </div>
                             
+                <div 
+                    ref={draggerRef} 
+                    className="dragger"
+                    title={showQuotePanel ? "Cliquez et glissez pour redimensionner le panneau de devis" : "Cliquez pour afficher le panneau de devis"}
+                    onClick={toggleQuotePanel}
+                >
+                    <span>{showQuotePanel ? ">" : "<"}</span>
+                </div>
+                
                 {showQuotePanel && (
-                    <>
-                        <div 
-                            ref={draggerRef} 
-                            className="dragger"
-                            title="Cliquez et glissez pour redimensionner le panneau de devis"
-                        ></div>
-                        <div 
-                            ref={rightPanelRef} 
-                            className="right-panel"
-                            style={{ width: `${quotePanelWidth}px` }}
-                        >
-                            <QuotePanel 
-                                quote={quote} 
-                                setObjects={setObjects}
-                                setQuote={setQuote}
-                                getSerializableQuote={objectsUtils.getSerializableQuote}
-                                handleRemoveObject={handleRemoveObject}
-                            />
-                        </div>
-                    </>
+                    <div 
+                        ref={rightPanelRef} 
+                        className="right-panel"
+                        style={{ width: `${quotePanelWidth}px` }}
+                    >
+                        <QuotePanel 
+                            quote={quote} 
+                            setObjects={setObjects}
+                            setQuote={setQuote}
+                            getSerializableQuote={objectsUtils.getSerializableQuote}
+                            handleRemoveObject={handleRemoveObject}
+                        />
+                    </div>
                 )}
             </div>
             {showRoomConfig && <RoomConfigPanel 

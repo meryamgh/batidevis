@@ -88,6 +88,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
     // Envoyer au backend
     try {
+        console.log('🔄 Exportation de la maquette en cours...');
         const response = await fetch('http://127.0.0.1:5000/save-maquette', {
             method: 'POST',
             headers: {
@@ -104,8 +105,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
         link.href = url;
         link.download = 'maquette.json';
         link.click();
+        console.log('✅ Maquette exportée avec succès !');
+        alert('Maquette exportée avec succès !');
     } catch (error) {
-        console.error('Erreur lors de l\'export:', error);
+        console.error('❌ Erreur lors de l\'export:', error);
+        alert('Erreur lors de l\'exportation de la maquette. Veuillez réessayer.');
     }
   };
 
@@ -160,9 +164,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         Upload Texture
       </button>
 
-      {showUpload && <TextureUpload onClose={() => setShowUpload(false)} />}
-
-      <button
+      {/* <button
         onClick={() => setShowObjectUpload(true)}
         className="bouton"
       >
@@ -184,7 +186,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onClose={() => setShowAIGeneration(false)} 
           onObjectGenerated={handleObjectGenerated}
         />
-      )}
+      )} */}
 
       <button onClick={() => setShowRoomConfig(true)} className="bouton">
         Générer une pièce
@@ -198,30 +200,23 @@ const Toolbar: React.FC<ToolbarProps> = ({
           Ajouter un étage
         </button>
       )}
-      
-      <button
-        onClick={toggleQuotePanel}
-        className="bouton"
-        title={showQuotePanel ? "Masquer le panneau de devis" : "Afficher le panneau de devis"}
-      >
-        {showQuotePanel ? "Masquer devis" : "Afficher devis"}
-      </button>
-      <ObjectSelector handleAddObject={handleAddObject} />
-
+      <ObjectSelector showObjectUpload={showObjectUpload} 
+      setShowObjectUpload={setShowObjectUpload} 
+      handleObjectGenerated={handleObjectGenerated} />
       <button
         onClick={handleExport}
-        className="bouton"
-        title="Exporter la maquette au format GLTF"
+        className="bouton icon-button"
+        title="Exporter la maquette au format JSON"
       >
-        Exporter la maquette
+        💾
       </button>
 
       <button 
         onClick={reconstructMaquette}
-        className="toolbar-button"
+        className="toolbar-button icon-button"
         title="Charger la maquette"
       >
-        Charger la maquette
+        📂
       </button>
     </div>
   );

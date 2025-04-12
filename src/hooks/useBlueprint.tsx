@@ -123,6 +123,7 @@ export const useBlueprint = ({
             gltf: wallMesh,
             rotation: [0, -angle, 0],
             scale: roundedScale,
+            isBatiChiffrageObject: false,
             color: '',
             type: 'wall',
             faces: {
@@ -305,6 +306,7 @@ export const useBlueprint = ({
             scale: [roundedWidth, roundedThickness, roundedLength],
             color: '',
             type: 'floor',
+            isBatiChiffrageObject: false,
             faces: {
                 front: { color: '', texture: '' },
                 back: { color: '', texture: '' },
@@ -382,6 +384,7 @@ export const useBlueprint = ({
                     wall.position[1] / 2,
                     wall.position[2] / 2
                 ],
+                isBatiChiffrageObject: false,
                 gltf: wallMesh,
                 rotation: wall.rotation as [number, number, number],
                 scale: wall.scale as [number, number, number],
@@ -692,6 +695,7 @@ export const useBlueprint = ({
                 scale: [floorWidth, floorThickness, floorLength],
                 color: '#' + floorColor.toString(16).padStart(6, '0'),
                 type: 'floor',
+                isBatiChiffrageObject: false,
                 faces: {
                     top: {
                         color: '#' + floorColor.toString(16).padStart(6, '0'),

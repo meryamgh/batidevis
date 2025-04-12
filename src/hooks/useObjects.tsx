@@ -37,6 +37,7 @@ interface UseObjectsReturn {
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => void;
   handleUpdateFaces: (id: string, faces: FacesData) => void;
+  handleUpdateObjectParametricData: (id: string, object : any) => void;
 }
 
 export const useObjects = ({
@@ -127,7 +128,8 @@ export const useObjects = ({
         scale,
         texture: '',
         color: '#FFFFFF',
-        boundingBox
+        boundingBox,
+        isBatiChiffrageObject: false
       };
 
       // Fetch parametric data from the API
@@ -138,7 +140,7 @@ export const useObjects = ({
             newObject.parametricData = parametricData;
             const prix = parametricData.item_details.prix;
             newObject.price = prix;
-             
+            newObject.isBatiChiffrageObject = true;
           }
         } catch (error) {
           console.error('Error fetching parametric data:', error);
@@ -434,6 +436,7 @@ export const useObjects = ({
       scale: item.scale,
       texture: item.texture,
       rotation: item.rotation,
+      isBatiChiffrageObject: item.isBatiChiffrageObject
     }));
   }, [quote]);
 
@@ -490,6 +493,25 @@ export const useObjects = ({
     );
   }, [setObjects]);
 
+
+  const handleUpdateObjectParametricData = (id: string, object : any) => {
+    const price = object.item_details.prix;
+    setObjects((prevObjects) =>
+      prevObjects.map((obj) =>
+        obj.id === id ? { ...obj, price : price, parametricData : object } : obj
+      )
+    );
+    
+    // Mettre à jour également le devis
+    setQuote((prevQuote) =>
+      prevQuote.map((item) =>
+        item.id === id ? { ...item, price : price, parametricData : object } : item
+      )
+    );
+    
+    console.log("Objects after update:", object);
+  }
+
   return {
     handleAddObject,
     handleAddObjectFromData,
@@ -503,7 +525,8 @@ export const useObjects = ({
     updateQuotePrice,
     getSerializableQuote,
     handleObjectClick,
-    handleUpdateFaces
+    handleUpdateFaces,
+    handleUpdateObjectParametricData
   };
 }; 
 
