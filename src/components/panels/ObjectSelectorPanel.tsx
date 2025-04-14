@@ -21,19 +21,32 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
 
     useEffect(() => {
         const fetchFiles = async () => {
-            console.log("fetchFiles")
+            console.log("Début de fetchFiles");
             try {
                 // Vérifier si les données sont déjà en cache
                 const cachedData = localStorage.getItem('objectList');
-                if (cachedData) {
-                    const parsedData = JSON.parse(cachedData);
-                    // Vérifier si le cache date de moins de 1 heure
-                    if (parsedData.timestamp && Date.now() - parsedData.timestamp < 3600000) {
-                        setObjects(parsedData.objects);
-                        return;
-                    }
-                }
+                console.log("Données en cache:", cachedData ? "présentes" : "absentes");
+                
+                // if (cachedData) {
+                //     try {
+                //         const parsedData = JSON.parse(cachedData);
+                //         const cacheAge = Date.now() - parsedData.timestamp;
+                //         console.log("Âge du cache:", Math.round(cacheAge / 1000 / 60), "minutes");
+                        
+                //         // Vérifier si le cache date de moins de 24 heures
+                //         if (parsedData.timestamp && cacheAge < 86400000) {
+                //             console.log("Utilisation des données en cache");
+                //             setObjects(parsedData.objects);
+                //             return;
+                //         } else {
+                //             console.log("Cache expiré, nouvelle requête nécessaire");
+                //         }
+                //     } catch (e) {
+                //         console.error("Erreur lors de la lecture du cache:", e);
+                //     }
+                // }
 
+                console.log("Récupération des données depuis le serveur");
                 const response = await fetch(`${BACKEND_URL}/list_files`);
                 const data = await response.json();
                 if (response.ok) {
@@ -44,10 +57,12 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                     setObjects(newObjects);
                     
                     // Mettre en cache les nouvelles données
-                    localStorage.setItem('objectList', JSON.stringify({
+                    const cacheData = {
                         objects: newObjects,
                         timestamp: Date.now()
-                    }));
+                    };
+                    localStorage.setItem('objectList', JSON.stringify(cacheData));
+                    console.log("Nouvelles données mises en cache");
                 } else {
                     console.error("Error fetching files:", data.error);
                 }

@@ -138,13 +138,29 @@ const FullQuote: React.FC = () => {
     const { quote } = useMaquetteStore();
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
-
+    const [data, setData] = useState<any>(null);
     // YouSign API integration
     const apiKey = import.meta.env.VITE_APP_YOUSIGN_API_KEY ;
     const [youSignClient] = useState<YouSignClient>(() => new YouSignClient(apiKey));
     const [signatureStatus, setSignatureStatus] = useState<'idle' | 'preparing' | 'sent' | 'error'>('idle');
     const [signatureRequestId, setSignatureRequestId] = useState<string | null>(null);
     const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+
+    // Constantes pour stocker les données des catégories
+    const [categoriesData, setCategoriesData] = useState<Record<number, any>>({});
+    const [loadingCategories, setLoadingCategories] = useState<Record<number, boolean>>({});
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [filteredData, setFilteredData] = useState<any>(null);
+
+    // Liste des catégories avec leurs IDs
+    const categories = [
+        { id: 48629, name: 'Électricité' },
+        { id: 48646, name: 'Génie climatique - Plomberie - Sanitaire' },
+        { id: 48659, name: 'Multiservices' },
+        { id: 66719, name: 'Second oeuvre' },
+        { id: 69486, name: 'Gros oeuvre' },
+        { id: 141175, name: 'Aménagements extérieurs' }
+    ];
 
     // New state for signer info
     const [signerFirstName, setSignerFirstName] = useState<string>('');
@@ -710,6 +726,135 @@ const FullQuote: React.FC = () => {
         });
     };
 
+    const fetchData = async (category_id: number) => {
+      // Si les données sont déjà chargées, les afficher directement
+      if (categoriesData[category_id]) {
+        setData(categoriesData[category_id]);
+        return;
+      }
+
+      // Si les données sont en cours de chargement, ne rien faire
+      if (loadingCategories[category_id]) {
+        return;
+      }
+
+      // Marquer cette catégorie comme en cours de chargement
+      setLoadingCategories(prev => ({ ...prev, [category_id]: true }));
+
+      try {
+          const response = await fetch(`${BACKEND_URL}/api/categories/${category_id}`);
+          if (response.ok) {
+              const data = await response.json();
+              // Stocker les données dans l'état des catégories
+              setCategoriesData(prev => ({ ...prev, [category_id]: data }));
+              // Afficher les données
+              setData(data);
+              console.log(data);
+          } else {
+              console.error('Erreur lors de la récupération des données de la catégorie');
+          }
+      } catch (error) {
+          console.error('Erreur lors de la récupération des données de la catégorie:', error);
+      } finally {
+          // Marquer cette catégorie comme chargée
+          setLoadingCategories(prev => ({ ...prev, [category_id]: false }));
+      }
+    }
+
+    // Fonction pour charger toutes les catégories au démarrage
+    const loadAllCategories = async () => {
+      // for (const category of categories) {
+      //   if (!categoriesData[category.id]) {
+      //     await fetchData(category.id);
+      //   }
+      // }
+    };
+
+    // Charger toutes les catégories au montage du composant
+    useEffect(() => {
+      loadAllCategories();
+    }, []);
+
+    // Component to display category data
+    const CategoryDisplay = ({ category }: { category: any }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      const [showDetails, setShowDetails] = useState(false);
+
+      if (!category) return null;
+
+      const title = category.libelle || category.libelle_parent || `Category ${category.category_id}`;
+
+      return (
+        <div className="category" style={{ marginLeft: '20px', marginBottom: '10px' }}>
+          <div 
+            style={{ 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <span style={{ marginRight: '10px' }}>
+              {isOpen ? '▼' : '▶'}
+            </span>
+            {title}
+          </div>
+          
+          {isOpen && (
+            <div style={{ marginLeft: '20px' }}>
+              {category.children && category.children.length > 0 ? (
+                category.children.map((child: any, index: number) => (
+                  <CategoryDisplay key={index} category={child} />
+                ))
+              ) : category.final_data && category.final_data.length > 0 ? (
+                <div>
+                  <div style={{ marginBottom: '10px' }}>
+                    {category.final_data.map((item: any, index: number) => (
+                      <div key={index} style={{ marginBottom: '5px' }}>
+                        <strong>{item.libelle}</strong>: {item.libtech}
+                      </div>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={() => setShowDetails(!showDetails)}
+                    style={{
+                      padding: '5px 10px',
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showDetails ? 'Hide Details' : 'More Details'}
+                  </button>
+                  
+                  {showDetails && (
+                    <div style={{ 
+                      marginTop: '10px', 
+                      padding: '10px', 
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '4px'
+                    }}>
+                      {category.final_data.map((item: any, index: number) => (
+                        <div key={index} style={{ marginBottom: '10px' }}>
+                          <p><strong>{item.libelle}</strong>: {item.libtech}</p>
+                          <p>Prix: {item.prix} {item.unite}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>No data available</div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    };
+
     // Function to start the signature process
     const handleRequestSignature = async () => {
         setShowSignerForm(true);
@@ -760,13 +905,88 @@ const FullQuote: React.FC = () => {
         setShowSignerForm(false);
     };
 
+    // Fonction pour filtrer les données en fonction du terme de recherche
+    const filterData = (data: any, term: string): any => {
+      if (!data || !term) return data;
+      
+      // Créer une copie profonde des données pour ne pas modifier l'original
+      const result = JSON.parse(JSON.stringify(data));
+      
+      // Fonction récursive pour filtrer les données
+      const filterRecursive = (node: any): boolean => {
+        // Si c'est un nœud final avec des données
+        if (node.final_data) {
+          // Filtrer les éléments qui correspondent au terme de recherche
+          const filteredItems = node.final_data.filter((item: any) => 
+            item.libelle?.toLowerCase().includes(term.toLowerCase()) ||
+            item.libtech?.toLowerCase().includes(term.toLowerCase())
+          );
+          
+          // Si aucun élément ne correspond, supprimer ce nœud
+          if (filteredItems.length === 0) {
+            return false;
+          }
+          
+          // Sinon, remplacer les données par les éléments filtrés
+          node.final_data = filteredItems;
+          return true;
+        }
+        
+        // Si c'est un nœud avec des enfants
+        if (node.children) {
+          // Filtrer les enfants récursivement
+          const filteredChildren = node.children.filter((child: any) => filterRecursive(child));
+          
+          // Si aucun enfant ne correspond, supprimer ce nœud
+          if (filteredChildren.length === 0) {
+            return false;
+          }
+          
+          // Sinon, remplacer les enfants par les enfants filtrés
+          node.children = filteredChildren;
+          return true;
+        }
+        
+        // Si c'est un nœud avec un libellé qui correspond
+        if (node.libelle?.toLowerCase().includes(term.toLowerCase()) || 
+            node.libelle_parent?.toLowerCase().includes(term.toLowerCase())) {
+          return true;
+        }
+        
+        // Par défaut, conserver le nœud
+        return true;
+      };
+      
+      // Appliquer le filtre récursif
+      filterRecursive(result);
+      
+      return result;
+    };
+
+    // Mettre à jour les données filtrées lorsque le terme de recherche ou les données changent
+    useEffect(() => {
+      if (data) {
+        setFilteredData(filterData(data, searchTerm));
+      }
+    }, [data, searchTerm]);
+
+    // Gérer le changement de terme de recherche
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(e.target.value);
+    };
+
+    // Réinitialiser la recherche
+    const resetSearch = () => {
+      setSearchTerm('');
+    };
+
     return (
       <div>
         <button className='full-quote-button' onClick={handleBack}>
           retour maquette
         </button>
          
-        <div className="container" ref={quoteRef}>
+        <div className="container" ref={quoteRef} style={{ position: 'relative', marginBottom: '30px' }}>
           <header>
             <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
               <img src={logoSrc} alt="Logo" />
@@ -1121,6 +1341,10 @@ const FullQuote: React.FC = () => {
             <p>Les marchandises vendues restent notre propriété, jusqu'au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
           </footer>
         </div>
+
+        <div>
+          <h1></h1>
+        </div>
         
         {/* Electronic Signature Button */}
         <div className="signature-actions" style={{ textAlign: 'center', margin: '20px 0' }}>
@@ -1176,6 +1400,106 @@ const FullQuote: React.FC = () => {
               Une erreur est survenue lors de la demande de signature. Veuillez réessayer.
             </div>
           )}
+        </div>
+        
+        {/* Categories and Search Section */}
+        <div style={{ 
+          marginTop: '30px', 
+          padding: '20px', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ marginBottom: '10px' }}>Catégories d'objets</h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f2f2f2' }}>
+                  <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Catégorie</th>
+                  <th style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>ID</th>
+                  <th style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((category) => (
+                  <tr key={category.id}>
+                    <td style={{ padding: '10px', border: '1px solid #ddd' }}>{category.name}</td>
+                    <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>{category.id}</td>
+                    <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>
+                      <button 
+                        onClick={() => fetchData(category.id)}
+                        style={{
+                          padding: '5px 10px',
+                          backgroundColor: loadingCategories[category.id] ? '#cccccc' : '#007bff',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: loadingCategories[category.id] ? 'wait' : 'pointer'
+                        }}
+                        disabled={loadingCategories[category.id]}
+                      >
+                        {loadingCategories[category.id] ? 'Chargement...' : 'Afficher'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {data && (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginBottom: '15px',
+                backgroundColor: '#ffffff',
+                padding: '10px',
+                borderRadius: '4px',
+                border: '1px solid #ddd'
+              }}>
+                <input
+                  type="text"
+                  placeholder="Rechercher dans les données..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd',
+                    marginRight: '10px'
+                  }}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={resetSearch}
+                    style={{
+                      padding: '8px 12px',
+                      backgroundColor: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+              {searchTerm && (
+                <div style={{ 
+                  marginBottom: '10px',
+                  padding: '8px',
+                  backgroundColor: '#e9f5ff',
+                  borderRadius: '4px',
+                  border: '1px solid #b8daff'
+                }}>
+                  <strong>Recherche :</strong> "{searchTerm}" - {filteredData ? 'Résultats filtrés' : 'Aucun résultat'}
+                </div>
+              )}
+            </div>
+          )}
+          {filteredData ? <CategoryDisplay category={filteredData} /> : data && <CategoryDisplay category={data} />}
         </div>
         
         {/* Signer Information Modal */}
