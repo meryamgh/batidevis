@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useParametricDataService } from '../services/ParametricDataService';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
 interface UseObjectsProps {
   objects: ObjectData[]; 

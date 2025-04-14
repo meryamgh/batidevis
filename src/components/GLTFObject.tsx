@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Mesh } from "three";
 import { FacesData } from '../types/ObjectData';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // Mapping des faces pour les murs
 const faceIndexMapping = {
@@ -64,11 +65,11 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     useEffect(() => {
         if (url !== '') {
             const loader = new GLTFLoader();
-    // 1. Configuration du DRACOLoader
-    const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderPath('/draco/') // Le dossier dans "public"
-    dracoLoader.setDecoderConfig({ type: 'js' }) // ou 'wasm' si tu préfères
-    loader.setDRACOLoader(dracoLoader)
+            // 1. Configuration du DRACOLoader
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('/draco/'); // Le dossier dans "public"
+            dracoLoader.setDecoderConfig({ type: 'js' }); // ou 'wasm' si tu préfères
+            loader.setDRACOLoader(dracoLoader);
             loader.load(url, (gltf) => {
                 const clonedScene = gltf.scene.clone();
                 
