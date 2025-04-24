@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import '../../styles/ObjectPanel.css';
 import Select, { SingleValue } from 'react-select';
-import ParametricDataPanel from '../ParametricDataPanel';
 import { BACKEND_URL } from '../../config/env';
         
 type ObjectPanelProps = {
@@ -60,9 +59,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
     const [showDimensions, setShowDimensions] = useState(false);
-    const [position, setPosition] = useState<[number, number, number]>(object.position);
-    const [curvature, setCurvature] = useState(0);
-    const [stretch, setStretch] = useState(1);
+    const [position, setPosition] = useState<[number, number, number]>(object.position); 
     const [selectedAxis, setSelectedAxis] = useState<'x' | 'y' | 'z'>('y');
     const [recalculateYPosition, setRecalculateYPosition] = useState(false);
     // États pour les dimensions de la pièce
