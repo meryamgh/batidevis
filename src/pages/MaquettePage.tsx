@@ -518,7 +518,7 @@ const MaquettePage: React.FC = () => {
                 createSurface(surfaceStartPoint, point);
             }
         } else {
-            objectsUtils.handleObjectClick(id, viewMode, is2DView, renderObjectPanel);
+            objectsUtils.handleObjectClick(id, viewMode, renderObjectPanel);
         }
     }, [objectsUtils, viewMode, is2DView, renderObjectPanel, isCreatingSurface, surfaceStartPoint]);
     

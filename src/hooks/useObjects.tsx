@@ -34,7 +34,6 @@ interface UseObjectsReturn {
   handleObjectClick: (
     id: string, 
     viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly',
-    is2DView: boolean,
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => void;
   handleUpdateFaces: (id: string, faces: FacesData) => void;
@@ -446,7 +445,6 @@ export const useObjects = ({
   const handleObjectClick = useCallback((
     id: string, 
     viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly',
-    is2DView: boolean,
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => {
     if (viewMode === 'ObjectOnly') {
