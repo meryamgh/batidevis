@@ -5,7 +5,6 @@ import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Mesh } from "three";
 import { FacesData } from '../types/ObjectData';
 
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 // Mapping des faces pour les murs
 const faceIndexMapping = {
@@ -34,7 +33,7 @@ type GLTFObjectProps = {
     color?: string;
     isSelected?: boolean;
     faces?: FacesData;
-    type?: 'wall' | 'floor' | 'object';
+    type?: 'wall' | 'floor' | 'object' | 'ceiling';
     onUpdateFaces: (id: string, faces: FacesData) => void;
 };
 
@@ -65,11 +64,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     useEffect(() => {
         if (url !== '') {
             const loader = new GLTFLoader();
-            // 1. Configuration du DRACOLoader
-            const dracoLoader = new DRACOLoader();
-            dracoLoader.setDecoderPath('/draco/'); // Le dossier dans "public"
-            dracoLoader.setDecoderConfig({ type: 'js' }); // ou 'wasm' si tu préfères
-            loader.setDRACOLoader(dracoLoader);
+          
             loader.load(url, (gltf) => {
                 const clonedScene = gltf.scene.clone();
                 
@@ -190,8 +185,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         textureUrl,
                         (loadedTexture) => {
                             console.log('Texture chargée avec succès:', textureUrl);
-                            loadedTexture.anisotropy = 16;
-                            loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
+                            loadedTexture.anisotropy = 30;
+                            loadedTexture.wrapS = loadedTexture.wrapT = THREE.MirroredRepeatWrapping ;
 
                             if (type === 'floor' || !type) { // !type pour les surfaces
                                 // Pour les sols et surfaces, utiliser les dimensions x et z

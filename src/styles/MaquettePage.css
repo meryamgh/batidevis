@@ -381,3 +381,40 @@ nav a.active {
     text-decoration: none;
     font-weight: bold;
 }
+
+/* Styles pour le conteneur du panneau de textures */
+.texture-panel-container {
+  background-color: #fff;
+  border-radius: 8px;
+  margin: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.texture-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+}
+
+.texture-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.toggle-texture-panel {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #666;
+  padding: 0 5px;
+}
+
+.toggle-texture-panel:hover {
+  color: #333;
+}

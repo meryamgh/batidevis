@@ -223,6 +223,61 @@ export const useFloors = ({
       setQuote((prevQuote: ObjectData[]) => [...prevQuote, newWallObject]);
     });
 
+    // Ajouter le plafond
+    const ceilingGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const ceilingMaterial = new THREE.MeshStandardMaterial({ 
+      color: FLOOR_COLORS[0],
+      transparent: true,
+      opacity: FLOOR_OPACITY,
+      side: THREE.DoubleSide
+    });
+    const ceilingMesh = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+    const ceilingBoundingBox = new THREE.Box3();
+    ceilingBoundingBox.min.set(-roomConfig.width/2, -WALL_THICKNESS/2, -roomConfig.length/2);
+    ceilingBoundingBox.max.set(roomConfig.width/2, WALL_THICKNESS/2, roomConfig.length/2);
+
+    const ceilingObject: ObjectData = {
+      id: uuidv4(),
+      url: '',
+      price: FLOOR_PRICE_PER_SQUARE_METER,
+      details: 'Plafond (Rez-de-chaussée)',
+      position: [0, roomConfig.height/2, 0],
+      gltf: ceilingMesh,
+      isBatiChiffrageObject: false,
+      rotation: [0, 0, 0],
+      scale: [roomConfig.width, WALL_THICKNESS, roomConfig.length],
+      color: FLOOR_COLORS[0],
+      type: 'ceiling',
+      boundingBox: {
+        min: [ceilingBoundingBox.min.x, ceilingBoundingBox.min.y, ceilingBoundingBox.min.z],
+        max: [ceilingBoundingBox.max.x, ceilingBoundingBox.max.y, ceilingBoundingBox.max.z],
+        size: [ceilingBoundingBox.max.x - ceilingBoundingBox.min.x, ceilingBoundingBox.max.y - ceilingBoundingBox.min.y, ceilingBoundingBox.max.z - ceilingBoundingBox.min.z],
+        center: [ceilingBoundingBox.min.x + (ceilingBoundingBox.max.x - ceilingBoundingBox.min.x) / 2, ceilingBoundingBox.min.y + (ceilingBoundingBox.max.y - ceilingBoundingBox.min.y) / 2, ceilingBoundingBox.min.z + (ceilingBoundingBox.max.z - ceilingBoundingBox.min.z) / 2]
+      },
+      faces: {
+        bottom: {
+          color: FLOOR_COLORS[0],
+          texture: ''
+        }
+      }
+    };
+
+    const roundedCeilingScale: [number, number, number] = [
+      Math.round(roomConfig.width * 1000) / 1000,
+      Math.round(WALL_THICKNESS * 1000) / 1000,
+      Math.round(roomConfig.length * 1000) / 1000
+    ];
+
+    setObjects((prevObjects: ObjectData[]) => [...prevObjects, {
+      ...ceilingObject,
+      scale: roundedCeilingScale
+    }]);
+    setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
+      ...ceilingObject,
+      scale: roundedCeilingScale,
+      price: Math.round(roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
+    }]);
+
     setCurrentFloor(0);
     setShowRoomConfig(false);
   }, [roomConfig, setObjects, setQuote, setCurrentFloor, setShowRoomConfig]);
@@ -315,6 +370,61 @@ export const useFloors = ({
     setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
       ...floorObject,
       scale: roundedFloorScale,
+      price: Math.round(roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
+    }]);
+
+    // Ajouter le plafond de l'étage
+    const ceilingGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const ceilingMaterial = new THREE.MeshStandardMaterial({ 
+      color: floorColor,
+      transparent: true,
+      opacity: FLOOR_OPACITY,
+      side: THREE.DoubleSide
+    });
+    const ceilingMesh = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+    const ceilingBoundingBox = new THREE.Box3();
+    ceilingBoundingBox.min.set(-roomConfig.width/2, -WALL_THICKNESS/2, -roomConfig.length/2);
+    ceilingBoundingBox.max.set(roomConfig.width/2, WALL_THICKNESS/2, roomConfig.length/2);
+
+    const ceilingObject: ObjectData = {
+      id: uuidv4(),
+      url: '',
+      price: FLOOR_PRICE_PER_SQUARE_METER,
+      details: `Plafond (Étage ${nextFloorNumber})`,
+      position: [0, (floorHeight + roomConfig.height)/2, 0],
+      gltf: ceilingMesh,
+      isBatiChiffrageObject: false,
+      rotation: [0, 0, 0],
+      scale: [roomConfig.width, WALL_THICKNESS, roomConfig.length],
+      color: floorColor,
+      type: 'ceiling',
+      boundingBox: {
+        min: [ceilingBoundingBox.min.x, ceilingBoundingBox.min.y, ceilingBoundingBox.min.z],
+        max: [ceilingBoundingBox.max.x, ceilingBoundingBox.max.y, ceilingBoundingBox.max.z],
+        size: [ceilingBoundingBox.max.x - ceilingBoundingBox.min.x, ceilingBoundingBox.max.y - ceilingBoundingBox.min.y, ceilingBoundingBox.max.z - ceilingBoundingBox.min.z],
+        center: [ceilingBoundingBox.min.x + (ceilingBoundingBox.max.x - ceilingBoundingBox.min.x) / 2, ceilingBoundingBox.min.y + (ceilingBoundingBox.max.y - ceilingBoundingBox.min.y) / 2, ceilingBoundingBox.min.z + (ceilingBoundingBox.max.z - ceilingBoundingBox.min.z) / 2]
+      },
+      faces: {
+        bottom: {
+          color: floorColor,
+          texture: ''
+        }
+      }
+    };
+
+    const roundedCeilingScale: [number, number, number] = [
+      Math.round(roomConfig.width * 1000) / 1000,
+      Math.round(WALL_THICKNESS * 1000) / 1000,
+      Math.round(roomConfig.length * 1000) / 1000
+    ];
+
+    setObjects((prevObjects: ObjectData[]) => [...prevObjects, {
+      ...ceilingObject,
+      scale: roundedCeilingScale
+    }]);
+    setQuote((prevQuote: ObjectData[]) => [...prevQuote, {
+      ...ceilingObject,
+      scale: roundedCeilingScale,
       price: Math.round(roomConfig.width * roomConfig.length * FLOOR_PRICE_PER_SQUARE_METER)
     }]);
 

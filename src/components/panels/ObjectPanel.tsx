@@ -982,39 +982,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         </div>
                     </div>
 
-                    <div className="panel-section">
-                        <h3 className="section-title">Déformation</h3>
-                        <div className="deformation-controls">
-                            <div className="deformation-group">
-                                <label>Courbure</label>
-                                <span className="deformation-value">{curvature.toFixed(1)}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="-50"
-                                max="50"
-                                step="0.01"
-                                value={curvature}
-                                onChange={(e) => setCurvature(parseFloat(e.target.value))}
-                                className="deformation-slider"
-                                onMouseDown={handleRangeMouseDown}
-                            />
-                            <div className="deformation-group">
-                                <label>Étirement</label>
-                                <span className="deformation-value">{stretch.toFixed(1)}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="-50"
-                                max="50"
-                                step="0.01"
-                                value={stretch}
-                                onChange={(e) => setStretch(parseFloat(e.target.value))}
-                                className="deformation-slider"
-                                onMouseDown={handleRangeMouseDown}
-                            />
-                        </div>
-                    </div>
 
                     <div className="panel-section">
                         <h3 className="section-title">Face sélectionnée</h3>
@@ -1391,19 +1358,19 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     )}
                     
                     {/* Template section for reference */}
-                    {parametricData.template && (
+                    {/* {parametricData.template && (
                         <div className="template-section">
                             <h4>Modèle complet</h4>
                             <p className="template-text">{parametricData.template}</p>
                         </div>
-                    )}
+                    )} */}
                 </div>
             )}
 
             {/* Add Parametric Data Panel */}
-            {object.parametricData && (
+            {/* {object.parametricData && (
                 <ParametricDataPanel parametricData={object.parametricData} />
-            )}
+            )} */}
         </div>
     );
 };

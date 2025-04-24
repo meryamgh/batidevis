@@ -117,7 +117,8 @@ type AggregatedQuoteItem = {
     details: string;
     price: number;
     quantity: number;
-    isNew?: boolean; // Add this flag to track new items
+    unit?: string;
+    isNew?: boolean;
 };
 
 // Interface for API response
@@ -168,6 +169,10 @@ const FullQuote: React.FC = () => {
     const [signerEmail, setSignerEmail] = useState<string>('');
     const [signerPhone, setSignerPhone] = useState<string>('');
     const [showSignerForm, setShowSignerForm] = useState<boolean>(false);
+
+    // Add new states for invoice email modal
+    const [showInvoiceEmailModal, setShowInvoiceEmailModal] = useState<boolean>(false);
+    const [invoiceEmail, setInvoiceEmail] = useState<string>('');
 
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
@@ -533,6 +538,7 @@ const FullQuote: React.FC = () => {
                     details: `${frais.libtech} (${frais.prix.toFixed(2)}€/${frais.unite})`,
                     price: frais.prix,
                     quantity: 1,
+                    unit: frais.unite,
                     isNew: true
                 };
                 setAggregatedQuote(prev => [...prev, newItem]);
@@ -668,8 +674,9 @@ const FullQuote: React.FC = () => {
             doc.text("N°", 20, 90);
             doc.text("DÉSIGNATION", 40, 90);
             doc.text("QTÉ", 130, 90);
-            doc.text("PRIX U.", 150, 90);
-            doc.text("TOTAL HT", 180, 90);
+            doc.text("UNITÉ", 150, 90);
+            doc.text("PRIX U.", 170, 90);
+            doc.text("TOTAL HT", 190, 90);
             
             // Draw a line under headers
             doc.setLineWidth(0.5);
@@ -690,8 +697,9 @@ const FullQuote: React.FC = () => {
                 y += (lines.length - 1) * 10;
                 
                 doc.text(item.quantity.toString(), 130, y);
-                doc.text(`${item.price.toFixed(2)} €`, 150, y);
-                doc.text(`${(item.price * item.quantity).toFixed(2)} €`, 180, y);
+                doc.text(item.unit || 'U', 150, y);
+                doc.text(`${item.price.toFixed(2)} €`, 170, y);
+                doc.text(`${(item.price * item.quantity).toFixed(2)} €`, 190, y);
                 
                 y += 15;
                 
@@ -980,6 +988,94 @@ const FullQuote: React.FC = () => {
       setSearchTerm('');
     };
 
+    // Update the send invoice function
+    const handleSendInvoiceByEmail = async (email: string) => {
+      try {
+        const invoiceData = {
+          logo: devoTitle,
+          client: {
+            nom: devoName,
+            adresse: `${devoAddress}, ${devoCity}`,
+            siren: devoSiren
+          },
+          entreprise: {
+            nom: societeBatiment,
+            adresse: clientAdresse,
+            code_postal: clientCodePostal,
+            telephone: clientTel,
+            email: clientEmail
+          },
+          devis: {
+            numero: devisNumero,
+            date_emission: enDateDu,
+            valable_jusqu_au: valableJusquau,
+            debut_travaux: debutTravaux,
+            duree_estimee: dureeTravaux
+          },
+          lignes: aggregatedQuote.map((item, index) => ({
+            numero: index + 1,
+            designation: item.details,
+            quantite: item.quantity,
+            unite: item.unit || 'U',
+            prix_unitaire: item.price,
+            tva: tvaRate * 100,
+            total_ht: item.price * item.quantity
+          })),
+          paiement: {
+            conditions: `Acompte ${(acompteRate * 100).toFixed(2)}% du total TTC = ${acompte.toFixed(2)} € TTC à la signature`,
+            reste_a_facturer: resteAPayer,
+            moyens_acceptes: ["Chèque", "Espèces"]
+          },
+          totaux: {
+            net_ht: totalHT,
+            tva: totalTVA,
+            total_ttc: totalTTC,
+            net_a_payer: totalTTC
+          }
+        };
+
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Cookie", "csrftoken=hnk2LQf33iUtXrgsu2jHolsCh1FtZHXQ");
+
+        const requestOptions = {
+          method: "POST",
+          headers: myHeaders,
+          body: JSON.stringify(invoiceData),
+          redirect: "follow" as RequestRedirect
+        };
+
+        const response = await fetch(`${BACKEND_URL}/api/send_invoice_by_email/${encodeURIComponent(email)}`, requestOptions);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.text();
+        console.log("Email sent successfully:", result);
+        alert("La facture a été envoyée avec succès par email!");
+        setShowInvoiceEmailModal(false);
+      } catch (error) {
+        console.error("Error sending invoice by email:", error);
+        alert("Erreur lors de l'envoi de la facture par email. Veuillez réessayer.");
+      }
+    };
+
+    // Add handler for opening email modal
+    const handleOpenInvoiceEmailModal = () => {
+      setShowInvoiceEmailModal(true);
+      setInvoiceEmail('');
+    };
+
+    // Add handler for submitting email
+    const handleSubmitInvoiceEmail = () => {
+      if (!invoiceEmail || !invoiceEmail.includes('@')) {
+        alert('Veuillez entrer une adresse email valide');
+        return;
+      }
+      handleSendInvoiceByEmail(invoiceEmail);
+    };
+
     return (
       <div>
         <button className='full-quote-button' onClick={handleBack}>
@@ -1106,6 +1202,7 @@ const FullQuote: React.FC = () => {
                 <th>N°</th>
                 <th>DÉSIGNATION</th>
                 <th>QTÉ</th>
+                <th>UNITÉ</th>
                 <th>PRIX U.</th>
                 <th>TVA</th>
                 <th>TOTAL HT</th>
@@ -1173,6 +1270,7 @@ const FullQuote: React.FC = () => {
                                                 details: selectedData.libtech,
                                                 price: selectedData.prix,
                                                 quantity: 1,
+                                                unit: selectedData.unite,
                                                 isNew: false
                                             };
                                             setAggregatedQuote(newQuote);
@@ -1220,6 +1318,7 @@ const FullQuote: React.FC = () => {
                         />
                         : `${item.quantity.toFixed(2)}`}
                     </td>
+                    <td>{item.unit || 'U'}</td>
                     <td
                       onClick={() => handleCellClick(index, 'price')}
                     >
@@ -1358,12 +1457,27 @@ const FullQuote: React.FC = () => {
                 border: 'none', 
                 borderRadius: '4px', 
                 cursor: 'pointer',
-                fontSize: '16px'
+                fontSize: '16px',
+                marginRight: '10px'
               }}
             >
               Demander signature électronique
             </button>
           )}
+          <button
+            onClick={handleOpenInvoiceEmailModal}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
+          >
+            Envoyer la facture électronique
+          </button>
           
           {signatureStatus === 'preparing' && (
             <div>Préparation de la demande de signature...</div>
@@ -1593,6 +1707,73 @@ const FullQuote: React.FC = () => {
                   }}
                 >
                   Envoyer la demande
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add the email modal */}
+        {showInvoiceEmailModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Envoyer la facture par email</h3>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Email du destinataire</label>
+                <input
+                  type="email"
+                  value={invoiceEmail}
+                  onChange={e => setInvoiceEmail(e.target.value)}
+                  style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                  placeholder="exemple@email.com"
+                />
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <button
+                  onClick={() => setShowInvoiceEmailModal(false)}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annuler
+                </button>
+                
+                <button
+                  onClick={handleSubmitInvoiceEmail}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Envoyer
                 </button>
               </div>
             </div>

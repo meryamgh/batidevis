@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useParametricDataService } from '../services/ParametricDataService';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+
 
 interface UseObjectsProps {
   objects: ObjectData[]; 
@@ -56,10 +56,7 @@ export const useObjects = ({
   const handleAddObject = useCallback(async (url: string, event?: React.DragEvent<HTMLDivElement>, camera?: THREE.Camera) => {
     try {
       const loader = new GLTFLoader();
-      const dracoLoader = new DRACOLoader()
-      dracoLoader.setDecoderPath('/draco/') // Assure-toi que ce dossier est dans public/ et contient les fichiers DRACO
-      dracoLoader.setDecoderConfig({type: 'js'});
-      loader.setDRACOLoader(dracoLoader)
+   
       const gltf = await loader.loadAsync(url);
       
       // Calculer la bounding box de l'objet
@@ -454,10 +451,6 @@ export const useObjects = ({
   ) => {
     if (viewMode === 'ObjectOnly') {
       setFocusedObjectId(id);
-    }
-    
-    if (is2DView || viewMode === 'ObjectOnly') {
-      return;
     }
 
     const selectedObject = objects.find((obj) => obj.id === id);

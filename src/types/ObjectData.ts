@@ -38,7 +38,7 @@ export type ObjectData = {
         center: [number, number, number];
     };
     faces?: FacesData;  // Définition des faces pour les murs et sols
-    type?: 'wall' | 'floor' | 'object';  // Type d'objet pour différencier le comportement
+    type?: 'wall' | 'floor' | 'object' | 'ceiling';  // Type d'objet pour différencier le comportement
     parametricData?: any; // Données paramétriques récupérées depuis l'API
     isBatiChiffrageObject : boolean;
 };

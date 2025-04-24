@@ -6,6 +6,7 @@ import '../styles/MaquettePage.css';
 import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelUtils';
 import CanvasScene from '../components/CanvasScene';
 import ObjectPanel from '../components/panels/ObjectPanel'; 
+import TexturePanel from '../components/panels/TexturePanel';
 import { useObjects } from '../hooks/useObjects';
 import QuotePanel from '../components/panels/QuotePanel';
 import NavigationHelpModal from '../components/panels/NavigationHelpModalPanel';
@@ -20,6 +21,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useMaquetteStore } from '../store/maquetteStore';
 import { BACKEND_URL } from '../config/env';
+import ObjectsPanel from '../components/panels/ObjectsPanel';
+import ObjectControls from '../components/panels/ObjectControlsPanel';
 const MaquettePage: React.FC = () => {
     const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
     const raycaster = useRef(new THREE.Raycaster()); 
@@ -46,6 +49,7 @@ const MaquettePage: React.FC = () => {
     const [surfaceStartPoint, setSurfaceStartPoint] = useState<THREE.Vector3 | null>(null);
     const [surfaceEndPoint, setSurfaceEndPoint] = useState<THREE.Vector3 | null>(null);
     const [surfacePreview, setSurfacePreview] = useState<THREE.Mesh | null>(null);
+    const [selectedTexture, setSelectedTexture] = useState<string | undefined>(undefined);
 
     // États pour le mode Blueprint
     const [blueprintPoints, setBlueprintPoints] = useState<THREE.Vector3[]>([]);
@@ -379,6 +383,11 @@ const MaquettePage: React.FC = () => {
         // Mettre à jour l'objet sélectionné
         setSelectedObjectId(selectedObject.id);
         
+        // Si l'objet a une texture, la définir comme texture sélectionnée
+        if (selectedObject.texture) {
+            setSelectedTexture(selectedObject.texture);
+        }
+        
         if (panel) {
             panel.style.display = 'block';
 
@@ -408,7 +417,10 @@ const MaquettePage: React.FC = () => {
                         panelRootRef.current?.render(
                             <ObjectPanel
                                 object={selectedObject}
-                                onUpdateTexture={objectsUtils.handleUpdateTexture}
+                                onUpdateTexture={(id, textureUrl) => {
+                                    objectsUtils.handleUpdateTexture(id, textureUrl);
+                                    setSelectedTexture(textureUrl);
+                                }}
                                 onUpdateColor={objectsUtils.handleUpdateColor}
                                 onUpdateScale={objectsUtils.handleUpdateScale}
                                 onUpdatePosition={objectsUtils.handleUpdatePosition}
@@ -447,7 +459,10 @@ const MaquettePage: React.FC = () => {
                 panelRootRef.current?.render(
                     <ObjectPanel
                         object={selectedObject}
-                        onUpdateTexture={objectsUtils.handleUpdateTexture}
+                        onUpdateTexture={(id, textureUrl) => {
+                            objectsUtils.handleUpdateTexture(id, textureUrl);
+                            setSelectedTexture(textureUrl);
+                        }}
                         onUpdateColor={objectsUtils.handleUpdateColor}
                         onUpdateScale={objectsUtils.handleUpdateScale}
                         onUpdatePosition={objectsUtils.handleUpdatePosition}
@@ -507,7 +522,8 @@ const MaquettePage: React.FC = () => {
         }
     }, [objectsUtils, viewMode, is2DView, renderObjectPanel, isCreatingSurface, surfaceStartPoint]);
     
-     
+   
+  
     
     // Ajouter la fonction pour créer la surface
     const createSurface = (start: THREE.Vector3, end: THREE.Vector3) => {
@@ -548,7 +564,7 @@ const MaquettePage: React.FC = () => {
             scale: [width, 0.1, depth],
             color: '#808080',
             isBatiChiffrageObject: false,
-            texture: '',
+            texture: selectedTexture || '',
             boundingBox: boundingBox
         };
 
@@ -747,6 +763,20 @@ const MaquettePage: React.FC = () => {
         }
     };
 
+    // Fonction pour gérer la sélection d'une texture
+    const handleTextureSelect = (textureUrl: string) => {
+        setSelectedTexture(textureUrl);
+        console.log('Texture sélectionnée:', textureUrl);
+        
+        // Si un objet est sélectionné, appliquer la texture à cet objet
+        if (selectedObjectId) {
+            const selectedObject = objects.find(obj => obj.id === selectedObjectId);
+            if (selectedObject) {
+                objectsUtils.handleUpdateTexture(selectedObjectId, textureUrl);
+            }
+        }
+    };
+
     return (
         <div id="page">
             <NavigationHelpModal 
@@ -785,6 +815,19 @@ const MaquettePage: React.FC = () => {
                         setSelectedFloor2D={setSelectedFloor2D}
                         is2DView={is2DView}
                     />
+                    
+                    {/* Panneau d'objets */}
+                    <ObjectsPanel 
+                        onSelectObject={objectsUtils.handleAddObject}
+                        selectedObject={selectedObjectId || undefined}
+                    />
+                    
+                    {/* Panneau de textures */}
+                    <TexturePanel 
+                        onSelectTexture={handleTextureSelect}
+                        selectedTexture={selectedTexture}
+                    />
+                    
                     <div
                         id="floating-panel"
                         className="floating-panel"
@@ -841,6 +884,16 @@ const MaquettePage: React.FC = () => {
                         rectangleStartPoint={rectangleStartPoint}
                         handleAddObject={objectsUtils.handleAddObject}
                         onUpdateFaces={objectsUtils.handleUpdateFaces}
+                    />
+
+                    {/* Ajout des contrôles d'objet */}
+                    <ObjectControls
+                        selectedObjectId={selectedObjectId}
+                        onRemoveObject={objectsUtils.handleRemoveObject}
+                        onMoveObject={() => setIsMoving(selectedObjectId || '')}
+                        onRotateObject={objectsUtils.handleRotateObject}
+                        onToggleDimensions={objectsUtils.handleToggleShowDimensions}
+                        selectedObject={objects.find(obj => obj.id === selectedObjectId)}
                     />
                 </div>
                             
