@@ -653,50 +653,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
     
 
-    const renderDimensionsInputs = () => {
-        
-        return (
-            <>
-                <div className='container-label'>
-                    <label className='titre-label'>largeur</label>
-                    <input className='selection'
-                        type="number"
-                        step="0.01"
-                        value={width}
-                        onChange={(e) => {
-                            const newWidth = parseFloat(e.target.value) || 0;
-                            handleUpdateScale(newWidth, height, depth);
-                        }}
-                    />
-                </div>
-                <div className='container-label'>
-                    <label className='titre-label'>hauteur</label>
-                    <input className='selection'
-                        type="number"
-                        step="0.01"
-                        value={height}
-                        onChange={(e) => {
-                            const newHeight = parseFloat(e.target.value) || 0;
-                            handleUpdateScale(width, newHeight, depth);
-                        }}
-                    />
-                </div>
-                <div className='container-label'>
-                    <label className='titre-label'>profondeur</label>
-                    <input className='selection'
-                        type="number"
-                        step="0.01"
-                        value={depth}
-                        onChange={(e) => {
-                            const newDepth = parseFloat(e.target.value) || 0;
-                            handleUpdateScale(width, height, newDepth);
-                        }}
-                    />
-                </div>
-            </>
-        );
-    };
-
     // Ajouter l'objet original à extendedObjects lors de l'initialisation
     useEffect(() => {
         if (extendedObjects.length === 0) {
@@ -705,89 +661,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         }
     }, []); // Dépendance vide pour n'exécuter qu'une seule fois
 
-    // Fonction pour gérer l'extension d'objet avec suivi
-    const handleExtendWithTracking = (direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => {
-        try {
-            console.log('=== Début de l\'extension ===');
-            console.log('État actuel des objets étendus:', extendedObjects);
-            console.log('Dernier objet étendu:', lastExtendedObject);
-
-            // Utiliser le dernier objet étendu comme source pour la nouvelle extension
-            // n'utilise plus le dernier objet étendu mais l'objet original et rajoute la distance qu'il faut pour le creer au bon endroit
-            const sourceObject = extendedObjects.length > 0 
-                ? extendedObjects[extendedObjects.length - 1] 
-                : object;
-            
-            console.log('Objet source sélectionné:', {
-                id: sourceObject.id,
-                position: sourceObject.position,
-                details: sourceObject.details
-            });
-            
-            if (!sourceObject) {
-                console.error("Pas d'objet source trouvé pour l'extension");
-                return;
-            }
-            
-            // Utiliser la fonction onExtendObject fournie dans les props
-            console.log('Appel de onExtendObject avec direction:', direction);
-            const newObject = onExtendObject(sourceObject, direction);
-            
-            console.log('Nouvel objet créé:', {
-                id: newObject.id,
-                position: newObject.position,
-                details: newObject.details
-            });
-
-            // Vérifier si le nouvel objet a bien un nouvel ID
-            if (newObject.id === sourceObject.id) {
-                console.error('ERREUR: Le nouvel objet a le même ID que la source!');
-                return;
-            }
-
-            // Vérifier si la position est différente
-            const samePosition = newObject.position.every((val, idx) => val === sourceObject.position[idx]);
-            if (samePosition) {
-                console.warn('ATTENTION: Le nouvel objet a la même position que la source!');
-            }
-
-            // Mettre à jour les états locaux
-            console.log('Mise à jour des états locaux');
-            console.log('Ancien état extendedObjects:', extendedObjects);
-            
-            setLastExtendedObject(newObject);
-            setExtendedObjects(prev => {
-                const newState = [...prev, newObject];
-                console.log('Nouvel état extendedObjects:', newState);
-                return newState;
-            });
-
-            console.log('=== Fin de l\'extension ===');
-        } catch (error) {
-            console.error("Erreur lors de l'extension de l'objet:", error);
-        }
-    };
-
-    // Fonction pour annuler le dernier objet étendu
-    const handleUndoLastExtend = () => {
-        if (extendedObjects.length > 0) {
-            const lastObject = extendedObjects[extendedObjects.length - 2] || object;
-            const objectToRemove = extendedObjects[extendedObjects.length - 1];
-            
-            onRemoveObject(objectToRemove.id);
-            setExtendedObjects(prev => prev.slice(0, -1));
-            setLastExtendedObject(lastObject);
-        }
-    };
-
-    // Fonction pour annuler tous les objets étendus
-    const handleCancelAllExtends = () => {
-        extendedObjects.forEach(obj => {
-            onRemoveObject(obj.id);
-        });
-        setExtendedObjects([]);
-        setLastExtendedObject(object);
-    };
+   
 
     // Réinitialiser le dernier objet étendu lors de la fermeture du panneau
     const handleClosePanel = () => {
@@ -917,10 +791,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
             {(!isRoomComponent || isWall || isFloor) && (
                 <>
-                    <div className="panel-section">
-                        <h3 className="section-title">Dimensions</h3>
-                        {renderDimensionsInputs()}
-                    </div>
+                   
                     {/* dans le cas ou c'est un mur  */}
                     {isWall && (
                     <div className='panel-section'>
@@ -937,47 +808,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         </button>
                     </div>
                     )}
-
-
-
-                    <div className="panel-section">
-                        <h3 className="section-title">Position</h3>
-                        <div className="axis-selector">
-                            <button 
-                                className={`axis-button ${selectedAxis === 'x' ? 'selected' : ''}`}
-                                onClick={() => setSelectedAxis('x')}
-                            >
-                                X
-                            </button>
-                            <button 
-                                className={`axis-button ${selectedAxis === 'y' ? 'selected' : ''}`}
-                                onClick={() => setSelectedAxis('y')}
-                            >
-                                Y
-                            </button>
-                            <button 
-                                className={`axis-button ${selectedAxis === 'z' ? 'selected' : ''}`}
-                                onClick={() => setSelectedAxis('z')}
-                            >
-                                Z
-                            </button>
-                        </div>
-                        <div className="deformation-group">
-                            <input
-                                type="range"
-                                min={selectedAxis === 'y' ? getMinYAxis(object) : "-25"}
-                                max="25"
-                                step="0.01"
-                                value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
-                                onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value))}
-                                className="position-slider"
-                                onMouseDown={handleRangeMouseDown}
-                            />
-                            <span className="deformation-value">
-                                {position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(1)}
-                            </span>
-                        </div>
-                    </div>
 
 
                     <div className="panel-section">
@@ -1142,59 +972,11 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 </>
             )}
 
-            <div className="panel-section">
-                <h3 className="section-title">Étendre l'objet</h3>
-                <div className="extend-controls">
-                    <div className="extend-row">
-                        <button 
-                            className="extend-button"
-                            onClick={() => handleExtendWithTracking('left')}
-                        >
-                            ← Gauche
-                        </button>
-                        <button 
-                            className="extend-button"
-                            onClick={() => handleExtendWithTracking('right')}
-                        >
-                            Droite →
-                        </button>
-                    </div>
-                    <div className="extend-row">
-                        <button 
-                            className="extend-button"
-                            onClick={() => handleExtendWithTracking('front')}
-                        >
-                            ↑ Devant
-                        </button>
-                        <button 
-                            className="extend-button"
-                            onClick={() => handleExtendWithTracking('back')}
-                        >
-                            Derrière ↓
-                        </button>
-                    </div>
-                    <div className="extend-controls-actions">
-                        <button 
-                            className="extend-control-button"
-                            onClick={handleUndoLastExtend}
-                            disabled={extendedObjects.length === 0}
-                        >
-                            Annuler dernier
-                        </button>
-                        <button 
-                            className="extend-control-button"
-                            onClick={handleCancelAllExtends}
-                            disabled={extendedObjects.length === 0}
-                        >
-                            Annuler tout
-                        </button>
-                    </div>
-                </div>
-            </div>
+       
 
             <p><strong>Prix:</strong> {object.price} €</p>
 
-            <div className="button-section">
+            {/* <div className="button-section">
                 <div className='bouton-container'>
                     <button onClick={() => {
                         onRemoveObject(object.id);
@@ -1225,7 +1007,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 <button className='bouton-popup-last-last' onClick={toggleDimensions}>
                     {showDimensions ? 'masquer les dimensions' : 'afficher les dimensions'}
                 </button>
-            </div>
+            </div> */}
 
             {parametricData && (
                 <div className="panel-section">

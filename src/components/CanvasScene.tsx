@@ -226,7 +226,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         }
         
         // Toggle between orbit and move navigation modes with 'n' key
-        if ((e.key === 'n' || e.key === 'N') && !isObjectOnlyView && !is2DView && !firstPersonView) {
+        if ((e.key === 'n' || e.key === 'N') && !isObjectOnlyView && !firstPersonView) {
             e.preventDefault(); // Empêcher tout comportement par défaut
             setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit');
         }
@@ -467,13 +467,13 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
             {firstPersonView && (
                 <PersonView rotateCamera={rotateCamera} />
             )}
-            <NavigationModeIndicator 
+            {/* <NavigationModeIndicator 
                 is2DView={is2DView}
                 isObjectOnlyView={isObjectOnlyView}
                 firstPersonView={firstPersonView}
                 navigationMode={navigationMode}
                 setNavigationMode={setNavigationMode}
-            />
+            /> */}
             <div 
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -581,7 +581,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     {/* Afficher la grille en mode 2D ou Blueprint, pas en mode ObjectOnly */}
                     {is2DView && !isObjectOnlyView && (
                         <gridHelper 
-                            args={[50, 50]} 
+                            args={[100, 100]} 
                             position={[0, 0, 0]} 
                             rotation={[0, 0, 0]}
                             // Couleur différente pour le mode Blueprint

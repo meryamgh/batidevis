@@ -7,6 +7,7 @@ import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelU
 import CanvasScene from '../components/CanvasScene';
 import ObjectPanel from '../components/panels/ObjectPanel'; 
 import TexturePanel from '../components/panels/TexturePanel';
+import TextureUpload from '../components/panels/TextureUploadPanel';
 import { useObjects } from '../hooks/useObjects';
 import QuotePanel from '../components/panels/QuotePanel';
 import NavigationHelpModal from '../components/panels/NavigationHelpModalPanel';
@@ -806,6 +807,9 @@ const MaquettePage: React.FC = () => {
                 reconstructMaquette={reconstructMaquette}
             />
 
+            {/* Add TextureUpload component */}
+            {showUpload && <TextureUpload onClose={() => setShowUpload(false)} />}
+
             {/* Contenu principal */}
             <div id="container">
                 <div ref={leftPanelRef} className={`left-panel ${!showQuotePanel ? 'left-panel-expanded' : ''}`}>
@@ -823,10 +827,11 @@ const MaquettePage: React.FC = () => {
                     />
                     
                     {/* Panneau de textures */}
-                    <TexturePanel 
+                    {/* <TexturePanel 
                         onSelectTexture={handleTextureSelect}
                         selectedTexture={selectedTexture}
-                    />
+                        setShowUpload={setShowUpload}
+                    /> */}
                     
                     <div
                         id="floating-panel"
@@ -887,14 +892,18 @@ const MaquettePage: React.FC = () => {
                     />
 
                     {/* Ajout des contrôles d'objet */}
-                    <ObjectControls
-                        selectedObjectId={selectedObjectId}
-                        onRemoveObject={objectsUtils.handleRemoveObject}
-                        onMoveObject={() => setIsMoving(selectedObjectId || '')}
-                        onRotateObject={objectsUtils.handleRotateObject}
-                        onToggleDimensions={objectsUtils.handleToggleShowDimensions}
-                        selectedObject={objects.find(obj => obj.id === selectedObjectId)}
-                    />
+                    {selectedObjectId && (
+                        <ObjectControls
+                            selectedObjectId={selectedObjectId}
+                            onRemoveObject={objectsUtils.handleRemoveObject}
+                            onUpdateScale={objectsUtils.handleUpdateScale}
+                            onMoveObject={() => setIsMoving(selectedObjectId || '')}
+                            onRotateObject={objectsUtils.handleRotateObject}
+                            onUpdatePosition={objectsUtils.handleUpdatePosition}
+                            onExtendObject={handleExtendObject}
+                            selectedObject={objects.find(obj => obj.id === selectedObjectId)}
+                        />
+                    )}
                 </div>
                             
                 <div 

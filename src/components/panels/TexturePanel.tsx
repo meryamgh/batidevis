@@ -5,9 +5,11 @@ import '../../styles/TexturePanel.css';
 interface TexturePanelProps {
   onSelectTexture: (textureUrl: string) => void;
   selectedTexture?: string;
+  onUploadClick?: () => void;
+  setShowUpload: (show: boolean) => void;
 }
 
-const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTexture }) => {
+const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTexture, onUploadClick, setShowUpload }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const { textures, isLoading, error } = useTextures();
 
@@ -27,8 +29,15 @@ const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTe
         {isExpanded ? '◀' : '▶'}
       </button>
       {isExpanded && (
+        
         <div className="texture-panel-content">
           <h3>Textures</h3>
+          <button
+            onClick={() => setShowUpload(true)}
+            className="bouton"
+          >
+            Upload Texture
+          </button>
           {isLoading ? (
             <div className="texture-loading">Chargement des textures...</div>
           ) : error ? (
@@ -55,8 +64,10 @@ const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTe
             </div>
           )}
         </div>
+        
       )}
     </div>
+    
   );
 };
 

@@ -1077,460 +1077,490 @@ const FullQuote: React.FC = () => {
     };
 
     return (
-      <div>
-        <button className='full-quote-button' onClick={handleBack}>
-          retour maquette
-        </button>
-         
-        <div className="container" ref={quoteRef} style={{ position: 'relative', marginBottom: '30px' }}>
-          <header>
-            <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
-              <img src={logoSrc} alt="Logo" />
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                style={{display:'none'}}
-                onChange={handleLogoChange}
-                accept="image/*"
-              />
-            </div>
-            <div className="devo-info">
-              <h2>
-                <EditableText fieldName="devoTitle" value={devoTitle} />
-              </h2>
-              <p>
-                <EditableText fieldName="devoName" value={devoName} /><br />
-                <EditableText fieldName="devoAddress" value={devoAddress} /><br />
-                <EditableText fieldName="devoCity" value={devoCity} /><br />
-                <EditableText fieldName="devoSiren" value={devoSiren} />
-              </p>
-            </div>
-          </header>
-          <div className="infoclient-infodevis">
-            <section className="info-client">
-              <h2>
-                <EditableText fieldName="societeBatiment" value={societeBatiment} />
-              </h2><br/>
-              <div>
-                <table className='info-table-client'>
-                  <tbody>
-                  <tr>
-                    <td>Adresse</td>
-                    <td>
-                      <EditableText fieldName="clientAdresse" value={clientAdresse} />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Code Postal</td>
-                    <td>
-                      <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Tel</td>
-                    <td>
-                      <EditableText fieldName="clientTel" value={clientTel} />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Email</td>
-                    <td>
-                      <EditableText fieldName="clientEmail" value={clientEmail} />
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
+      <div style={{ 
+        display: 'flex', 
+        height: '100vh',
+        overflow: 'hidden'
+      }}>
+        {/* Colonne de gauche - Devis */}
+        <div style={{ 
+          flex: '1',
+          overflowY: 'auto',
+          padding: '20px',
+          borderRight: '1px solid #ddd'
+        }}>
+          <button className='full-quote-button' onClick={handleBack}>
+            retour maquette
+          </button>
+          
+          <div className="container" ref={quoteRef} style={{ marginBottom: '30px' }}>
+            <header>
+              <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
+                <img src={logoSrc} alt="Logo" />
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  style={{display:'none'}}
+                  onChange={handleLogoChange}
+                  accept="image/*"
+                />
               </div>
-            </section>
-            <section className="devis-header">
-              <h2>
-                Devis n° : <EditableText fieldName="devisNumero" value={devisNumero} />
-              </h2><br/>
-              <div>
-                <table className='info-table-devis'>
-                  <tbody>
-                  <tr>
-                    <td>En date du</td>
-                    <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
-                  </tr>
-                  <tr>
-                    <td>Valable jusqu'au</td>
-                    <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
-                  </tr>
-                  <tr>
-                    <td>Début des travaux</td>
-                    <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
-                  </tr>
-                  <tr>
-                    <td>Durée estimée à</td>
-                    <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
-                  </tr>
-                  </tbody>
-                </table>
+              <div className="devo-info">
+                <h2>
+                  <EditableText fieldName="devoTitle" value={devoTitle} />
+                </h2>
+                <p>
+                  <EditableText fieldName="devoName" value={devoName} /><br />
+                  <EditableText fieldName="devoAddress" value={devoAddress} /><br />
+                  <EditableText fieldName="devoCity" value={devoCity} /><br />
+                  <EditableText fieldName="devoSiren" value={devoSiren} />
+                </p>
               </div>
-            </section>
-          </div>
+            </header>
+            <div className="infoclient-infodevis">
+              <section className="info-client">
+                <h2>
+                  <EditableText fieldName="societeBatiment" value={societeBatiment} />
+                </h2><br/>
+                <div>
+                  <table className='info-table-client'>
+                    <tbody>
+                    <tr>
+                      <td>Adresse</td>
+                      <td>
+                        <EditableText fieldName="clientAdresse" value={clientAdresse} />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Code Postal</td>
+                      <td>
+                        <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Tel</td>
+                      <td>
+                        <EditableText fieldName="clientTel" value={clientTel} />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Email</td>
+                      <td>
+                        <EditableText fieldName="clientEmail" value={clientEmail} />
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+              <section className="devis-header">
+                <h2>
+                  Devis n° : <EditableText fieldName="devisNumero" value={devisNumero} />
+                </h2><br/>
+                <div>
+                  <table className='info-table-devis'>
+                    <tbody>
+                    <tr>
+                      <td>En date du</td>
+                      <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
+                    </tr>
+                    <tr>
+                      <td>Valable jusqu'au</td>
+                      <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
+                    </tr>
+                    <tr>
+                      <td>Début des travaux</td>
+                      <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
+                    </tr>
+                    <tr>
+                      <td>Durée estimée à</td>
+                      <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
 
-          <div className="frais-divers-section" style={{ marginBottom: '20px' }}>
-            <h3 style={{ marginBottom: '10px' }}>Frais divers</h3>
-            <select
-                multiple
-                value={selectedFraisDivers.map(String)}
-                onChange={handleFraisDiversChange}
-                style={{
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                    minHeight: '100px'
-                }}
-            >
-                {fraisDivers.map((frais) => (
-                    <option key={frais.id} value={frais.id}>
-                        {frais.libtech} - {frais.prix.toFixed(2)}€/{frais.unite}
-                    </option>
-                ))}
-            </select>
-            <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                Maintenez la touche Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs frais
-            </p>
-          </div>
+            <table className='table-border'>
+              <thead>
+                <tr className='blue'>
+                  <th>N°</th>
+                  <th>DÉSIGNATION</th>
+                  <th>QTÉ</th>
+                  <th>UNITÉ</th>
+                  <th>PRIX U.</th>
+                  <th>TVA</th>
+                  <th>TOTAL HT</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {aggregatedQuote.map((item, index) => {
+                  const isEditingDetails = editingCell?.rowIndex === index && editingCell?.field === 'details';
+                  const isEditingQuantity = editingCell?.rowIndex === index && editingCell?.field === 'quantity';
+                  const isEditingPrice = editingCell?.rowIndex === index && editingCell?.field === 'price';
 
-          <table className='table-border'>
-            <thead>
-              <tr className='blue'>
-                <th>N°</th>
-                <th>DÉSIGNATION</th>
-                <th>QTÉ</th>
-                <th>UNITÉ</th>
-                <th>PRIX U.</th>
-                <th>TVA</th>
-                <th>TOTAL HT</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {aggregatedQuote.map((item, index) => {
-                const isEditingDetails = editingCell?.rowIndex === index && editingCell?.field === 'details';
-                const isEditingQuantity = editingCell?.rowIndex === index && editingCell?.field === 'quantity';
-                const isEditingPrice = editingCell?.rowIndex === index && editingCell?.field === 'price';
-
-                return (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td 
-                      className='size_description' 
-                      onClick={() => handleCellClick(index, 'details')}
-                      style={{ position: 'relative' }}
-                    >
-                      {isEditingDetails ? (
-                        <>
+                  return (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td 
+                        className='size_description' 
+                        onClick={() => handleCellClick(index, 'details')}
+                        style={{ position: 'relative' }}
+                      >
+                        {isEditingDetails ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={handleInputChange}
+                              onBlur={handleBlur}
+                              onKeyDown={handleKeyDown}
+                              ref={inputRef}
+                              autoFocus
+                              style={{ width: '100%' }}
+                            />
+                            {suggestions.length > 0 && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                backgroundColor: 'white',
+                                border: '2px solid #007bff',
+                                borderRadius: '4px',
+                                zIndex: 1000,
+                                width: '100%',
+                                maxHeight: '200px',
+                                overflowY: 'auto',
+                                boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                              }}>
+                                {suggestions.map((suggestion: string, index: number) => (
+                                  <div
+                                      key={index}
+                                      onMouseDown={(e: React.MouseEvent) => {
+                                          e.preventDefault();
+                                      }}
+                                      onClick={(e: React.MouseEvent) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setIsSuggestionClicking(true);
+                                          
+                                          if (currentSuggestionData && currentSuggestionData[index] && editingCell) {
+                                              const {rowIndex} = editingCell;
+                                              const selectedData = currentSuggestionData[index];
+                                              
+                                              const newQuote = [...aggregatedQuote];
+                                              newQuote[rowIndex] = {
+                                                  ...newQuote[rowIndex],
+                                                  details: selectedData.libtech,
+                                                  price: selectedData.prix,
+                                                  quantity: 1,
+                                                  unit: selectedData.unite,
+                                                  isNew: false
+                                              };
+                                              setAggregatedQuote(newQuote);
+                                              setEditingCell(null);
+                                              setEditValue('');
+                                              setSuggestions([]);
+                                              setCurrentSuggestionData(null);
+                                              
+                                              setTimeout(() => {
+                                                  setIsSuggestionClicking(false);
+                                              }, 300);
+                                          }
+                                      }}
+                                      style={{
+                                          padding: '8px 12px',
+                                          cursor: 'pointer',
+                                          backgroundColor: index === selectedSuggestionIndex ? '#e9f5ff' : 'white',
+                                          color: '#333',
+                                          fontWeight: index === selectedSuggestionIndex ? 'bold' : 'normal',
+                                          borderBottom: index < suggestions.length - 1 ? '1px solid #eee' : 'none'
+                                      }}
+                                  >
+                                      {suggestion}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          item.details
+                        )}
+                      </td>
+                      <td
+                        onClick={() => handleCellClick(index, 'quantity')}
+                      >
+                        {isEditingQuantity ? 
                           <input
-                            type="text"
+                            type="number"
+                            step="0.01"
                             value={editValue}
                             onChange={handleInputChange}
                             onBlur={handleBlur}
                             onKeyDown={handleKeyDown}
-                            ref={inputRef}
                             autoFocus
-                            style={{ width: '100%' }}
                           />
-                          {suggestions.length > 0 && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              backgroundColor: 'white',
-                              border: '2px solid #007bff',
-                              borderRadius: '4px',
-                              zIndex: 1000,
-                              width: '100%',
-                              maxHeight: '200px',
-                              overflowY: 'auto',
-                              boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                            }}>
-                              {suggestions.map((suggestion: string, index: number) => (
-                                <div
-                                    key={index}
-                                    onMouseDown={(e: React.MouseEvent) => {
-                                        e.preventDefault();
-                                    }}
-                                    onClick={(e: React.MouseEvent) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setIsSuggestionClicking(true);
-                                        
-                                        if (currentSuggestionData && currentSuggestionData[index] && editingCell) {
-                                            const {rowIndex} = editingCell;
-                                            const selectedData = currentSuggestionData[index];
-                                            
-                                            const newQuote = [...aggregatedQuote];
-                                            newQuote[rowIndex] = {
-                                                ...newQuote[rowIndex],
-                                                details: selectedData.libtech,
-                                                price: selectedData.prix,
-                                                quantity: 1,
-                                                unit: selectedData.unite,
-                                                isNew: false
-                                            };
-                                            setAggregatedQuote(newQuote);
-                                            setEditingCell(null);
-                                            setEditValue('');
-                                            setSuggestions([]);
-                                            setCurrentSuggestionData(null);
-                                            
-                                            setTimeout(() => {
-                                                setIsSuggestionClicking(false);
-                                            }, 300);
-                                        }
-                                    }}
-                                    style={{
-                                        padding: '8px 12px',
-                                        cursor: 'pointer',
-                                        backgroundColor: index === selectedSuggestionIndex ? '#e9f5ff' : 'white',
-                                        color: '#333',
-                                        fontWeight: index === selectedSuggestionIndex ? 'bold' : 'normal',
-                                        borderBottom: index < suggestions.length - 1 ? '1px solid #eee' : 'none'
-                                    }}
-                                >
-                                    {suggestion}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        item.details
-                      )}
-                    </td>
-                    <td
-                      onClick={() => handleCellClick(index, 'quantity')}
+                          : `${item.quantity.toFixed(2)}`}
+                      </td>
+                      <td>{item.unit || 'U'}</td>
+                      <td
+                        onClick={() => handleCellClick(index, 'price')}
+                      >
+                        {isEditingPrice ? 
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editValue}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                          />
+                          : `${item.price.toFixed(2)} €`}
+                      </td>
+                      <td>{(tvaRate * 100).toFixed(2)} %</td>
+                      <td>{(item.price * item.quantity).toFixed(2)} €</td>
+                      <td>
+                          <button 
+                              onClick={() => handleDeleteRow(index)}
+                              style={{
+                                  backgroundColor: '#dc3545',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  padding: '4px 8px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                              }}
+                          >
+                              Supprimer
+                          </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '10px' }}>
+                    <button 
+                      onClick={handleAddRow} 
+                      style={{ 
+                        fontSize: '18px', 
+                        backgroundColor: '#007bff', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '50%', 
+                        width: '30px', 
+                        height: '30px', 
+                        cursor: 'pointer' 
+                      }}
                     >
-                      {isEditingQuantity ? 
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editValue}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          onKeyDown={handleKeyDown}
-                          autoFocus
-                        />
-                        : `${item.quantity.toFixed(2)}`}
-                    </td>
-                    <td>{item.unit || 'U'}</td>
-                    <td
-                      onClick={() => handleCellClick(index, 'price')}
-                    >
-                      {isEditingPrice ? 
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editValue}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          onKeyDown={handleKeyDown}
-                          autoFocus
-                        />
-                        : `${item.price.toFixed(2)} €`}
-                    </td>
-                    <td>{(tvaRate * 100).toFixed(2)} %</td>
-                    <td>{(item.price * item.quantity).toFixed(2)} €</td>
-                    <td>
-                        <button 
-                            onClick={() => handleDeleteRow(index)}
-                            style={{
-                                backgroundColor: '#dc3545',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                padding: '4px 8px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                            }}
-                        >
-                            Supprimer
-                        </button>
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '10px' }}>
-                  <button 
-                    onClick={handleAddRow} 
-                    style={{ 
-                      fontSize: '18px', 
-                      backgroundColor: '#007bff', 
-                      color: 'white', 
-                      border: 'none', 
-                      borderRadius: '50%', 
-                      width: '30px', 
-                      height: '30px', 
-                      cursor: 'pointer' 
-                    }}
-                  >
-                    +
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                      +
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
 
-          <div className="condition-total">
-            <div className="payment-info">
-              <p><strong>Conditions de paiement :</strong></p>
-              <p>
-                Acompte {editingAcompte ? (
-                  <input
-                    type="number"
-                    value={acompteEditValue}
-                    onChange={handleAcompteChange}
-                    onBlur={handleAcompteBlurOrEnter}
-                    onKeyDown={handleAcompteKeyDown}
-                    style={{ width: '50px' }}
-                    autoFocus
-                  />
-                ) : (
-                  <span onClick={handleAcompteClick} style={{cursor:'pointer',textDecoration:'underline'}}>
-                    {(acompteRate * 100).toFixed(2)}%
-                  </span>
-                )} du total TTC = {acompte.toFixed(2)} € TTC à la signature
-                <br/>
-                Reste à facturer : {resteAPayer.toFixed(2)} € TTC
-                <br/>
-                Méthodes de paiement acceptées : Chèque, Espèces.
-              </p>
+            <div className="condition-total">
+              <div className="payment-info">
+                <p><strong>Conditions de paiement :</strong></p>
+                <p>
+                  Acompte {editingAcompte ? (
+                    <input
+                      type="number"
+                      value={acompteEditValue}
+                      onChange={handleAcompteChange}
+                      onBlur={handleAcompteBlurOrEnter}
+                      onKeyDown={handleAcompteKeyDown}
+                      style={{ width: '50px' }}
+                      autoFocus
+                    />
+                  ) : (
+                    <span onClick={handleAcompteClick} style={{cursor:'pointer',textDecoration:'underline'}}>
+                      {(acompteRate * 100).toFixed(2)}%
+                    </span>
+                  )} du total TTC = {acompte.toFixed(2)} € TTC à la signature
+                  <br/>
+                  Reste à facturer : {resteAPayer.toFixed(2)} € TTC
+                  <br/>
+                  Méthodes de paiement acceptées : Chèque, Espèces.
+                </p>
+              </div>
+              <div className="totals">
+                <table className='table-border'>
+                  <tbody>
+                    <tr>
+                      <td className='size_description_price'><strong>Total net HT</strong></td>
+                      <td className='size_price'><strong>{totalHT.toFixed(2)} €</strong></td>
+                    </tr>
+                    <tr>
+                      <td>TVA { (tvaRate * 100).toFixed(2) } %</td>
+                      <td>{totalTVA.toFixed(2)} €</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Total TTC</strong></td>
+                      <td><strong>{totalTTC.toFixed(2)} €</strong></td>
+                    </tr>
+                    <tr className='blue'>
+                      <td>NET À PAYER</td>
+                      <td>{totalTTC.toFixed(2)} €</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="totals">
-              <table className='table-border'>
-                <tbody>
-                  <tr>
-                    <td className='size_description_price'><strong>Total net HT</strong></td>
-                    <td className='size_price'><strong>{totalHT.toFixed(2)} €</strong></td>
-                  </tr>
-                  <tr>
-                    <td>TVA { (tvaRate * 100).toFixed(2) } %</td>
-                    <td>{totalTVA.toFixed(2)} €</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Total TTC</strong></td>
-                    <td><strong>{totalTTC.toFixed(2)} €</strong></td>
-                  </tr>
-                  <tr className='blue'>
-                    <td>NET À PAYER</td>
-                    <td>{totalTTC.toFixed(2)} €</td>
-                  </tr>
-                </tbody>
-              </table>
+            <br/>
+            <div className='container-signature'>
+              <div className='signature'>
+                <p>
+                  Mention "Reçu avant l'exécution des travaux, bon pour accord", date et
+                  signature :
+                </p><br/>
+                <p>...... / ...... / ............</p>
+              </div>
             </div>
+            <br/>
+            <footer>
+              <p>Les marchandises vendues restent notre propriété, jusqu'au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
+            </footer>
           </div>
-          <br/>
-          <div className='container-signature'>
-            <div className='signature'>
-              <p>
-                Mention "Reçu avant l'exécution des travaux, bon pour accord", date et
-                signature :
-              </p><br/>
-              <p>...... / ...... / ............</p>
-            </div>
-          </div>
-          <br/>
-          <footer>
-            <p>Les marchandises vendues restent notre propriété, jusqu'au paiement complet de la facture (loi°80.335 du 2 mai 1980)</p>
-          </footer>
         </div>
 
-        <div>
-          <h1></h1>
-        </div>
-        
-        {/* Electronic Signature Button */}
-        <div className="signature-actions" style={{ textAlign: 'center', margin: '20px 0' }}>
-          {signatureStatus === 'idle' && (
-            <button 
-              onClick={handleRequestSignature}
-              style={{ 
-                padding: '10px 20px', 
-                backgroundColor: '#007bff', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
+        {/* Colonne de droite - Contrôles et catégories */}
+        <div style={{ 
+          width: '400px',
+          overflowY: 'auto',
+          padding: '20px',
+          backgroundColor: '#f8f9fa'
+        }}>
+          {/* Electronic Signature Button */}
+          <div className="signature-actions" style={{ marginBottom: '20px' }}>
+            {signatureStatus === 'idle' && (
+              <button 
+                onClick={handleRequestSignature}
+                style={{ 
+                  padding: '10px 20px', 
+                  backgroundColor: '#007bff', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  marginRight: '10px',
+                  width: '100%',
+                  marginBottom: '10px'
+                }}
+              >
+                Demander signature électronique
+              </button>
+            )}
+            <button
+              onClick={handleOpenInvoiceEmailModal}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '16px',
-                marginRight: '10px'
+                width: '100%'
               }}
             >
-              Demander signature électronique
+              Envoyer la facture électronique
             </button>
-          )}
-          <button
-            onClick={handleOpenInvoiceEmailModal}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            Envoyer la facture électronique
-          </button>
+            
+            {signatureStatus === 'preparing' && (
+              <div>Préparation de la demande de signature...</div>
+            )}
+            
+            {signatureStatus === 'sent' && (
+              <div>
+                <p style={{ color: 'green', fontWeight: 'bold' }}>
+                  Demande de signature envoyée avec succès!
+                </p>
+                {signatureUrl && (
+                  <a 
+                    href={signatureUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ 
+                      display: 'inline-block',
+                      margin: '10px 0',
+                      padding: '10px 20px',
+                      backgroundColor: '#28a745',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      width: '100%',
+                      textAlign: 'center'
+                    }}
+                  >
+                    Voir la demande de signature
+                  </a>
+                )}
+              </div>
+            )}
+            
+            {signatureStatus === 'error' && (
+              <div style={{ color: 'red' }}>
+                Une erreur est survenue lors de la demande de signature. Veuillez réessayer.
+              </div>
+            )}
+          </div>
           
-          {signatureStatus === 'preparing' && (
-            <div>Préparation de la demande de signature...</div>
-          )}
+          {/* Frais Divers Section */}
+          <div style={{ 
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            padding: '15px',
+            marginBottom: '20px'
+          }}>
+            <h3 style={{ marginBottom: '10px' }}>Frais divers</h3>
+            <select
+              multiple
+              value={selectedFraisDivers.map(String)}
+              onChange={handleFraisDiversChange}
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #ddd',
+                minHeight: '100px',
+                marginBottom: '8px'
+              }}
+            >
+              {fraisDivers.map((frais) => (
+                <option key={frais.id} value={frais.id}>
+                  {frais.libtech} - {frais.prix.toFixed(2)}€/{frais.unite}
+                </option>
+              ))}
+            </select>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#666', 
+              margin: '0',
+              fontStyle: 'italic'
+            }}>
+              Maintenez la touche Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs frais
+            </p>
+          </div>
           
-          {signatureStatus === 'sent' && (
-            <div>
-              <p style={{ color: 'green', fontWeight: 'bold' }}>
-                Demande de signature envoyée avec succès!
-              </p>
-              {signatureUrl && (
-                <a 
-                  href={signatureUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ 
-                    display: 'inline-block',
-                    margin: '10px 0',
-                    padding: '10px 20px',
-                    backgroundColor: '#28a745',
-                    color: 'white',
-                    textDecoration: 'none',
-                    borderRadius: '4px'
-                  }}
-                >
-                  Voir la demande de signature
-                </a>
-              )}
-            </div>
-          )}
-          
-          {signatureStatus === 'error' && (
-            <div style={{ color: 'red' }}>
-              Une erreur est survenue lors de la demande de signature. Veuillez réessayer.
-            </div>
-          )}
-        </div>
-        
-        {/* Categories and Search Section */}
-        <div style={{ 
-          marginTop: '30px', 
-          padding: '20px', 
-          backgroundColor: '#f8f9fa', 
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ marginBottom: '20px' }}>
+          {/* Categories Section */}
+          <div style={{ 
+            backgroundColor: '#ffffff', 
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            padding: '15px'
+          }}>
             <h3 style={{ marginBottom: '10px' }}>Catégories d'objets</h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f2f2f2' }}>
                   <th style={{ padding: '10px', textAlign: 'left', border: '1px solid #ddd' }}>Catégorie</th>
-                  <th style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>ID</th>
                   <th style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>Action</th>
                 </tr>
               </thead>
@@ -1538,7 +1568,6 @@ const FullQuote: React.FC = () => {
                 {categories.map((category) => (
                   <tr key={category.id}>
                     <td style={{ padding: '10px', border: '1px solid #ddd' }}>{category.name}</td>
-                    <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>{category.id}</td>
                     <td style={{ padding: '10px', textAlign: 'center', border: '1px solid #ddd' }}>
                       <button 
                         onClick={() => fetchData(category.id)}
@@ -1559,64 +1588,61 @@ const FullQuote: React.FC = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-          {data && (
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                marginBottom: '15px',
-                backgroundColor: '#ffffff',
-                padding: '10px',
-                borderRadius: '4px',
-                border: '1px solid #ddd'
-              }}>
-                <input
-                  type="text"
-                  placeholder="Rechercher dans les données..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd',
-                    marginRight: '10px'
-                  }}
-                />
-                {searchTerm && (
-                  <button
-                    onClick={resetSearch}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: '#6c757d',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Réinitialiser
-                  </button>
-                )}
-              </div>
-              {searchTerm && (
+
+            {data && (
+              <div>
                 <div style={{ 
-                  marginBottom: '10px',
-                  padding: '8px',
-                  backgroundColor: '#e9f5ff',
-                  borderRadius: '4px',
-                  border: '1px solid #b8daff'
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '15px'
                 }}>
-                  <strong>Recherche :</strong> "{searchTerm}" - {filteredData ? 'Résultats filtrés' : 'Aucun résultat'}
+                  <input
+                    type="text"
+                    placeholder="Rechercher dans les données..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      marginRight: '10px'
+                    }}
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={resetSearch}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-          {filteredData ? <CategoryDisplay category={filteredData} /> : data && <CategoryDisplay category={data} />}
+                {searchTerm && (
+                  <div style={{ 
+                    marginBottom: '10px',
+                    padding: '8px',
+                    backgroundColor: '#e9f5ff',
+                    borderRadius: '4px',
+                    border: '1px solid #b8daff'
+                  }}>
+                    <strong>Recherche :</strong> "{searchTerm}" - {filteredData ? 'Résultats filtrés' : 'Aucun résultat'}
+                  </div>
+                )}
+                {filteredData ? <CategoryDisplay category={filteredData} /> : <CategoryDisplay category={data} />}
+              </div>
+            )}
+          </div>
         </div>
-        
-        {/* Signer Information Modal */}
+
+        {/* Modals remain unchanged */}
         {showSignerForm && (
           <div style={{
             position: 'fixed',
@@ -1713,7 +1739,6 @@ const FullQuote: React.FC = () => {
           </div>
         )}
 
-        {/* Add the email modal */}
         {showInvoiceEmailModal && (
           <div style={{
             position: 'fixed',

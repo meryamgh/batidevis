@@ -101,6 +101,34 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <div className="banner">
+      
+
+      <select 
+        value={viewMode}
+        onChange={(e) => {
+          const newViewMode = e.target.value as "3D" | "2D" | "Blueprint" | "ObjectOnly";
+          setViewMode(newViewMode);
+        }}
+      >
+        <option value="ObjectOnly">Object Only</option>
+        <option value="3D">Vue 3D</option>
+        <option value="2D">Vue 2D</option>
+        {/* <option value="Blueprint">Mode Blueprint</option> */}
+      </select>
+
+      <button 
+        onClick={() => setShowNavigationHelp(true)} 
+        className="bouton help-button"
+        title="Aide à la navigation"
+      >
+        ?
+      </button> 
+      {/* <button
+        onClick={() => setShowUpload(true)}
+        className="bouton"
+      >
+        Upload Texture
+      </button> */}
       {is2DView && (
         <>
           <button onClick={() => setCreatingWallMode(!creatingWallMode)}>
@@ -114,33 +142,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
           </button>
         </>
       )}
-
-      <select 
-        value={viewMode}
-        onChange={(e) => {
-          const newViewMode = e.target.value as "3D" | "2D" | "Blueprint" | "ObjectOnly";
-          setViewMode(newViewMode);
-        }}
-      >
-        <option value="ObjectOnly">Object Only</option>
-        <option value="3D">Vue 3D</option>
-        <option value="2D">Vue 2D</option>
-        <option value="Blueprint">Mode Blueprint</option>
-      </select>
-
-      <button 
-        onClick={() => setShowNavigationHelp(true)} 
-        className="bouton help-button"
-        title="Aide à la navigation"
-      >
-        ?
-      </button> 
-      <button
-        onClick={() => setShowUpload(true)}
-        className="bouton"
-      >
-        Upload Texture
-      </button>
 
       {/* <button
         onClick={() => setShowObjectUpload(true)}
