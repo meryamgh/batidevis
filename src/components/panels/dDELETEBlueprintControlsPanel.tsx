@@ -37,7 +37,7 @@ interface BlueprintControlsProps {
   createRoomFromRectangle: (startPoint: THREE.Vector3, endPoint: THREE.Vector3) => void;
 }
 
-const BlueprintControls: React.FC<BlueprintControlsProps> = ({
+const BlueprintControlssssss: React.FC<BlueprintControlsProps> = ({
   isBlueprintView,
   creationMode,
   setCreationMode,
@@ -249,4 +249,4 @@ const BlueprintControls: React.FC<BlueprintControlsProps> = ({
   );
 };
 
-export default BlueprintControls;
+export default BlueprintControlssssss;

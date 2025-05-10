@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { ObjectData } from '../types/ObjectData';
 
 interface Use2DViewsSurfaceProps {  
-    viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
+    viewMode: '3D' | '2D' | 'ObjectOnly';
     is2DView: boolean;
     renderObjectPanel: (object: ObjectData) => void;
     objectsUtils: any; // Type à définir selon votre implémentation

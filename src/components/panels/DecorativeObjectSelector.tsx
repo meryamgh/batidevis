@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import '../../styles/Controls.css'; 
-import ObjectUpload from './ObjectUploadPanel';
-import AIGenerationPanel from './AIGenerationPanel';
+import '../../styles/Controls.css';
 import { BACKEND_URL } from '../../config/env';
+import ObjectUpload from './ObjectUploadPanel';
 
 interface ObjectFile {
     name: string;
@@ -10,39 +9,36 @@ interface ObjectFile {
     isBatiChiffrageObject: boolean;
 }
 
-interface ObjectSelectorProps {
+interface DecorativeObjectSelectorProps {
     showObjectUpload: boolean;
     setShowObjectUpload: (show: boolean) => void;
     handleObjectGenerated: (objectUrl: string) => void;
 }
 
-const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setShowObjectUpload, handleObjectGenerated }) => {
+const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({ 
+    showObjectUpload, 
+    setShowObjectUpload, 
+    handleObjectGenerated 
+}) => {
     const [objects, setObjects] = useState<ObjectFile[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [showAIGeneration, setShowAIGeneration] = useState(false);
 
     useEffect(() => {
         const fetchFiles = async () => {
-            console.log("Début de fetchFiles");
+            console.log("Début de fetchFiles pour objets décoratifs");
             try {
-                console.log("Récupération des données depuis le serveur");
                 const response = await fetch(`${BACKEND_URL}/list_files`);
                 const data = await response.json();
                 if (response.ok) {
-                    // is batichiffrage if the file name looks like this : "objname_id.glb or gltf"
                     const newObjects = data.objects || data.files.map((file: string) => ({
                         name: file,
                         imageUrl: `${BACKEND_URL}/previews/${file}`,
                         isBatiChiffrageObject: /^[^_]+_\d+\.(glb|gltf)$/i.test(file)
                     }));
-                    setObjects(newObjects);
-                    
-                    const cacheData = {
-                        objects: newObjects,
-                        timestamp: Date.now()
-                    };
-                    localStorage.setItem('objectList', JSON.stringify(cacheData));
-                    console.log("Nouvelles données mises en cache");
+                    // Ne garder que les objets décoratifs
+                    const decorativeObjects = newObjects.filter((obj: ObjectFile) => !obj.isBatiChiffrageObject);
+                    setObjects(decorativeObjects);
+                    console.log("Objets décoratifs chargés:", decorativeObjects);
                 } else {
                     console.error("Error fetching files:", data.error);
                 }
@@ -87,12 +83,12 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
     );
 
     return (
-        <div className="object-selector">
+        <div className="object-selector decorative">
             <button 
                 className="object-selector-toggle"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                {isOpen ? 'Masquer la liste' : 'Afficher la liste des objets'}
+                {isOpen ? 'Masquer les objets décoratifs' : 'Afficher les objets décoratifs'}
             </button>
             {isOpen && (
                 <div className="object-selector-dropdown">
@@ -100,38 +96,15 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                         onClick={() => setShowObjectUpload(true)}
                         className="bouton"
                     >
-                        Upload 3D Object
+                        Upload Objet Décoratif
                     </button>
-                    <button 
-                        onClick={() => setShowAIGeneration(true)}
-                        className="bouton ai-button"
-                        title="Générer un objet 3D avec l'IA"
-                    >
-                        Générer votre objet 3D avec l'IA
-                    </button>
-
-                    {showAIGeneration && (
-                        <AIGenerationPanel 
-                            onClose={() => setShowAIGeneration(false)} 
-                            onObjectGenerated={handleObjectGenerated}
-                        />
-                    )}
 
                     {showObjectUpload && <ObjectUpload onClose={() => setShowObjectUpload(false)} />}
 
                     {objects.length === 0 ? (
-                        <p>Chargement des modèles...</p>
+                        <p>Chargement des objets décoratifs...</p>
                     ) : (
-                        <>
-                            <div className="object-category">
-                                <h3>Objets Batichiffrage</h3>
-                                {(() => {
-                                    const batichiffrageObjects = objects.filter(obj => obj.isBatiChiffrageObject);
-                                    console.log("Batichiffrage objects:", batichiffrageObjects);
-                                    return renderObjectGrid(batichiffrageObjects);
-                                })()}
-                            </div>
-                        </>
+                        renderObjectGrid(objects)
                     )}
                 </div>
             )}
@@ -139,4 +112,4 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
     );
 };
 
-export default ObjectSelector; 
+export default DecorativeObjectSelector; 

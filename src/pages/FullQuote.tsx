@@ -177,12 +177,7 @@ const FullQuote: React.FC = () => {
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
       let details: string;
-      if (item.isBatiChiffrageObject) {
-         details = item.parametricData.item_details.libtech;
-      }
-      else {
-         details = item.details;
-      }
+      details = item.parametricData ? item.parametricData.item_details.libtech : item.details;
         const existingItem = acc.find(
             (i) => i.details === details && i.price === item.price
         );
@@ -334,6 +329,19 @@ const FullQuote: React.FC = () => {
         
         // Reset suggestion selection
         setSelectedSuggestionIndex(-1);
+
+        // Mettre à jour immédiatement la valeur dans le tableau
+        if (editingCell) {
+            const {rowIndex, field} = editingCell;
+            const newAggregated = [...aggregatedQuote];
+            if (field === 'quantity' || field === 'price') {
+                const numericVal = parseFloat(value) || 0;
+                newAggregated[rowIndex][field] = numericVal;
+            } else {
+                newAggregated[rowIndex][field] = value;
+            }
+            setAggregatedQuote(newAggregated);
+        }
     };
 
     const handleBlur = () => {

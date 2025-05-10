@@ -13,11 +13,9 @@ import QuotePanel from '../components/panels/QuotePanel';
 import NavigationHelpModal from '../components/panels/NavigationHelpModalPanel';
 import '../styles/Controls.css';
 import Toolbar from '../components/panels/ToolbarPanel';
-import BlueprintControls from '../components/panels/BlueprintControlsPanel';
 import { useFloors } from '../hooks/useFloors';
 import RoomConfigPanel from '../components/panels/RoomConfigPanel';
-import FloorSelector from '../components/panels/FloorSelectorPanel';
-import { useBlueprint } from '../hooks/useBlueprint';
+import FloorSelector from '../components/panels/FloorSelectorPanel'; 
 import { v4 as uuidv4 } from 'uuid';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useMaquetteStore } from '../store/maquetteStore';
@@ -39,9 +37,8 @@ const MaquettePage: React.FC = () => {
     const panelRootRef = useRef<Root | null>(null);  
     const [isMoving, setIsMoving] = useState<string | null>(null);
     const [showDimensions, setShowDimensions] = useState<{ [key: string]: boolean }>({});
-    const [viewMode, setViewMode] = useState<'3D' | '2D' | 'Blueprint' | 'ObjectOnly'>('3D');
-    const is2DView = viewMode === '2D' || viewMode === 'Blueprint';
-    const isBlueprintView = viewMode === 'Blueprint';
+    const [viewMode, setViewMode] = useState<'3D' | '2D' | 'ObjectOnly'>('3D');
+    const is2DView = viewMode === '2D' ;
     const isObjectOnlyView = viewMode === 'ObjectOnly';
     const [focusedObjectId, setFocusedObjectId] = useState<string | null>(null);
     const [showQuotePanel, setShowQuotePanel] = useState(true);
@@ -52,23 +49,7 @@ const MaquettePage: React.FC = () => {
     const [surfacePreview, setSurfacePreview] = useState<THREE.Mesh | null>(null);
     const [selectedTexture, setSelectedTexture] = useState<string | undefined>(undefined);
 
-    // États pour le mode Blueprint
-    const [blueprintPoints, setBlueprintPoints] = useState<THREE.Vector3[]>([]);
-    const [blueprintLines, setBlueprintLines] = useState<{start: THREE.Vector3, end: THREE.Vector3, id: string, length: number}[]>([]);
-    const [tempPoint, setTempPoint] = useState<THREE.Vector3 | null>(null);
-    const [currentLinePoints, setCurrentLinePoints] = useState<THREE.Vector3[]>([]);
-    const [isDrawingLine, setIsDrawingLine] = useState(false);
-
-    // États pour le mode de création de pièce rectangulaire
-    const [creationMode, setCreationMode] = useState<'wall' | 'room'>('wall');
-    const [rectangleStartPoint, setRectangleStartPoint] = useState<THREE.Vector3 | null>(null);
-    const [rectangleEndPoint, setRectangleEndPoint] = useState<THREE.Vector3 | null>(null);
-    const [isCreatingRectangle, setIsCreatingRectangle] = useState(false);
-    const [rectanglePreview, setRectanglePreview] = useState<{
-        lines: {start: THREE.Vector3, end: THREE.Vector3, id: string}[],
-        width: number,
-        length: number
-    } | null>(null);
+    
 
     const [creatingWallMode, setCreatingWallMode] = useState(false);
     const [walls2D, setWalls2D] = useState<THREE.Line[]>([]);
@@ -166,46 +147,17 @@ const MaquettePage: React.FC = () => {
         objects,
     });
     
-    const blueprintUtils = useBlueprint({
-        currentFloor,
-        setObjects,
-        setQuote,
-        setWalls2D,
-        lineHelper,
-        blueprintLines, 
-        creationMode,
-        setCreationMode,
-        isCreatingRectangle,
-        setIsCreatingRectangle,
-        rectangleStartPoint,
-        setRectangleStartPoint,
-        rectangleEndPoint,
-        rectanglePreview,
-        setRectanglePreview,
-        blueprintPoints,
-        setBlueprintPoints,
-        tempPoint,
-        setTempPoint,
-        currentLinePoints,
-        setCurrentLinePoints,
-        isDrawingLine,
-        setIsDrawingLine, 
-        setBlueprintLines,
-        setRectangleEndPoint,
-        roomConfig,
-        setViewMode,
-        setCurrentFloor
-    });
+     
 
     useEffect(() => {
         const geometry = new THREE.PlaneGeometry(100, 100);
         const material = new THREE.MeshStandardMaterial({ 
-            color: 'lightgray',
+            color: '#716e6e',
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.5,
-            roughness: 0.8,
-            metalness: 0.2
+            opacity: 0.8,
+            roughness: 0.9,
+            metalness: 0.1
         });
         const plane = new THREE.Mesh(geometry, material);
         plane.rotation.x = -Math.PI / 2;
@@ -714,6 +666,7 @@ const MaquettePage: React.FC = () => {
                             color: objData.color || '',
                             type: objData.type,
                             faces: objData.faces,
+                            parametricData: objData.parametricData || {},
                             gltf: gltf,
                             price: objData.price || 100,
                             details: objData.details || 'Objet importé',
@@ -763,6 +716,94 @@ const MaquettePage: React.FC = () => {
             console.error('Erreur lors de la reconstruction:', error);
         }
     };
+
+    const handleAddWall2D = (start: THREE.Vector3, end: THREE.Vector3) => { 
+        const baseWallHeight = 3;
+        // Hauteur ajustée en fonction de l'étage courant
+        const wallHeight = baseWallHeight;
+        // Position Y ajustée en fonction de l'étage
+        const wallPositionY = currentFloor * baseWallHeight;
+        
+        const wallWidth = 0.2;
+        const wallLength = start.distanceTo(end);
+        const pricePerUnitLength = 10;
+        const wallPrice = Math.round(wallLength * pricePerUnitLength);
+        const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallWidth);
+        const wallMaterial = new THREE.MeshBasicMaterial({
+            color: '#000000',
+            side: THREE.DoubleSide
+        });
+        const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+
+        const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        midPoint.y = wallPositionY; // Ajuster la hauteur en fonction de l'étage
+        const direction = new THREE.Vector3().subVectors(end, start).normalize();
+        const angle = Math.atan2(direction.z, direction.x);
+        const boundingBox = new THREE.Box3();
+        boundingBox.setFromObject(wallMesh);
+        const center = new THREE.Vector3();
+        boundingBox.getCenter(center);
+
+        // Arrondir les dimensions au millimètre près
+        const roundedScale: [number, number, number] = [
+            Math.round(wallLength * 1000) / 1000,
+            Math.round(wallHeight * 1000) / 1000,
+            Math.round(wallWidth * 1000) / 1000
+        ];
+
+        const newWallObject: ObjectData = {
+            id: uuidv4(),
+            url: '',
+            price: wallPrice,
+            details: `Mur (Étage ${currentFloor})`,
+            position: [midPoint.x/2, (wallPositionY + wallHeight/2)/2, midPoint.z/2],
+            gltf: wallMesh,
+            rotation: [0, -angle, 0],
+            scale: roundedScale,
+            isBatiChiffrageObject: false,
+            color: '',
+            type: 'wall',
+            faces: {
+                front: { color: '', texture: '' },
+                back: { color: '', texture: '' },
+                left: { color: '', texture: '' },
+                right: { color: '', texture: '' },
+                top: { color: '', texture: '' },
+                bottom: { color: '', texture: '' }
+            },
+            boundingBox: {
+                min: [
+                    Math.round(boundingBox.min.x * 1000) / 1000,
+                    Math.round(boundingBox.min.y * 1000) / 1000,
+                    Math.round(boundingBox.min.z * 1000) / 1000
+                ],
+                max: [
+                    Math.round(boundingBox.max.x * 1000) / 1000,
+                    Math.round(boundingBox.max.y * 1000) / 1000,
+                    Math.round(boundingBox.max.z * 1000) / 1000
+                ],
+                size: [
+                    Math.round((boundingBox.max.x - boundingBox.min.x) * 1000) / 1000,
+                    Math.round((boundingBox.max.y - boundingBox.min.y) * 1000) / 1000,
+                    Math.round((boundingBox.max.z - boundingBox.min.z) * 1000) / 1000
+                ],
+                center: [
+                    Math.round(center.x * 1000) / 1000,
+                    Math.round(center.y * 1000) / 1000,
+                    Math.round(center.z * 1000) / 1000
+                ]
+            }
+        };
+
+        setObjects((prevObjects: ObjectData[]) => [...prevObjects, newWallObject]);
+        setQuote((prevQuote: ObjectData[]) => [...prevQuote, newWallObject]);
+
+        if (lineHelper.current) {
+            setWalls2D((prev) => prev.filter((w) => w !== lineHelper.current!));
+            lineHelper.current = null;
+        }
+    };
+
 
     // Fonction pour gérer la sélection d'une texture
     const handleTextureSelect = (textureUrl: string) => {
@@ -866,14 +907,13 @@ const MaquettePage: React.FC = () => {
                         setCamera={setCamera}
                         showDimensions={showDimensions}
                         is2DView={is2DView}
-                        isBlueprintView={isBlueprintView}
                         isObjectOnlyView={isObjectOnlyView}
                         focusedObjectId={focusedObjectId}
                         selectedObjectId={selectedObjectId}
                         walls2D={walls2D}
                         updateQuotePrice={objectsUtils.updateQuotePrice}
                         groundPlane={groundPlaneRef.current}
-                        handleAddWall2D={blueprintUtils.handleAddWall2D}
+                        handleAddWall2D={handleAddWall2D}
                         creatingWallMode={creatingWallMode}
                         isCreatingSurface={isCreatingSurface}
                         surfaceStartPoint={surfaceStartPoint}
@@ -881,12 +921,6 @@ const MaquettePage: React.FC = () => {
                         surfacePreview={surfacePreview}
                         onSurfacePointSelected={handleSurfacePointSelected}
                         onSurfacePreviewUpdate={handleSurfacePreviewUpdate}
-                        blueprintPoints={blueprintPoints}
-                        blueprintLines={blueprintLines}
-                        tempPoint={tempPoint}
-                        handleBlueprintClick={blueprintUtils.handleBlueprintClick}
-                        updateRectanglePreview={blueprintUtils.updateRectanglePreview}
-                        rectangleStartPoint={rectangleStartPoint}
                         handleAddObject={objectsUtils.handleAddObject}
                         onUpdateFaces={objectsUtils.handleUpdateFaces}
                     />
@@ -937,33 +971,7 @@ const MaquettePage: React.FC = () => {
                 generateRoom={floorsUtils.generateRoom} 
                 setShowRoomConfig={setShowRoomConfig} 
             />}
-            <BlueprintControls 
-                isBlueprintView={isBlueprintView}
-                creationMode={creationMode}
-                setCreationMode={setCreationMode}
-                isDrawingLine={isDrawingLine}
-                setIsDrawingLine={setIsDrawingLine}
-                isCreatingRectangle={isCreatingRectangle}
-                setIsCreatingRectangle={setIsCreatingRectangle}
-                rectangleStartPoint={rectangleStartPoint}
-                setRectangleStartPoint={setRectangleStartPoint}
-                rectangleEndPoint={rectangleEndPoint}
-                setRectangleEndPoint={setRectangleEndPoint}
-                rectanglePreview={rectanglePreview}
-                setRectanglePreview={setRectanglePreview}
-                blueprintLines={blueprintLines}
-                setBlueprintLines={setBlueprintLines}
-                blueprintPoints={blueprintPoints}
-                setBlueprintPoints={setBlueprintPoints}
-                tempPoint={tempPoint}
-                setTempPoint={setTempPoint}
-                currentLinePoints={currentLinePoints}
-                setCurrentLinePoints={setCurrentLinePoints}
-                setWalls2D={setWalls2D}
-                convertBlueprintToWalls={blueprintUtils.convertBlueprintToWalls}
-                handleAddNewFloorBlueprint={blueprintUtils.handleAddNewFloorBlueprint}
-                createRoomFromRectangle={blueprintUtils.createRoomFromRectangle}
-            />
+          
         </div>
     );
 };

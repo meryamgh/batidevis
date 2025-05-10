@@ -31,7 +31,7 @@ interface BlueprintProps {
     isDrawingLine: boolean;
     setIsDrawingLine: React.Dispatch<React.SetStateAction<boolean>>;
     roomConfig: {width: number, length: number, height: number};
-    setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'Blueprint' | 'ObjectOnly'>>;
+    setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
     setCurrentFloor: React.Dispatch<React.SetStateAction<number>>;
 }
 
@@ -77,6 +77,7 @@ export const useBlueprint = ({
     const tolerance = 0.5;
 
     const handleAddWall2D = (start: THREE.Vector3, end: THREE.Vector3) => {
+        alert('handleAddWall2D');
         // Hauteur de base pour le rez-de-chaussée
         const baseWallHeight = 3;
         // Hauteur ajustée en fonction de l'étage courant
@@ -163,6 +164,7 @@ export const useBlueprint = ({
 
 
     const isPointNearLine = (point: THREE.Vector3): THREE.Vector3 | null => {
+        alert('isPointNearLine');
         for (const line of blueprintLines) {
             const start = new THREE.Vector3(line.start.x, line.start.y, line.start.z);
             const end = new THREE.Vector3(line.end.x, line.end.y, line.end.z);
@@ -181,6 +183,7 @@ export const useBlueprint = ({
     };
 
     const isAngleAligned = (angle: number): boolean => {
+        alert('isAngleAligned');
         // Convertir l'angle en degrés et le normaliser entre 0 et 360
         const degrees = ((angle * 180 / Math.PI) % 360 + 360) % 360;
         
@@ -195,6 +198,7 @@ export const useBlueprint = ({
     };
 
     const adjustPointToAlignedAngle = (start: THREE.Vector3, end: THREE.Vector3): THREE.Vector3 => {
+        alert('adjustPointToAlignedAngle');
         const direction = new THREE.Vector3().subVectors(end, start);
         const angle = Math.atan2(direction.z, direction.x);
         
@@ -237,6 +241,7 @@ export const useBlueprint = ({
     };
 
     const createRoomFromRectangle = (startPoint: THREE.Vector3, endPoint: THREE.Vector3) => {
+        alert('createRoomFromRectangle');
         if (!startPoint || !endPoint) return;
         
         const x1 = startPoint.x;
@@ -439,6 +444,7 @@ export const useBlueprint = ({
     };
 
     const handleBlueprintClick = (point: THREE.Vector3) => {
+        alert('handleBlueprintClick');  
         console.log("Blueprint click handled:", point);
         
         // Si on est en mode création de pièce rectangulaire

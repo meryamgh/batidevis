@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 
-type ViewModeType = '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
+type ViewModeType = '3D' | '2D' | 'ObjectOnly';
 
 export const useViewMode = (orbitControlsRef: React.MutableRefObject<any>) => {
   const [viewMode, setViewMode] = useState<ViewModeType>('3D');
-  const is2DView = viewMode === '2D' || viewMode === 'Blueprint';
-  const isBlueprintView = viewMode === 'Blueprint';
+  const is2DView = viewMode === '2D' ;
   const isObjectOnlyView = viewMode === 'ObjectOnly';
   
   const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -111,7 +110,6 @@ export const useViewMode = (orbitControlsRef: React.MutableRefObject<any>) => {
     viewMode,
     setViewMode,
     is2DView,
-    isBlueprintView,
     isObjectOnlyView,
     leftPanelRef,
     rightPanelRef,

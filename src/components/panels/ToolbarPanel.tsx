@@ -2,9 +2,10 @@ import ObjectSelector from './ObjectSelectorPanel';
 import {  ObjectData } from '../../types/ObjectData';
 import '../../styles/AIGenerationPanel.css';
 import { BACKEND_URL } from '../../config/env';
+import DecorativeObjectSelector from './DecorativeObjectSelector';
 interface ToolbarProps {
-  viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly';
-  setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'Blueprint' | 'ObjectOnly'>>;
+  viewMode: '3D' | '2D' | 'ObjectOnly';
+  setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
   setShowNavigationHelp: React.Dispatch<React.SetStateAction<boolean>>;
   setShowUpload: React.Dispatch<React.SetStateAction<boolean>>;
   setShowObjectUpload: React.Dispatch<React.SetStateAction<boolean>>;
@@ -50,6 +51,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
         objects: objects.map(obj => ({
             id: obj.id,
             url: obj.url,
+            price: obj.price,
+            details: obj.details,
             position: [
                 obj.position[0] * 2,
                 obj.position[1] * 2,
@@ -58,9 +61,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
             scale: obj.scale,
             rotation: obj.rotation || [0, 0, 0],
             texture: obj.texture,
+            color: obj.color,
+            startPoint: obj.startPoint,
+            endPoint: obj.endPoint,
+            parentScale: obj.parentScale,
+            boundingBox: obj.boundingBox,
             faces: obj.faces,
             type: obj.type,
-            color: obj.color
+            parametricData: obj.parametricData,
+            isBatiChiffrageObject: obj.isBatiChiffrageObject
         }))
     };
 
@@ -93,6 +102,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   const handleObjectGenerated = async (objectUrl: string) => {
     try {
+      alert("objectUrl");
       await handleAddObject(objectUrl);
     } catch (error) {
       console.error('Erreur lors de l\'ajout de l\'objet généré:', error);
@@ -106,14 +116,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
       <select 
         value={viewMode}
         onChange={(e) => {
-          const newViewMode = e.target.value as "3D" | "2D" | "Blueprint" | "ObjectOnly";
+          const newViewMode = e.target.value as "3D" | "2D" |  "ObjectOnly";
           setViewMode(newViewMode);
         }}
       >
         <option value="ObjectOnly">Object Only</option>
         <option value="3D">Vue 3D</option>
         <option value="2D">Vue 2D</option>
-        {/* <option value="Blueprint">Mode Blueprint</option> */}
       </select>
 
       <button 
@@ -180,6 +189,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       )}
       <ObjectSelector showObjectUpload={showObjectUpload} 
+      setShowObjectUpload={setShowObjectUpload} 
+      handleObjectGenerated={handleObjectGenerated} />
+      <DecorativeObjectSelector showObjectUpload={showObjectUpload} 
       setShowObjectUpload={setShowObjectUpload} 
       handleObjectGenerated={handleObjectGenerated} />
       <button

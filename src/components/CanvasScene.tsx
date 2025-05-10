@@ -11,7 +11,6 @@ import MoveControls from './canvaScene/MoveControls';
 import NavigationModeIndicator from './panels/NavigationModeIndicatorPanel';
 import TwoDView from './canvaScene/2Dview';
 import PersonView from './canvaScene/PersonView';
-import BlueprintClickHandler from './canvaScene/BlueprintClickHandler';
 
 type CanvasSceneProps = {
     objects: ObjectData[];
@@ -24,7 +23,6 @@ type CanvasSceneProps = {
     updateQuotePrice: (id: string, price: number, scale : [number, number, number]) => void;
     showDimensions: { [key: string]: boolean };
     is2DView: boolean;
-    isBlueprintView: boolean;
     isObjectOnlyView?: boolean;
     focusedObjectId?: string | null;
     selectedObjectId?: string | null;
@@ -38,12 +36,6 @@ type CanvasSceneProps = {
     surfacePreview: THREE.Mesh | null;
     onSurfacePointSelected: (point: THREE.Vector3) => void;
     onSurfacePreviewUpdate: (start: THREE.Vector3, end: THREE.Vector3) => void;
-    blueprintPoints?: THREE.Vector3[];
-    blueprintLines?: {start: THREE.Vector3, end: THREE.Vector3, id: string, length: number}[];
-    tempPoint?: THREE.Vector3 | null;
-    handleBlueprintClick?: (point: THREE.Vector3) => void;
-    updateRectanglePreview?: (start: THREE.Vector3, end: THREE.Vector3) => void;
-    rectangleStartPoint?: THREE.Vector3 | null;
     handleAddObject: (url: string, event: React.DragEvent<HTMLDivElement>, camera: THREE.Camera) => Promise<void>;
     onUpdateFaces: (id: string, faces: FacesData) => void;
 };
@@ -130,7 +122,6 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     updateQuotePrice,
     showDimensions,
     is2DView,
-    isBlueprintView,
     isObjectOnlyView,
     focusedObjectId,
     selectedObjectId,
@@ -143,12 +134,6 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     surfacePreview,
     onSurfacePointSelected,
     onSurfacePreviewUpdate,
-    blueprintPoints,
-    blueprintLines,
-    tempPoint,
-    handleBlueprintClick,
-    updateRectanglePreview,
-    rectangleStartPoint,
     handleAddObject,
     onUpdateFaces,
 }) => {
@@ -172,53 +157,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         }
     }, [isObjectOnlyView, is2DView]);
 
-    // Fonction pour créer une représentation blueprint d'un objet
-    const createBlueprintRepresentation = (obj: ObjectData) => {
-        // Si c'est un mur, on le représente par une ligne épaisse
-        if (obj.details.includes('Mur')) {
-            const position = new THREE.Vector3(...obj.position);
-            const scale = new THREE.Vector3(...obj.scale);
-            const rotation = obj.rotation ? new THREE.Euler(...obj.rotation) : new THREE.Euler(0, 0, 0);
-            
-            // Calculer les points de début et de fin du mur
-            const direction = new THREE.Vector3(Math.sin(rotation.y), 0, Math.cos(rotation.y));
-            const halfLength = scale.x / 2;
-            const start = position.clone().sub(direction.clone().multiplyScalar(halfLength));
-            const end = position.clone().add(direction.clone().multiplyScalar(halfLength));
-            
-            return (
-                <line key={obj.id}>
-                    <bufferGeometry attach="geometry">
-                        <bufferAttribute
-                            attach="position"
-                            array={new Float32Array([start.x, 0.1, start.z, end.x, 0.1, end.z])}
-                            count={2}
-                            itemSize={3}
-                        />
-                    </bufferGeometry>
-                    <lineBasicMaterial attach="material" color="#0066cc" linewidth={3} />
-                </line>
-            );
-        }
-        
-        // Pour les autres objets, on les représente par un rectangle
-        const position = new THREE.Vector3(...obj.position);
-        const scale = new THREE.Vector3(...obj.scale);
-        const rotation = obj.rotation ? new THREE.Euler(...obj.rotation) : new THREE.Euler(0, 0, 0);
-        
-        return (
-            <mesh 
-                key={obj.id}
-                position={[position.x, 0.1, position.z]}
-                rotation={[0, rotation.y, 0]}
-                onClick={() => onClick(obj.id)}
-            >
-                <boxGeometry args={[scale.x, 0.01, scale.z]} />
-                <meshBasicMaterial color="#0066cc" wireframe={true} />
-            </mesh>
-        );
-    };
-
+ 
     const handleKeyPress = (e: KeyboardEvent) => {
         // Only allow toggling first person view when not in ObjectOnly mode
         if ((e.key === 'v' || e.key === 'V') && !isObjectOnlyView && !is2DView) {
@@ -378,17 +317,6 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     };
     
     
-    const isAngleAligned = (angle: number, tolerance: number = 0.5): boolean => {
-        // Convertir l'angle en degrés et le normaliser entre 0 et 360
-        const degrees = ((angle * 180 / Math.PI) % 360 + 360) % 360;
-        
-        const targetAngles = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-        
-        return targetAngles.some(targetAngle => 
-            Math.abs(degrees - targetAngle) < tolerance || 
-            Math.abs(degrees - targetAngle - 360) < tolerance
-        );
-    };
 
     const handleSceneClick = useCallback((event: THREE.Intersection) => {
         if (navigationMode !== 'move' || firstPersonView || is2DView || isObjectOnlyView) return;
@@ -575,27 +503,19 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         />
                     )}
 
-                    {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode Blueprint ou ObjectOnly */}
-                    {groundPlane && !isBlueprintView && !isObjectOnlyView && <primitive object={groundPlane} />}
+                    {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode ObjectOnly */}
+                    {groundPlane && !isObjectOnlyView && <primitive object={groundPlane} />}
                     
-                    {/* Afficher la grille en mode 2D ou Blueprint, pas en mode ObjectOnly */}
+                    {/* Afficher la grille en mode 2D , pas en mode ObjectOnly */}
                     {is2DView && !isObjectOnlyView && (
                         <gridHelper 
-                            args={[100, 100]} 
+                            args={[100, 100, '#e0e0e0']} 
                             position={[0, 0, 0]} 
-                            rotation={[0, 0, 0]}
-                            // Couleur différente pour le mode Blueprint
-                            userData={{ color: isBlueprintView ? '#1a3f5c' : '#444444' }}
+                            rotation={[0, 0, 0]} 
                         />
                     )}
 
-                    {/* Fond bleu clair pour le mode Blueprint */}
-                    {isBlueprintView && !isObjectOnlyView && (
-                        <mesh rotation={[0, 0, 0]} position={[0, -0.1, 0]}>
-                            <planeGeometry args={[100, 100]} />
-                            <meshBasicMaterial color="#e6f2ff" />
-                        </mesh>
-                    )}
+                
                     
                     {/* Fond neutre pour le mode ObjectOnly */}
                     {isObjectOnlyView && (
@@ -603,7 +523,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                     )}
 
                     {/* Afficher les objets normalement en mode 3D ou 2D */}
-                    {!isBlueprintView && objects.map((obj) => (
+                    {objects.map((obj) => (
                         <GLTFObject
                             key={obj.id}
                             id={obj.id}
@@ -627,48 +547,11 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         />
                     ))}
 
-                    {/* Afficher les représentations blueprint en mode Blueprint */}
-                    {isBlueprintView && objects.map(createBlueprintRepresentation)}
-
-                    {/* Afficher les lignes Blueprint avec leur taille */}
-                    {isBlueprintView && walls2D.map((line, index) => (
-                        <primitive key={`blueprint-line-${index}`} object={line} />
-                    ))}
-                    
-                    {/* Afficher les mesures des lignes */}
-                    {isBlueprintView && blueprintLines && blueprintLines.map(line => (
-                        <LineMeasurement 
-                            key={`measure-${line.id}`}
-                            start={line.start}
-                            end={line.end}
-                            length={line.length}
-                        />
-                    ))}
-
-                    {/* Afficher le point temporaire */}
-                    {isBlueprintView && tempPoint && (
-                        <mesh position={[tempPoint.x, 0.1, tempPoint.z]}>
-                            <sphereGeometry args={[0.2, 16, 16]} />
-                            <meshBasicMaterial color="#ff3333" />
-                        </mesh>
-                    )}
-                    
-                    {/* Afficher tous les points existants */}
-                    {isBlueprintView && blueprintPoints && blueprintPoints.length > 0 && (
-                        <group>
-                            {blueprintPoints.map((point, index) => (
-                                <mesh 
-                                    key={`point-${index}`}
-                                    position={[point.x, 0.1, point.z]}
-                                >
-                                    <sphereGeometry args={[0.15, 16, 16]} />
-                                    <meshBasicMaterial color="#0066cc" />
-                                </mesh>
-                            ))}
-                        </group>
-                    )}
-
-                    {is2DView && !isBlueprintView && walls2D.map((line, index) => (
+                  
+                 
+            
+                  
+                    {is2DView && walls2D.map((line, index) => (
                         <primitive key={`2d-line-${index}`} object={line} />
                     ))}
 
@@ -682,19 +565,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         />
                     )}
                     
-                    {isBlueprintView && (
-                        <BlueprintClickHandler 
-                            isBlueprintView={isBlueprintView}
-                            tempPoint={tempPoint || null}
-                            groundPlane={groundPlane}
-                            rectangleStartPoint={rectangleStartPoint || null}
-                            handleBlueprintClick={handleBlueprintClick || (() => {})}
-                            updateRectanglePreview={updateRectanglePreview}
-                            isAngleAligned={isAngleAligned}
-                            blueprintLines={blueprintLines}
-                        />
-                    )}
-
+                
                     {/* Afficher l'aperçu de la surface */}
                     {surfacePreview && (
                         <primitive object={surfacePreview} />

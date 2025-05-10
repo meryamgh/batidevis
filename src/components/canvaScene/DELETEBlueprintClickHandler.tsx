@@ -13,7 +13,7 @@ interface BlueprintClickHandlerProps {
     blueprintLines?: {start: THREE.Vector3, end: THREE.Vector3, id: string, length: number}[];
 }
 
-const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
+const BlueprintClickHandlerttt: React.FC<BlueprintClickHandlerProps> = ({
     isBlueprintView,
     tempPoint,
     groundPlane,
@@ -399,4 +399,4 @@ const BlueprintClickHandler: React.FC<BlueprintClickHandlerProps> = ({
     return null;
 };
 
-export default BlueprintClickHandler;
+export default BlueprintClickHandlerttt;

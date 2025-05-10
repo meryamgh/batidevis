@@ -33,7 +33,7 @@ interface UseObjectsReturn {
   getSerializableQuote: () => Omit<ObjectData, 'gltf'>[];
   handleObjectClick: (
     id: string, 
-    viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly',
+    viewMode: '3D' | '2D' | 'ObjectOnly',
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => void;
   handleUpdateFaces: (id: string, faces: FacesData) => void;
@@ -116,7 +116,7 @@ export const useObjects = ({
       const objectId = uuidv4();
       const scale: [number, number, number] = [size.x, size.y, size.z];
       const rotation: [number, number, number] = [0, 0, 0];
-
+      
       // Créer l'objet avec les propriétés de base
       const newObject: ObjectData = {
         id: objectId,
@@ -142,6 +142,7 @@ export const useObjects = ({
             const prix = parametricData.item_details.prix;
             newObject.price = prix;
             newObject.isBatiChiffrageObject = true;
+            console.log("newObject", newObject.isBatiChiffrageObject);
           }
         } catch (error) {
           console.error('Error fetching parametric data:', error);
@@ -444,7 +445,7 @@ export const useObjects = ({
   // Nouvelle fonction handleObjectClick déplacée depuis MaquettePage
   const handleObjectClick = useCallback((
     id: string, 
-    viewMode: '3D' | '2D' | 'Blueprint' | 'ObjectOnly',
+    viewMode: '3D' | '2D' | 'ObjectOnly',
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => {
     if (viewMode === 'ObjectOnly') {
