@@ -792,7 +792,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             {(!isRoomComponent || isWall || isFloor) && (
                 <>
                    
-                    {/* dans le cas ou c'est un mur  */}
+                    {/* dans le cas ou c'est un mur 
                     {isWall && (
                     <div className='panel-section'>
                         <h3 className="section-title">Ajouter un élément</h3>
@@ -807,7 +807,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                             </p>
                         </button>
                     </div>
-                    )}
+                    )} */}
 
 
                     <div className="panel-section">
@@ -927,7 +927,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         </div>
                     </div>
 
-                    <div className="panel-section">
+                    {/* <div className="panel-section">
                         <h3 className="section-title">
                             {object.type === 'wall' || object.type === 'floor' 
                                 ? `Couleur - ${getFaceName(selectedFace)}`
@@ -968,7 +968,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 ))}
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                 </>
             )}
 

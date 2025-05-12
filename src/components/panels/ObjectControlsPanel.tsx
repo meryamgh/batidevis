@@ -20,7 +20,7 @@ interface ObjectControlsProps {
     onUpdatePosition: (id: string, position: [number, number, number]) => void;
     onExtendObject: (object: any, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => any;
     selectedObject?: ObjectData; // Rendre l'objet sélectionné optionnel
-    onUpdateTexture?: (id: string, newTexture: string) => void;
+    onUpdateTexture?: (newTexture: string) => void;
     customTextures?: Record<string, string>;
 }
 
@@ -68,7 +68,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
     // Fonction pour appliquer une texture
     const applyTexture = (textureUrl: string) => {
         if (selectedObjectId && onUpdateTexture) {
-            onUpdateTexture(selectedObjectId, textureUrl);
+            onUpdateTexture(textureUrl);
         }
     };
 
@@ -420,12 +420,13 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                     top: '100%', 
                     left: '0', 
                     width: '100%', 
-                    backgroundColor: '#f5f5f5', 
+                    backgroundColor: '#ffffff', 
                     borderRadius: '8px', 
                     padding: '10px', 
                     marginTop: '10px',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                    zIndex: 1000
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                    zIndex: 1000,
+                    border: '1px solid #ddd'
                 }}>
                     <div className="texture-selector" style={{ maxHeight: '200px', overflowY: 'auto' }}>
                         {isLoadingTextures ? (

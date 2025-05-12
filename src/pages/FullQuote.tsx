@@ -272,7 +272,7 @@ const FullQuote: React.FC = () => {
                 if (data.matches && data.matches.length > 0) {
                     // Stocker les données complètes de toutes les suggestions
                     const formattedSuggestions = data.matches.map(match => ({
-                        display: `${match.libelle} (${match.prix.toFixed(2)}€/${match.unite})`,
+                        display: `${match.libtech} (${match.prix.toFixed(2)}€/${match.unite})`,
                         data: match
                     }));
                     

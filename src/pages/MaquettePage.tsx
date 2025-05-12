@@ -868,11 +868,11 @@ const MaquettePage: React.FC = () => {
                     />
                     
                     {/* Panneau de textures */}
-                    {/* <TexturePanel 
+                    <TexturePanel 
                         onSelectTexture={handleTextureSelect}
                         selectedTexture={selectedTexture}
                         setShowUpload={setShowUpload}
-                    /> */}
+                    />
                     
                     <div
                         id="floating-panel"
@@ -935,6 +935,7 @@ const MaquettePage: React.FC = () => {
                             onRotateObject={objectsUtils.handleRotateObject}
                             onUpdatePosition={objectsUtils.handleUpdatePosition}
                             onExtendObject={handleExtendObject}
+                            onUpdateTexture={handleTextureSelect}
                             selectedObject={objects.find(obj => obj.id === selectedObjectId)}
                         />
                     )}
