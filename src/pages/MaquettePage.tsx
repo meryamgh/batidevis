@@ -80,10 +80,7 @@ const MaquettePage: React.FC = () => {
         setShowDimensions,
         setFocusedObjectId,
     });
-
-    useEffect(() => {
-        console.log('quote', quote);
-    }, [quote]);
+ 
 
     // Fonction pour étendre un objet
     const handleExtendObject = useCallback((sourceObject: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => {
