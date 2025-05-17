@@ -419,8 +419,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const isWall = object.details.includes('Mur');
     const isRoomComponent = isFloor || isWall;
     
-    // Utilisation du hook personnalisé pour récupérer les textures
-    const { textures: apiTextures, isLoading: isLoadingTextures, error: texturesError } = useTextures();
 
     // Styles pour le bouton "Aucune couleur"
     const noColorButtonStyle = {
@@ -809,7 +807,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     </div>
                     )} */}
 
-
+{/* 
                     <div className="panel-section">
                         <h3 className="section-title">Face sélectionnée</h3>
                         <div className="face-selector">
@@ -834,99 +832,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 </button>
                             )}
                         </div>
-                    </div>
+                    </div> */}
 
-                    <div className="panel-section">
-                        <h3 className="section-title">
-                            {object.type === 'wall' || object.type === 'floor' 
-                                ? `Texture - ${getFaceName(selectedFace)}`
-                                : 'Texture'}
-                        </h3>
-                        
-                        <div className="texture-selector">
-                            {isLoadingTextures ? (
-                                <p className="texture-loading">Chargement des textures...</p>
-                            ) : texturesError ? (
-                                <div className="texture-error">
-                                    <p>Erreur lors du chargement des textures API</p>
-                                    <p className="error-details">{texturesError}</p>
-                                    <p>Les textures par défaut sont toujours disponibles.</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="texture-grid">
-                                        {Object.entries(customTextures).map(([name, url]) => (
-                                            <div 
-                                                key={url}
-                                                className={`texture-option ${
-                                                    faces[selectedFace]?.texture === url ? 'selected' : ''
-                                                }`}
-                                                onClick={() => {
-                                                    console.log('Texture clicked:', {
-                                                        name,
-                                                        url,
-                                                        selectedFace,
-                                                        currentFaces: faces
-                                                    });
-                                                    applyTextureToFace(url);
-                                                }}
-                                            >
-                                                <img 
-                                                    src={url} 
-                                                    alt={name}
-                                                    className="texture-preview"
-                                                    onError={handleImageError}
-                                                />
-                                                <span>{name.replace(/\.[^/.]+$/, "")}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    
-                                    {/* Textures de l'API */}
-                                    {apiTextures.length > 0 ? (
-                                        <>
-                                            <div style={textureDividerStyle}></div>
-                                            <h4>Textures API</h4>
-                                            <div className="texture-grid">
-                                                {apiTextures.map((textureItem, index) => (
-                                                    <div 
-                                                        key={`api-${index}`}
-                                                        className={`texture-option ${texture === textureItem.fullUrl ? 'selected' : ''}`}
-                                                        onClick={() => {
-                                                            console.log('API Texture clicked:', {
-                                                                name: textureItem.name,
-                                                                url: textureItem.fullUrl,
-                                                                selectedFace,
-                                                                currentFaces: faces
-                                                            });
-                                                            if (object.type === 'wall' || object.type === 'floor') {
-                                                                applyTextureToFace(textureItem.fullUrl);
-                                                            } else {
-                                                                applyTexture(textureItem.fullUrl);
-                                                            }
-                                                        }}
-                                                    >
-                                                        <img 
-                                                            src={textureItem.fullUrl} 
-                                                            alt={textureItem.name}
-                                                            className="texture-preview"
-                                                            onError={handleImageError}
-                                                        />
-                                                        <span>{textureItem.name}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </>
-                                    ) : !texturesError && (
-                                        <div className="texture-info">
-                                            <p>Aucune texture disponible depuis l'API.</p>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    </div>
-
+                   
                     {/* <div className="panel-section">
                         <h3 className="section-title">
                             {object.type === 'wall' || object.type === 'floor' 
@@ -974,7 +882,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
        
 
-            <p><strong>Prix:</strong> {object.price} €</p>
+            {/* <p><strong>Prix:</strong> {object.price} €</p> */}
 
             {/* <div className="button-section">
                 <div className='bouton-container'>

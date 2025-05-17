@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../../styles/ObjectControlsCompact.css';
-import { ObjectData } from '../../types/ObjectData';
+import { ObjectData, FacesData } from '../../types/ObjectData';
 import {
     DeleteIcon,
     MoveIcon,
@@ -11,6 +11,9 @@ import {
 } from '../icons/ControlIcons';
 import { useTextures } from '../../services/TextureService';
 
+// Type pour les noms des faces
+type FaceName = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
+
 interface ObjectControlsProps {
     selectedObjectId: string | null;
     onRemoveObject: (id: string) => void;
@@ -19,8 +22,9 @@ interface ObjectControlsProps {
     onRotateObject: (id: string, rotation: [number, number, number]) => void;
     onUpdatePosition: (id: string, position: [number, number, number]) => void;
     onExtendObject: (object: any, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => any;
-    selectedObject?: ObjectData; // Rendre l'objet sélectionné optionnel
+    selectedObject?: ObjectData;
     onUpdateTexture?: (newTexture: string) => void;
+    onUpdateFaces?: (id: string, faces: FacesData) => void;
     customTextures?: Record<string, string>;
 }
 
@@ -34,6 +38,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
     onExtendObject,
     selectedObject,
     onUpdateTexture,
+    onUpdateFaces,
     customTextures = {}
 }) => {
     const [currentRotation, setCurrentRotation] = useState<[number, number, number]>([0, 0, 0]);
@@ -46,6 +51,8 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
     const [height, setHeight] = useState(selectedObject?.scale[1] || 0);
     const [depth, setDepth] = useState(selectedObject?.scale[2] || 0);
     const [showTexturePanel, setShowTexturePanel] = useState(false);
+    const [selectedFace, setSelectedFace] = useState<FaceName>('front');
+    const [faces, setFaces] = useState<FacesData>(selectedObject?.faces || {});
     
     // Utilisation du hook personnalisé pour récupérer les textures
     const { textures: apiTextures, isLoading: isLoadingTextures, error: texturesError } = useTextures();
@@ -65,10 +72,35 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         margin: '10px 0',
     };
 
-    // Fonction pour appliquer une texture
-    const applyTexture = (textureUrl: string) => {
-        if (selectedObjectId && onUpdateTexture) {
-            onUpdateTexture(textureUrl);
+    // Fonction pour obtenir le nom lisible d'une face
+    const getFaceName = (face: FaceName): string => {
+        const names = {
+            front: 'Face avant',
+            back: 'Face arrière',
+            left: 'Face gauche',
+            right: 'Face droite',
+            top: 'Face supérieure',
+            bottom: 'Face inférieure'
+        };
+        return names[face];
+    };
+
+    // Fonction pour appliquer une texture à une face spécifique
+    const applyTextureToFace = (textureUrl: string) => {
+        if (!selectedObject) return;
+
+        const newFaces = {
+            ...faces,
+            [selectedFace]: {
+                ...faces[selectedFace],
+                texture: textureUrl,
+                color: undefined
+            }
+        };
+        
+        setFaces(newFaces);
+        if (onUpdateFaces) {
+            onUpdateFaces(selectedObject.id, newFaces);
         }
     };
 
@@ -380,6 +412,33 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                 </span>
             </div>
 
+            {selectedObject?.type === 'wall' && (
+                <div className="face-selector" style={{ marginBottom: '8px' }}>
+                    <div className="section-header" style={{ marginBottom: '2px' }}>
+                        <span style={{ fontSize: '8px' }}>Face sélectionnée</span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+                        {['front', 'back', 'left', 'right', 'top', 'bottom'].map((face) => (
+                            <button
+                                key={face}
+                                className={`face-button ${selectedFace === face ? 'selected' : ''}`}
+                                onClick={() => setSelectedFace(face as FaceName)}
+                                style={{ 
+                                    padding: '2px 4px', 
+                                    fontSize: '8px',
+                                    backgroundColor: selectedFace === face ? '#4a90e2' : '#f0f0f0',
+                                    color: selectedFace === face ? 'white' : 'black',
+                                    border: '1px solid #ccc',
+                                    borderRadius: '3px'
+                                }}
+                            >
+                                {getFaceName(face as FaceName)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="appearance-section" style={{ marginTop: '8px', display: 'flex', gap: '4px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <button
@@ -448,7 +507,13 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                                         <div 
                                             key={url}
                                             className="texture-option"
-                                            onClick={() => applyTexture(url)}
+                                            onClick={() => {
+                                                if (selectedObject?.type === 'wall') {
+                                                    applyTextureToFace(url);
+                                                } else if (onUpdateTexture) {
+                                                    onUpdateTexture(url);
+                                                }
+                                            }}
                                             style={{ 
                                                 display: 'flex', 
                                                 flexDirection: 'column', 
@@ -456,7 +521,13 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                                                 cursor: 'pointer', 
                                                 padding: '2px', 
                                                 borderRadius: '4px',
-                                                border: selectedObject?.texture === url ? '2px solid #4a90e2' : '1px solid #ddd'
+                                                border: selectedObject?.type === 'wall' 
+                                                    ? faces[selectedFace]?.texture === url 
+                                                        ? '2px solid #4a90e2' 
+                                                        : '1px solid #ddd'
+                                                    : selectedObject?.texture === url 
+                                                        ? '2px solid #4a90e2' 
+                                                        : '1px solid #ddd'
                                             }}
                                         >
                                             <img 
@@ -475,6 +546,8 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                                 {/* Textures de l'API */}
                                 {apiTextures.length > 0 ? (
                                     <>
+                                        <div style={textureDividerStyle}></div>
+                                        <h4 style={{ fontSize: '10px', margin: '5px 0' }}>Textures API</h4>
                                         <div className="texture-grid" style={{ 
                                             display: 'grid', 
                                             gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', 
@@ -484,15 +557,27 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                                                 <div 
                                                     key={`api-${index}`}
                                                     className="texture-option"
-                                                    onClick={() => applyTexture(textureItem.fullUrl)}
+                                                    onClick={() => {
+                                                        if (selectedObject?.type === 'wall') {
+                                                            applyTextureToFace(textureItem.fullUrl);
+                                                        } else if (onUpdateTexture) {
+                                                            onUpdateTexture(textureItem.fullUrl);
+                                                        }
+                                                    }}
                                                     style={{ 
                                                         display: 'flex', 
                                                         flexDirection: 'column', 
                                                         alignItems: 'center', 
                                                         cursor: 'pointer', 
-                                                        padding: '1px', 
-                                                        borderRadius: '3px',
-                                                        border: selectedObject?.texture === textureItem.fullUrl ? '2px solid #4a90e2' : '1px solid #ddd'
+                                                        padding: '2px', 
+                                                        borderRadius: '4px',
+                                                        border: selectedObject?.type === 'wall' 
+                                                            ? faces[selectedFace]?.texture === textureItem.fullUrl 
+                                                                ? '2px solid #4a90e2' 
+                                                                : '1px solid #ddd'
+                                                            : selectedObject?.texture === textureItem.fullUrl 
+                                                                ? '2px solid #4a90e2' 
+                                                                : '1px solid #ddd'
                                                     }}
                                                 >
                                                     <img 

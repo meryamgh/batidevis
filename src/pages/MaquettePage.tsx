@@ -934,6 +934,8 @@ const MaquettePage: React.FC = () => {
                             onExtendObject={handleExtendObject}
                             onUpdateTexture={handleTextureSelect}
                             selectedObject={objects.find(obj => obj.id === selectedObjectId)}
+                            onUpdateFaces={objectsUtils.handleUpdateFaces}
+                            
                         />
                     )}
                 </div>
