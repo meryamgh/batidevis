@@ -186,8 +186,8 @@ footer {
 }
 
 .full-quote-button {
-    margin-top: 10px;
-    padding: 10px 20px;
+    margin: 0;
+    padding: 0 20px;
     background-color: #3A4D6E;
     color: white;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -197,10 +197,18 @@ footer {
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     font-family: 'Lato', sans-serif;
-    font-variant: small-caps;
     border: 0.5px solid #2D3C54;
     font-size: 15px;
-    min-width: 150px;
+    min-width: fit-content;
+    height: 40px;
+    text-transform: none;
+    font-variant: normal;
+    letter-spacing: 0.5px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .full-quote-button:hover {

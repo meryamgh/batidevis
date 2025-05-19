@@ -1109,10 +1109,10 @@ const FullQuote: React.FC = () => {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
             <button className='full-quote-button' onClick={handleBack}>
-              retour maquette
+              RETOUR
             </button>
             <button className='full-quote-button mode-toggle' onClick={toggleMode}>
-              {isEditMode ? 'Mode Lecture' : 'Mode Édition'}
+              {isEditMode ? 'MODE LECTURE' : 'MODE EDITION'}
             </button>
           </div>
           
