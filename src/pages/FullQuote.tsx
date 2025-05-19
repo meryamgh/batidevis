@@ -140,6 +140,7 @@ const FullQuote: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
     const [data, setData] = useState<any>(null);
+    const [isEditMode, setIsEditMode] = useState<boolean>(true);
     // YouSign API integration
     const apiKey = import.meta.env.VITE_APP_YOUSIGN_API_KEY ;
     const [youSignClient] = useState<YouSignClient>(() => new YouSignClient(apiKey));
@@ -636,19 +637,23 @@ const FullQuote: React.FC = () => {
 
     const EditableText = ({fieldName, value}: {fieldName: string; value: string}) => {
         const isEditing = editingFieldOutside === fieldName;
-        return isEditing ? (
-            <input
-                type="text"
-                value={editValueOutside}
-                onChange={handleOutsideInputChange}
-                onBlur={handleOutsideBlur}
-                onKeyDown={handleOutsideKeyDown}
-                autoFocus
-            />
+        return isEditMode ? (
+            isEditing ? (
+                <input
+                    type="text"
+                    value={editValueOutside}
+                    onChange={handleOutsideInputChange}
+                    onBlur={handleOutsideBlur}
+                    onKeyDown={handleOutsideKeyDown}
+                    autoFocus
+                />
+            ) : (
+                <span onClick={() => handleFieldClick(fieldName, value)} style={{cursor:'pointer', textDecoration:'underline'}}>
+                    {value}
+                </span>
+            )
         ) : (
-            <span onClick={() => handleFieldClick(fieldName, value)} style={{cursor:'pointer', textDecoration:'underline'}}>
-                {value}
-            </span>
+            <span>{value}</span>
         );
     };
 
@@ -1084,6 +1089,11 @@ const FullQuote: React.FC = () => {
       handleSendInvoiceByEmail(invoiceEmail);
     };
 
+    // Fonction pour basculer entre les modes
+    const toggleMode = () => {
+        setIsEditMode(!isEditMode);
+    };
+
     return (
       <div style={{ 
         display: 'flex', 
@@ -1097,9 +1107,14 @@ const FullQuote: React.FC = () => {
           padding: '20px',
           borderRight: '1px solid #ddd'
         }}>
-          <button className='full-quote-button' onClick={handleBack}>
-            retour maquette
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <button className='full-quote-button' onClick={handleBack}>
+              retour maquette
+            </button>
+            <button className='full-quote-button mode-toggle' onClick={toggleMode}>
+              {isEditMode ? 'Mode Lecture' : 'Mode Édition'}
+            </button>
+          </div>
           
           <div className="container" ref={quoteRef} style={{ marginBottom: '30px' }}>
             <header>
@@ -1200,7 +1215,7 @@ const FullQuote: React.FC = () => {
                   <th>PRIX U.</th>
                   <th>TVA</th>
                   <th>TOTAL HT</th>
-                  <th>Actions</th>
+                  {isEditMode && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1214,10 +1229,10 @@ const FullQuote: React.FC = () => {
                       <td>{index + 1}</td>
                       <td 
                         className='size_description' 
-                        onClick={() => handleCellClick(index, 'details')}
-                        style={{ position: 'relative' }}
+                        onClick={() => isEditMode && handleCellClick(index, 'details')}
+                        style={{ position: 'relative', cursor: isEditMode ? 'pointer' : 'default' }}
                       >
-                        {isEditingDetails ? (
+                        {isEditMode && isEditingDetails ? (
                           <>
                             <input
                               type="text"
@@ -1298,9 +1313,10 @@ const FullQuote: React.FC = () => {
                         )}
                       </td>
                       <td
-                        onClick={() => handleCellClick(index, 'quantity')}
+                        onClick={() => isEditMode && handleCellClick(index, 'quantity')}
+                        style={{ cursor: isEditMode ? 'pointer' : 'default' }}
                       >
-                        {isEditingQuantity ? 
+                        {isEditMode && isEditingQuantity ? 
                           <input
                             type="number"
                             step="0.01"
@@ -1314,9 +1330,10 @@ const FullQuote: React.FC = () => {
                       </td>
                       <td>{item.unit || 'U'}</td>
                       <td
-                        onClick={() => handleCellClick(index, 'price')}
+                        onClick={() => isEditMode && handleCellClick(index, 'price')}
+                        style={{ cursor: isEditMode ? 'pointer' : 'default' }}
                       >
-                        {isEditingPrice ? 
+                        {isEditMode && isEditingPrice ? 
                           <input
                             type="number"
                             step="0.01"
@@ -1330,44 +1347,48 @@ const FullQuote: React.FC = () => {
                       </td>
                       <td>{(tvaRate * 100).toFixed(2)} %</td>
                       <td>{(item.price * item.quantity).toFixed(2)} €</td>
-                      <td>
+                      {isEditMode && (
+                        <td>
                           <button 
-                              onClick={() => handleDeleteRow(index)}
-                              style={{
-                                  backgroundColor: '#dc3545',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  padding: '4px 8px',
-                                  cursor: 'pointer',
-                                  fontSize: '12px'
-                              }}
+                            onClick={() => handleDeleteRow(index)}
+                            style={{
+                              backgroundColor: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
                           >
-                              Supprimer
+                            Supprimer
                           </button>
-                      </td>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '10px' }}>
-                    <button 
-                      onClick={handleAddRow} 
-                      style={{ 
-                        fontSize: '18px', 
-                        backgroundColor: '#007bff', 
-                        color: 'white', 
-                        border: 'none', 
-                        borderRadius: '50%', 
-                        width: '30px', 
-                        height: '30px', 
-                        cursor: 'pointer' 
-                      }}
-                    >
-                      +
-                    </button>
-                  </td>
-                </tr>
+                {isEditMode && (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '10px' }}>
+                      <button 
+                        onClick={handleAddRow} 
+                        style={{ 
+                          fontSize: '18px', 
+                          backgroundColor: '#007bff', 
+                          color: 'white', 
+                          border: 'none', 
+                          borderRadius: '50%', 
+                          width: '30px', 
+                          height: '30px', 
+                          cursor: 'pointer' 
+                        }}
+                      >
+                        +
+                      </button>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
@@ -1375,7 +1396,7 @@ const FullQuote: React.FC = () => {
               <div className="payment-info">
                 <p><strong>Conditions de paiement :</strong></p>
                 <p>
-                  Acompte {editingAcompte ? (
+                  Acompte {isEditMode && editingAcompte ? (
                     <input
                       type="number"
                       value={acompteEditValue}
@@ -1386,7 +1407,13 @@ const FullQuote: React.FC = () => {
                       autoFocus
                     />
                   ) : (
-                    <span onClick={handleAcompteClick} style={{cursor:'pointer',textDecoration:'underline'}}>
+                    <span 
+                      onClick={() => isEditMode && handleAcompteClick} 
+                      style={{
+                        cursor: isEditMode ? 'pointer' : 'default',
+                        textDecoration: isEditMode ? 'underline' : 'none'
+                      }}
+                    >
                       {(acompteRate * 100).toFixed(2)}%
                     </span>
                   )} du total TTC = {acompte.toFixed(2)} € TTC à la signature
