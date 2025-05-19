@@ -1118,87 +1118,96 @@ const FullQuote: React.FC = () => {
           
           <div className="container" ref={quoteRef} style={{ marginBottom: '30px' }}>
             <header>
-              <div className="logo-info" style={{cursor: 'pointer'}} onClick={handleLogoClick}>
-                <img src={logoSrc} alt="Logo" />
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  style={{display:'none'}}
-                  onChange={handleLogoChange}
-                  accept="image/*"
-                />
-              </div>
-              <div className="devo-info">
-                <h2>
-                  <EditableText fieldName="devoTitle" value={devoTitle} />
-                </h2>
-                <p>
-                  <EditableText fieldName="devoName" value={devoName} /><br />
-                  <EditableText fieldName="devoAddress" value={devoAddress} /><br />
-                  <EditableText fieldName="devoCity" value={devoCity} /><br />
-                  <EditableText fieldName="devoSiren" value={devoSiren} />
-                </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '45%' }}>
+                  <div className="devo-info">
+                    <h2>
+                      <EditableText fieldName="devoTitle" value={devoTitle} />
+                    </h2>
+                    <p>
+                      <EditableText fieldName="devoName" value={devoName} /><br />
+                      <EditableText fieldName="devoAddress" value={devoAddress} /><br />
+                      <EditableText fieldName="devoCity" value={devoCity} /><br />
+                      <EditableText fieldName="devoSiren" value={devoSiren} />
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '45%' }}>
+                  <div className="devis-header" style={{ border: '1px solid #2D3C54', padding: '15px', borderRadius: '4px' }}>
+                    <div className="logo-info" style={{cursor: 'pointer', marginBottom: '15px', display: 'flex', justifyContent: 'center', width: '100%'}} onClick={handleLogoClick}>
+                      <img src={logoSrc} alt="Logo" />
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        style={{display:'none'}}
+                        onChange={handleLogoChange}
+                        accept="image/*"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <table className='info-table-devis'>
+                        <tbody>
+                          <tr>
+                            <td>Devis n°</td>
+                            <td><EditableText fieldName="devisNumero" value={devisNumero} /></td>
+                          </tr>
+                          <tr>
+                            <td>En date du</td>
+                            <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
+                          </tr>
+                          <tr>
+                            <td>Valable jusqu'au</td>
+                            <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
+                          </tr>
+                          <tr>
+                            <td>Début des travaux</td>
+                            <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
+                          </tr>
+                          <tr>
+                            <td>Durée estimée à</td>
+                            <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
             </header>
+
             <div className="infoclient-infodevis">
-              <section className="info-client">
+              <section className="info-client" style={{ textAlign: 'right' }}>
                 <h2>
                   <EditableText fieldName="societeBatiment" value={societeBatiment} />
                 </h2><br/>
                 <div>
-                  <table className='info-table-client'>
+                  <table className='info-table-client' style={{ marginLeft: 'auto' }}>
                     <tbody>
-                    <tr>
-                      <td>Adresse</td>
-                      <td>
-                        <EditableText fieldName="clientAdresse" value={clientAdresse} />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Code Postal</td>
-                      <td>
-                        <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Tel</td>
-                      <td>
-                        <EditableText fieldName="clientTel" value={clientTel} />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Email</td>
-                      <td>
-                        <EditableText fieldName="clientEmail" value={clientEmail} />
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-              <section className="devis-header">
-                <h2>
-                  Devis n° : <EditableText fieldName="devisNumero" value={devisNumero} />
-                </h2><br/>
-                <div>
-                  <table className='info-table-devis'>
-                    <tbody>
-                    <tr>
-                      <td>En date du</td>
-                      <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
-                    </tr>
-                    <tr>
-                      <td>Valable jusqu'au</td>
-                      <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
-                    </tr>
-                    <tr>
-                      <td>Début des travaux</td>
-                      <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
-                    </tr>
-                    <tr>
-                      <td>Durée estimée à</td>
-                      <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
-                    </tr>
+                      <tr>
+                        <td>Adresse</td>
+                        <td>
+                          <EditableText fieldName="clientAdresse" value={clientAdresse} />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Code Postal</td>
+                        <td>
+                          <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Tel</td>
+                        <td>
+                          <EditableText fieldName="clientTel" value={clientTel} />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Email</td>
+                        <td>
+                          <EditableText fieldName="clientEmail" value={clientEmail} />
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -1373,16 +1382,7 @@ const FullQuote: React.FC = () => {
                     <td colSpan={8} style={{ textAlign: 'center', padding: '10px' }}>
                       <button 
                         onClick={handleAddRow} 
-                        style={{ 
-                          fontSize: '18px', 
-                          backgroundColor: '#007bff', 
-                          color: 'white', 
-                          border: 'none', 
-                          borderRadius: '50%', 
-                          width: '30px', 
-                          height: '30px', 
-                          cursor: 'pointer' 
-                        }}
+                        className="add-row-button"
                       >
                         +
                       </button>
