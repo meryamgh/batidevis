@@ -51,7 +51,9 @@ const ObjectsPanel: React.FC<ObjectsPanelProps> = ({ onSelectObject, selectedObj
     };
 
     return (
-        <div className={`objects-panel ${isExpanded ? 'expanded' : 'collapsed'}`}>
+        <div className={`objects-panel ${isExpanded ? 'expanded' : 'collapsed'}`} style={{
+            display: 'none'
+        }}>
             <button 
                 className="objects-panel-toggle"
                 onClick={() => setIsExpanded(!isExpanded)}
