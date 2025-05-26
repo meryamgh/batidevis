@@ -82,11 +82,23 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
         </div>
     );
 
+    const buttonStyle = {
+        padding: '6px 12px',
+        borderRadius: '4px',
+        border: '1px solid #ced4da',
+        backgroundColor: 'white',
+        fontSize: '14px',
+        height: '32px',
+        color: '#2D3C54',
+        textShadow: 'none'
+    };
+
     return (
         <div className="object-selector decorative">
             <button 
                 className="object-selector-toggle"
                 onClick={() => setIsOpen(!isOpen)}
+                style={buttonStyle}
             >
                 {isOpen ? 'Masquer les objets décoratifs' : 'Afficher les objets décoratifs'}
             </button>
@@ -95,6 +107,7 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
                     <button
                         onClick={() => setShowObjectUpload(true)}
                         className="bouton"
+                        style={buttonStyle}
                     >
                         Upload Objet Décoratif
                     </button>

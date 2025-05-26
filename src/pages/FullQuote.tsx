@@ -464,6 +464,7 @@ const FullQuote: React.FC = () => {
 
     // Gestion du logo modifiable
     const [logoSrc, setLogoSrc] = useState<string>("logo.png");
+    const [leftLogoSrc, setLeftLogoSrc] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleLogoClick = () => {
@@ -476,7 +477,18 @@ const FullQuote: React.FC = () => {
         if (e.target.files && e.target.files[0]) {
             const newLogo = e.target.files[0];
             const objectUrl = URL.createObjectURL(newLogo);
-            setLogoSrc(objectUrl);
+            setLeftLogoSrc(objectUrl);
+        }
+        // Réinitialiser l'input pour permettre le même fichier
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDeleteLogo = () => {
+        setLeftLogoSrc("");
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -1118,101 +1130,208 @@ const FullQuote: React.FC = () => {
           
           <div className="container" ref={quoteRef} style={{ marginBottom: '30px' }}>
             <header>
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '45%' }}>
-                  <div className="devo-info">
-                    <h2>
-                      <EditableText fieldName="devoTitle" value={devoTitle} />
-                    </h2>
-                    <p>
-                      <EditableText fieldName="devoName" value={devoName} /><br />
-                      <EditableText fieldName="devoAddress" value={devoAddress} /><br />
-                      <EditableText fieldName="devoCity" value={devoCity} /><br />
-                      <EditableText fieldName="devoSiren" value={devoSiren} />
-                    </p>
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ 
+                  padding: '15px', 
+                  borderRadius: '4px',
+                  width: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  {leftLogoSrc ? (
+                    <>
+                      <img src={leftLogoSrc} alt="Logo" style={{ width: '400px', maxWidth: '100%' }} />
+                      {isEditMode && (
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
+                          <button 
+                            onClick={handleLogoClick}
+                            style={{
+                              padding: '4px 8px',
+                              backgroundColor: '#f8f9fa',
+                              border: '1px solid #dee2e6',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              color: '#6c757d',
+                              fontSize: '12px',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                          >
+                            Modifier le logo
+                          </button>
+                          <button 
+                            onClick={handleDeleteLogo}
+                            style={{
+                              padding: '4px 8px',
+                              backgroundColor: '#f8f9fa',
+                              border: '1px solid #dee2e6',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              color: '#dc3545',
+                              fontSize: '12px',
+                              transition: 'all 0.3s ease'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                          >
+                            Supprimer le logo
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    isEditMode && (
+                      <div 
+                        onClick={handleLogoClick}
+                        style={{
+                          width: '100%',
+                          height: '100px',
+                          backgroundColor: '#f8f9fa',
+                          border: '2px dashed #2D3C54',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          gap: '8px'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                      >
+                        <span style={{ fontSize: '24px' }}>📁</span>
+                        <span style={{ fontSize: '14px', color: '#2D3C54' }}>Upload le logo</span>
+                      </div>
+                    )
+                  )}
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    style={{display:'none'}}
+                    onChange={handleLogoChange}
+                    accept="image/*"
+                  />
                 </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '45%' }}>
-                  <div className="devis-header" style={{ border: '1px solid #2D3C54', padding: '15px', borderRadius: '4px' }}>
-                    <div className="logo-info" style={{cursor: 'pointer', marginBottom: '15px', display: 'flex', justifyContent: 'center', width: '100%'}} onClick={handleLogoClick}>
-                      <img src={logoSrc} alt="Logo" />
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        style={{display:'none'}}
-                        onChange={handleLogoChange}
-                        accept="image/*"
-                      />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <table className='info-table-devis'>
-                        <tbody>
-                          <tr>
-                            <td>Devis n°</td>
-                            <td><EditableText fieldName="devisNumero" value={devisNumero} /></td>
-                          </tr>
-                          <tr>
-                            <td>En date du</td>
-                            <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
-                          </tr>
-                          <tr>
-                            <td>Valable jusqu'au</td>
-                            <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
-                          </tr>
-                          <tr>
-                            <td>Début des travaux</td>
-                            <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
-                          </tr>
-                          <tr>
-                            <td>Durée estimée à</td>
-                            <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                <div className="devis-header" style={{ border: '1px solid #2D3C54', padding: '15px', borderRadius: '4px' }}>
+                  <div className="logo-info" style={{marginBottom: '15px', display: 'flex', justifyContent: 'center', width: '100%'}}>
+                    <img src={logoSrc} alt="Logo" />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <table className='info-table-devis'>
+                      <tbody>
+                        <tr>
+                          <td>Devis n°</td>
+                          <td><EditableText fieldName="devisNumero" value={devisNumero} /></td>
+                        </tr>
+                        <tr>
+                          <td>En date du</td>
+                          <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
+                        </tr>
+                        <tr>
+                          <td>Valable jusqu'au</td>
+                          <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
+                        </tr>
+                        <tr>
+                          <td>Début des travaux</td>
+                          <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
+                        </tr>
+                        <tr>
+                          <td>Durée estimée à</td>
+                          <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
             </header>
 
-            <div className="infoclient-infodevis">
-              <section className="info-client" style={{ textAlign: 'right' }}>
+            <div className="infoclient-infodevis" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+              <section className="info-client" style={{ textAlign: 'left', width: '45%' }}>
                 <h2>
-                  <EditableText fieldName="societeBatiment" value={societeBatiment} />
+                  <EditableText fieldName="devoTitle" value={devoTitle} />
                 </h2><br/>
                 <div>
-                  <table className='info-table-client' style={{ marginLeft: 'auto' }}>
+                  <table className='info-table-client'>
                     <tbody>
+                      <tr>
+                        <td>Nom</td>
+                        <td>
+                          <EditableText fieldName="devoName" value={devoName} />
+                        </td>
+                      </tr>
                       <tr>
                         <td>Adresse</td>
                         <td>
-                          <EditableText fieldName="clientAdresse" value={clientAdresse} />
+                          <EditableText fieldName="devoAddress" value={devoAddress} />
                         </td>
                       </tr>
                       <tr>
-                        <td>Code Postal</td>
+                        <td>Ville</td>
                         <td>
-                          <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
+                          <EditableText fieldName="devoCity" value={devoCity} />
                         </td>
                       </tr>
                       <tr>
-                        <td>Tel</td>
+                        <td>SIREN</td>
                         <td>
-                          <EditableText fieldName="clientTel" value={clientTel} />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>Email</td>
-                        <td>
-                          <EditableText fieldName="clientEmail" value={clientEmail} />
+                          <EditableText fieldName="devoSiren" value={devoSiren} />
                         </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
               </section>
+
+              <section className="info-client" style={{ textAlign: 'right', width: '40%' }}>
+                <div className="devis-header" style={{ 
+                  border: '1px solid #2D3C54', 
+                  padding: '15px', 
+                  borderRadius: '4px',
+                  backgroundColor: '#f8f9fa'
+                }}>
+                  <h2 style={{ marginBottom: '15px', textAlign: 'center' }}>
+                    <EditableText fieldName="societeBatiment" value={societeBatiment} />
+                  </h2>
+                  <div>
+                    <table className='info-table-client' style={{ marginLeft: 'auto', width: '100%' }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ paddingRight: '5px' }}>Adresse</td>
+                          <td>
+                            <EditableText fieldName="clientAdresse" value={clientAdresse} />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingRight: '5px' }}>Code Postal</td>
+                          <td>
+                            <EditableText fieldName="clientCodePostal" value={clientCodePostal} />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingRight: '5px' }}>Tel</td>
+                          <td>
+                            <EditableText fieldName="clientTel" value={clientTel} />
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ paddingRight: '5px' }}>Email</td>
+                          <td>
+                            <EditableText fieldName="clientEmail" value={clientEmail} />
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
             </div>
+
+            <br></br><br></br>
 
             <table className='table-border'>
               <thead>

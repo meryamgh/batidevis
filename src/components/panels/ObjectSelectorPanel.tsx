@@ -86,11 +86,23 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
         </div>
     );
 
+    const buttonStyle = {
+        padding: '6px 12px',
+        borderRadius: '4px',
+        border: '1px solid #ced4da',
+        backgroundColor: 'white',
+        fontSize: '14px',
+        height: '32px',
+        color: '#2D3C54',
+        textShadow: 'none'
+    };
+
     return (
         <div className="object-selector">
             <button 
                 className="object-selector-toggle"
                 onClick={() => setIsOpen(!isOpen)}
+                style={buttonStyle}
             >
                 {isOpen ? 'Masquer la liste' : 'Afficher la liste des objets'}
             </button>
@@ -99,6 +111,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                     <button
                         onClick={() => setShowObjectUpload(true)}
                         className="bouton"
+                        style={buttonStyle}
                     >
                         Upload 3D Object
                     </button>
@@ -106,6 +119,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                         onClick={() => setShowAIGeneration(true)}
                         className="bouton ai-button"
                         title="Générer un objet 3D avec l'IA"
+                        style={buttonStyle}
                     >
                         Générer votre objet 3D avec l'IA
                     </button>

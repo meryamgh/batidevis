@@ -109,106 +109,133 @@ const Toolbar: React.FC<ToolbarProps> = ({
     }
   };
 
+  const buttonStyle = {
+    padding: '6px 12px',
+    borderRadius: '4px',
+    border: '1px solid #ced4da',
+    backgroundColor: 'white',
+    fontSize: '14px',
+    height: '32px',
+    color: '#2D3C54',
+    textShadow: 'none'
+  };
+
+  const iconButtonStyle = {
+    ...buttonStyle,
+    minWidth: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
+
   return (
-    <div className="banner">
-      
-
-      <select 
-        value={viewMode}
-        onChange={(e) => {
-          const newViewMode = e.target.value as "3D" | "2D" |  "ObjectOnly";
-          setViewMode(newViewMode);
-        }}
-      >
-        <option value="ObjectOnly">Object Only</option>
-        <option value="3D">Vue 3D</option>
-        <option value="2D">Vue 2D</option>
-      </select>
-
-      <button 
-        onClick={() => setShowNavigationHelp(true)} 
-        className="bouton help-button"
-        title="Aide à la navigation"
-      >
-        ?
-      </button> 
-      {/* <button
-        onClick={() => setShowUpload(true)}
-        className="bouton"
-      >
-        Upload Texture
-      </button> */}
-      {is2DView && (
-        <>
-          <button onClick={() => setCreatingWallMode(!creatingWallMode)}>
-            {creatingWallMode ? 'terminer l\'ajout de mur' : 'ajouter un mur en 2D'}
-          </button>
-          <button 
-            onClick={() => setIsCreatingSurface(!isCreatingSurface)}
-            className={`bouton ${isCreatingSurface ? 'active' : ''}`}
-          >
-            {isCreatingSurface ? 'Terminer la surface' : 'Créer une surface'}
-          </button>
-        </>
-      )}
-
-      {/* <button
-        onClick={() => setShowObjectUpload(true)}
-        className="bouton"
-      >
-        Upload 3D Object
-      </button>
-
-      {showObjectUpload && <ObjectUpload onClose={() => setShowObjectUpload(false)} />}
-
-      <button 
-        onClick={() => setShowAIGeneration(true)}
-        className="bouton ai-button"
-        title="Générer un objet 3D avec l'IA"
-      >
-        Générer votre objet 3D avec l'IA
-      </button>
-
-      {showAIGeneration && (
-        <AIGenerationPanel 
-          onClose={() => setShowAIGeneration(false)} 
-          onObjectGenerated={handleObjectGenerated}
-        />
-      )} */}
-
-      <button onClick={() => setShowRoomConfig(true)} className="bouton">
-        Générer une pièce
-      </button>
-      
-      {(currentFloor > 0 || objects.length > 0) && (
-        <button 
-          onClick={addNewFloor} 
-          className="bouton"
+    <div className="banner" style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      padding: '8px 16px',
+      backgroundColor: '#f8f9fa',
+      borderBottom: '1px solid #e9ecef'
+    }}>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <select 
+          value={viewMode}
+          onChange={(e) => {
+            const newViewMode = e.target.value as "3D" | "2D" |  "ObjectOnly";
+            setViewMode(newViewMode);
+          }}
+          style={{
+            ...buttonStyle,
+            cursor: 'pointer',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            MozAppearance: 'none',
+            backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232D3C54' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 8px center',
+            backgroundSize: '16px',
+            paddingRight: '32px'
+          }}
         >
-          Ajouter un étage
-        </button>
-      )}
-      <ObjectSelector showObjectUpload={showObjectUpload} 
-      setShowObjectUpload={setShowObjectUpload} 
-      handleObjectGenerated={handleObjectGenerated} />
-      <DecorativeObjectSelector showObjectUpload={showObjectUpload} 
-      setShowObjectUpload={setShowObjectUpload} 
-      handleObjectGenerated={handleObjectGenerated} />
-      <button
-        onClick={handleExport}
-        className="bouton icon-button"
-        title="Exporter la maquette au format JSON"
-      >
-        💾
-      </button>
+          <option value="ObjectOnly">Object Only</option>
+          <option value="3D">Vue 3D</option>
+          <option value="2D">Vue 2D</option>
+        </select>
 
-      <button 
-        onClick={reconstructMaquette}
-        className="toolbar-button icon-button"
-        title="Charger la maquette"
-      >
-        📂
-      </button>
+        <button 
+          onClick={() => setShowNavigationHelp(true)} 
+          className="bouton help-button"
+          title="Aide à la navigation"
+          style={iconButtonStyle}
+        >
+          ?
+        </button> 
+
+        {is2DView && (
+          <>
+            <button 
+              onClick={() => setCreatingWallMode(!creatingWallMode)}
+              style={buttonStyle}
+            >
+              {creatingWallMode ? 'Terminer' : 'Ajouter un mur'}
+            </button>
+            <button 
+              onClick={() => setIsCreatingSurface(!isCreatingSurface)}
+              className={`bouton ${isCreatingSurface ? 'active' : ''}`}
+              style={{
+                ...buttonStyle,
+                backgroundColor: isCreatingSurface ? '#e9ecef' : 'white'
+              }}
+            >
+              {isCreatingSurface ? 'Terminer' : 'Créer une surface'}
+            </button>
+          </>
+        )}
+
+        <button 
+          onClick={() => setShowRoomConfig(true)} 
+          className="bouton"
+          style={buttonStyle}
+        >
+          Générer une pièce
+        </button>
+        
+        {(currentFloor > 0 || objects.length > 0) && (
+          <button 
+            onClick={addNewFloor} 
+            className="bouton"
+            style={buttonStyle}
+          >
+            Ajouter un étage
+          </button>
+        )}
+        <ObjectSelector showObjectUpload={showObjectUpload} 
+        setShowObjectUpload={setShowObjectUpload} 
+        handleObjectGenerated={handleObjectGenerated} />
+        <DecorativeObjectSelector showObjectUpload={showObjectUpload} 
+        setShowObjectUpload={setShowObjectUpload} 
+        handleObjectGenerated={handleObjectGenerated} />
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <button
+          onClick={handleExport}
+          className="bouton icon-button"
+          title="Exporter la maquette au format JSON"
+          style={iconButtonStyle}
+        >
+          💾
+        </button>
+
+        <button 
+          onClick={reconstructMaquette}
+          className="toolbar-button icon-button"
+          title="Charger la maquette"
+          style={iconButtonStyle}
+        >
+          📂
+        </button>
+      </div>
     </div>
   );
 };
