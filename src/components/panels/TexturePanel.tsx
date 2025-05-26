@@ -21,7 +21,9 @@ const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTe
   };
 
   return (
-    <div className={`texture-panel ${isExpanded ? 'expanded' : 'collapsed'}`}>
+    <div className={`texture-panel ${isExpanded ? 'expanded' : 'collapsed'}`} style={{
+      display: 'none'
+    }}>
       <button 
         className="texture-panel-toggle"
         onClick={() => setIsExpanded(!isExpanded)}

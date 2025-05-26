@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ObjectData, FacesData } from '../../types/ObjectData';
-import '../../styles/Controls.css';
-import { useTextures } from '../../services/TextureService';
+import '../../styles/Controls.css'; 
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import '../../styles/ObjectPanel.css';
@@ -59,8 +58,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
     const [showDimensions, setShowDimensions] = useState(false);
-    const [position, setPosition] = useState<[number, number, number]>(object.position); 
-    const [selectedAxis, setSelectedAxis] = useState<'x' | 'y' | 'z'>('y');
+    const [position, setPosition] = useState<[number, number, number]>(object.position);  
     const [recalculateYPosition, setRecalculateYPosition] = useState(false);
     // États pour les dimensions de la pièce
     const [roomWidth, setRoomWidth] = useState(object.scale[0]);
@@ -739,184 +737,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 <p className='modif'>modification de l'objet</p>
             </div>
             <p className='texte'>{object.details}</p>
-
-            {isFloor && (
-                <div className="room-dimensions-section">
-                    <h4>Dimensions de la pièce</h4>
-                    <div className="dimension-control">
-                        <label>Largeur (m): </label>
-                        <input 
-                            type="number" 
-                            value={roomWidth} 
-                            onChange={(e) => setRoomWidth(Number(e.target.value))}
-                            min="1"
-                            step="0.5"
-                        />
-                    </div>
-                    <div className="dimension-control">
-                        <label>Longueur (m): </label>
-                        <input 
-                            type="number" 
-                            value={roomLength} 
-                            onChange={(e) => setRoomLength(Number(e.target.value))}
-                            min="1"
-                            step="0.5"
-                        />
-                    </div>
-                    <div className="dimension-control">
-                        <label>Hauteur (m): </label>
-                        <input 
-                            type="number" 
-                            value={roomHeight} 
-                            onChange={(e) => setRoomHeight(Number(e.target.value))}
-                            min="1"
-                            step="0.5"
-                        />
-                    </div>
-                    <div className="dimension-info">
-                        <strong>Surface totale:</strong> {(roomWidth * roomLength).toFixed(2)} m²
-                    </div>
-                    {isFloor && (
-                        <button 
-                            onClick={handleUpdateRoomDimensions}
-                            className="update-room-button"
-                    >
-                            Mettre à jour la pièce
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {(!isRoomComponent || isWall || isFloor) && (
-                <>
-                   
-                    {/* dans le cas ou c'est un mur 
-                    {isWall && (
-                    <div className='panel-section'>
-                        <h3 className="section-title">Ajouter un élément</h3>
-                        <button className='bouton-popup' onClick={handleAddWindow}>
-                            <p>
-                                <strong>Ajouter une fenêtre:</strong> 
-                            </p>
-                        </button>
-                        <button className='bouton-popup' onClick={handleAddDoor}>
-                            <p>
-                                <strong>Ajouter une porte:</strong> 
-                            </p>
-                        </button>
-                    </div>
-                    )} */}
-
-{/* 
-                    <div className="panel-section">
-                        <h3 className="section-title">Face sélectionnée</h3>
-                        <div className="face-selector">
-                            {object.type === 'wall' ? (
-                                // Pour les murs, montrer toutes les faces
-                                ['front', 'back', 'left', 'right', 'top', 'bottom'].map((face) => (
-                                    <button
-                                        key={face}
-                                        className={`face-button ${selectedFace === face ? 'selected' : ''}`}
-                                        onClick={() => setSelectedFace(face as FaceName)}
-                                    >
-                                        {getFaceName(face as FaceName)}
-                                    </button>
-                                ))
-                            ) : (
-                                // Pour le sol, montrer uniquement la face supérieure
-                                <button
-                                    className="face-button selected"
-                                    onClick={() => setSelectedFace('top')}
-                                >
-                                    Face supérieure
-                                </button>
-                            )}
-                        </div>
-                    </div> */}
-
-                   
-                    {/* <div className="panel-section">
-                        <h3 className="section-title">
-                            {object.type === 'wall' || object.type === 'floor' 
-                                ? `Couleur - ${getFaceName(selectedFace)}`
-                                : 'Couleur'}
-                        </h3>
-                        <div className="color-selector">
-                            <div className="color-preview" 
-                                style={{ backgroundColor: faces[selectedFace]?.color || color || '#FFFFFF' }}
-                            ></div>
-                            <input
-                                type="color"
-                                value={faces[selectedFace]?.color || color || '#FFFFFF'}
-                                onChange={(e) => applyColorToFace(e.target.value)}
-                                className="color-picker"
-                            />
-                            <button 
-                                className="no-color-button"
-                                style={noColorButtonStyle}
-                                onClick={() => {
-                                    const newFaces = { ...faces };
-                                    if (newFaces[selectedFace]) {
-                                        delete newFaces[selectedFace].color;
-                                    }
-                                    setFaces(newFaces);
-                                    onUpdateFaces?.(object.id, newFaces);
-                                }}
-                            >
-                                Aucune couleur
-                            </button>
-                            <div className="color-presets">
-                                {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFFFFF', '#000000'].map((presetColor) => (
-                                    <div
-                                        key={presetColor}
-                                        className={`color-preset ${faces[selectedFace]?.color === presetColor ? 'selected' : ''}`}
-                                        style={{ backgroundColor: presetColor }}
-                                        onClick={() => applyColorToFace(presetColor)}
-                                    ></div>
-                                ))}
-                            </div>
-                        </div>
-                    </div> */}
-                </>
-            )}
-
-       
-
-            {/* <p><strong>Prix:</strong> {object.price} €</p> */}
-
-            {/* <div className="button-section">
-                <div className='bouton-container'>
-                    <button onClick={() => {
-                        onRemoveObject(object.id);
-                        onClosePanel();
-                    }} className='bouton-popup'>supprimer</button>
-                    <button onClick={onMoveObject} className='bouton-popup'>déplacer</button>
-                </div>
-                <div className='bouton-container'>
-                    <button className='bouton-popup'
-                        onClick={() => {
-                            const newRotation: [number, number, number] = [
-                                rotation[0],
-                                (rotation[1] + Math.PI / 2) % (Math.PI * 2),
-                                rotation[2]
-                            ];
-                            setRotation(newRotation);
-                            onRotateObject(object.id, newRotation);
-                        }}
-                    >
-                        faire pivoter de 90°
-                    </button>
-                    <button className='bouton-popup'
-                        onClick={toggleRotation}
-                    >
-                        {isRotating ? 'arrêter la rotation' : 'pivoter avec la souris'}
-                    </button>
-                </div>
-                <button className='bouton-popup-last-last' onClick={toggleDimensions}>
-                    {showDimensions ? 'masquer les dimensions' : 'afficher les dimensions'}
-                </button>
-            </div> */}
-
             {parametricData && (
                 <div className="panel-section">
                     <h3 className="section-title">Données Paramétriques</h3>

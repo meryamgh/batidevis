@@ -71,7 +71,8 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                     <div className="object-preview">
                         <img 
                             src={object.imageUrl} 
-                            alt={object.name.replace(".gltf", "").replace(".glb", "")}
+                            // display the name only what is before the first _
+                            alt={object.name.split('_')[0]}
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = '/placeholder-3d.png';
@@ -79,7 +80,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                         />
                     </div>
                     <div className="object-name">
-                        {object.name.replace(".gltf", "").replace(".glb", "")}
+                        {object.name.split('_')[0]}
                     </div>
                 </div>
             ))}

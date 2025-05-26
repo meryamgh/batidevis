@@ -869,6 +869,7 @@ const MaquettePage: React.FC = () => {
                         onSelectTexture={handleTextureSelect}
                         selectedTexture={selectedTexture}
                         setShowUpload={setShowUpload}
+                       
                     />
                     
                     <div
