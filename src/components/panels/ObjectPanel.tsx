@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import '../../styles/ObjectPanel.css';
 import Select, { SingleValue } from 'react-select';
 import { BACKEND_URL } from '../../config/env';
+import ParametricDataPanel from '../ParametricDataPanel';
         
 type ObjectPanelProps = {
     object: ObjectData;
@@ -86,50 +87,69 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         const libtech = parametricData.item_details.libtech;
         const selectedVariants: Record<string, string> = {};
         
-        // Trouver les positions des underscores dans le template
+        // Diviser le template en parties fixes
         const templateParts = template.split('_');
-        let libtechCopy = libtech;
         
-        // Pour chaque partie du template sauf la dernière
-        for (let i = 0; i < templateParts.length - 1; i++) {
-            // Extraire la partie fixe du template
+        // Si il n'y a qu'une seule partie, pas de variantes
+        if (templateParts.length <= 1) {
+            return selectedVariants;
+        }
+        
+        let currentLibtech = libtech;
+        let currentIndex = 0;
+        
+        // Pour chaque partie fixe du template
+        for (let i = 0; i < templateParts.length; i++) {
             const fixedPart = templateParts[i];
             
-            // Trouver l'index de cette partie fixe dans le libtech
-            const fixedPartIndex = libtechCopy.indexOf(fixedPart);
+            // Trouver cette partie fixe dans le libtech
+            const fixedPartIndex = currentLibtech.indexOf(fixedPart, currentIndex);
             
             if (fixedPartIndex !== -1) {
-                // Avancer dans le libtech
-                libtechCopy = libtechCopy.substring(fixedPartIndex + fixedPart.length);
-                
-                // Si nous ne sommes pas à la fin du template
-                if (i < templateParts.length - 1) {
-                    // Trouver la prochaine partie fixe
-                    const nextFixedPart = templateParts[i + 1];
-                    
-                    // Extraire la variante entre les parties fixes
-                    const nextFixedPartIndex = libtechCopy.indexOf(nextFixedPart);
-                    
-                    if (nextFixedPartIndex !== -1) {
-                        const variant = libtechCopy.substring(0, nextFixedPartIndex).trim();
-                        
-                        // Enregistrer la variante pour cette position
-                        let z = i+1
-                        selectedVariants[z.toString()] = variant;
-                    }
+                // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
+                if (fixedPartIndex > 0) {
+                    const variant = currentLibtech.substring(0, fixedPartIndex).trim();
+                    const position = (i).toString();
+                    selectedVariants[position] = variant;
                 }
+                
+                // Avancer dans le libtech après cette partie fixe
+                currentIndex = fixedPartIndex + fixedPart.length;
+                currentLibtech = currentLibtech.substring(currentIndex);
+                currentIndex = 0;
             }
         }
-        console.log("selectedVariants", selectedVariants)
+        
+        // Si il reste du texte après la dernière partie fixe, c'est aussi une variante
+        if (currentLibtech.length > 0) {
+            const lastPosition = (templateParts.length - 1).toString();
+            selectedVariants[lastPosition] = currentLibtech.trim();
+        }
+        
+        console.log("Extracted variants:", selectedVariants);
         return selectedVariants;
     };
     
     // Extraire les variantes sélectionnées à partir du libtech
-    const selectedVariants = extractSelectedVariants();
+    const selectedVariants = useMemo(() => extractSelectedVariants(), [parametricData]);
     
     // Initialiser l'état des variantes sélectionnées
     useEffect(() => {
-        setSelectedVariantsState(selectedVariants);
+        if (Object.keys(selectedVariants).length > 0) {
+            console.log("Setting selectedVariantsState from extracted variants:", selectedVariants);
+            setSelectedVariantsState(selectedVariants);
+        }
+    }, [selectedVariants]);
+    
+    // Effet pour synchroniser les variantes au chargement initial
+    useEffect(() => {
+        if (parametricData && parametricData.item_details?.libtech && Object.keys(selectedVariantsState).length === 0) {
+            const extracted = extractSelectedVariants();
+            if (Object.keys(extracted).length > 0) {
+                console.log("Initial sync of variants:", extracted);
+                setSelectedVariantsState(extracted);
+            }
+        }
     }, [parametricData]);
     
     // Fonction pour mettre à jour la description avec une nouvelle variante
@@ -142,48 +162,79 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         const libtech = parametricData.item_details.libtech;
         const templateParts = template.split('_');
         
-        // Créer une copie de la description actuelle
+        // Si il n'y a qu'une seule partie, pas de variantes à mettre à jour
+        if (templateParts.length <= 1) {
+            return;
+        }
+        
+        let currentLibtech = libtech;
+        let currentIndex = 0;
         let updatedLibtech = libtech;
+        let hasUpdated = false;
         
-        let startIndex = 0;
-        
-        for (let i = 0; i < templateParts.length - 1; i++) {
+        // Pour chaque partie fixe du template
+        for (let i = 0; i < templateParts.length; i++) {
             const fixedPart = templateParts[i];
-            const nextFixedPart = templateParts[i + 1];
+            const positionIndex = i.toString();
             
-            // Trouver l'index de la partie fixe actuelle
-            const fixedPartIndex = updatedLibtech.indexOf(fixedPart, startIndex);
+            // Trouver cette partie fixe dans le libtech
+            const fixedPartIndex = currentLibtech.indexOf(fixedPart, currentIndex);
             
             if (fixedPartIndex !== -1) {
-                // Avancer dans le libtech
-                startIndex = fixedPartIndex + fixedPart.length;
-                
-                // Trouver l'index de la prochaine partie fixe
-                const nextFixedPartIndex = updatedLibtech.indexOf(nextFixedPart, startIndex);
-                
-                if (nextFixedPartIndex !== -1) {
-                    // Si c'est la position que nous cherchons
-                    if ((i + 1).toString() === position) {
+                // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
+                if (fixedPartIndex > 0) {
+                    const variant = currentLibtech.substring(0, fixedPartIndex).trim();
+                    
+                    // Si c'est la position que nous cherchons, mettre à jour
+                    if (positionIndex === position) {
+                        // Calculer l'index global dans le libtech original
+                        const globalIndex = libtech.length - currentLibtech.length + fixedPartIndex;
+                        const variantStartIndex = globalIndex - variant.length;
+                        
                         // Remplacer la variante
-                        updatedLibtech = updatedLibtech.substring(0, startIndex) + 
+                        updatedLibtech = updatedLibtech.substring(0, variantStartIndex) + 
                                          newVariant + 
-                                         updatedLibtech.substring(nextFixedPartIndex);
+                                         updatedLibtech.substring(globalIndex);
                         
-                        // Mettre à jour la description dans l'interface
-                        if (parametricData.item_details) {
-                            parametricData.item_details.libtech = updatedLibtech;
-                        }
-                        
-                        // Mettre à jour les variantes sélectionnées
-                        const updatedVariants = {...selectedVariantsState};
-                        updatedVariants[position] = newVariant;
-                        setSelectedVariantsState(updatedVariants);
-                        
+                        hasUpdated = true;
                         break;
                     }
                 }
+                
+                // Avancer dans le libtech après cette partie fixe
+                currentIndex = fixedPartIndex + fixedPart.length;
+                currentLibtech = currentLibtech.substring(currentIndex);
+                currentIndex = 0;
             }
         }
+        
+        // Si il reste du texte après la dernière partie fixe et que c'est la position recherchée
+        if (!hasUpdated && currentLibtech.length > 0) {
+            const lastPosition = (templateParts.length - 1).toString();
+            if (lastPosition === position) {
+                // Remplacer la dernière variante
+                const lastFixedPart = templateParts[templateParts.length - 1];
+                const lastFixedPartIndex = updatedLibtech.lastIndexOf(lastFixedPart);
+                
+                if (lastFixedPartIndex !== -1) {
+                    const variantStartIndex = lastFixedPartIndex + lastFixedPart.length;
+                    updatedLibtech = updatedLibtech.substring(0, variantStartIndex) + newVariant;
+                }
+            }
+        }
+        
+        // Mettre à jour la description dans l'interface
+        if (parametricData.item_details) {
+            parametricData.item_details.libtech = updatedLibtech;
+        }
+        
+        // Mettre à jour les variantes sélectionnées
+        const updatedVariants = {...selectedVariantsState};
+        updatedVariants[position] = newVariant;
+        setSelectedVariantsState(updatedVariants);
+        
+        // Mettre à jour les données paramétriques
+        handleUpdateObjectParametricData(object.id, parametricData);
     };
     
      
@@ -208,28 +259,41 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             const template = parametricData.template_bis;
             const templateParts = template.split('_');
             
-            let libtechCopy = libtech;
+            // Si il n'y a qu'une seule partie, pas de variantes
+            if (templateParts.length <= 1) {
+                return;
+            }
+            
+            let currentLibtech = libtech;
+            let currentIndex = 0;
             const variants: Record<string, string> = {};
             
-            // Extraire les variantes du libtech
-            for (let i = 0; i < templateParts.length - 1; i++) {
+            // Pour chaque partie fixe du template
+            for (let i = 0; i < templateParts.length; i++) {
                 const fixedPart = templateParts[i];
-                const fixedPartIndex = libtechCopy.indexOf(fixedPart);
+                
+                // Trouver cette partie fixe dans le libtech
+                const fixedPartIndex = currentLibtech.indexOf(fixedPart, currentIndex);
                 
                 if (fixedPartIndex !== -1) {
-                    libtechCopy = libtechCopy.substring(fixedPartIndex + fixedPart.length);
-                    
-                    if (i < templateParts.length - 1) {
-                        const nextFixedPart = templateParts[i + 1];
-                        const nextFixedPartIndex = libtechCopy.indexOf(nextFixedPart);
-                        
-                        if (nextFixedPartIndex !== -1) {
-                            const variant = libtechCopy.substring(0, nextFixedPartIndex).trim();
-                            const position = (i + 1).toString();
-                            variants[position] = variant;
-                        }
+                    // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
+                    if (fixedPartIndex > 0) {
+                        const variant = currentLibtech.substring(0, fixedPartIndex).trim();
+                        const position = (i).toString();
+                        variants[position] = variant;
                     }
+                    
+                    // Avancer dans le libtech après cette partie fixe
+                    currentIndex = fixedPartIndex + fixedPart.length;
+                    currentLibtech = currentLibtech.substring(currentIndex);
+                    currentIndex = 0;
                 }
+            }
+            
+            // Si il reste du texte après la dernière partie fixe, c'est aussi une variante
+            if (currentLibtech.length > 0) {
+                const lastPosition = (templateParts.length - 1).toString();
+                variants[lastPosition] = currentLibtech.trim();
             }
             
             // Ajouter cette combinaison à la carte
@@ -352,28 +416,41 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             const template = parametricData.template_bis;
             const templateParts = template.split('_');
             
-            let libtechCopy = libtech;
+            // Si il n'y a qu'une seule partie, pas de variantes
+            if (templateParts.length <= 1) {
+                return;
+            }
+            
+            let currentLibtech = libtech;
+            let currentIndex = 0;
             const variants: Record<string, string> = {};
             
-            // Extraire les variantes du libtech
-            for (let i = 0; i < templateParts.length - 1; i++) {
+            // Pour chaque partie fixe du template
+            for (let i = 0; i < templateParts.length; i++) {
                 const fixedPart = templateParts[i];
-                const fixedPartIndex = libtechCopy.indexOf(fixedPart);
+                
+                // Trouver cette partie fixe dans le libtech
+                const fixedPartIndex = currentLibtech.indexOf(fixedPart, currentIndex);
                 
                 if (fixedPartIndex !== -1) {
-                    libtechCopy = libtechCopy.substring(fixedPartIndex + fixedPart.length);
-                    
-                    if (i < templateParts.length - 1) {
-                        const nextFixedPart = templateParts[i + 1];
-                        const nextFixedPartIndex = libtechCopy.indexOf(nextFixedPart);
-                        
-                        if (nextFixedPartIndex !== -1) {
-                            const variant = libtechCopy.substring(0, nextFixedPartIndex).trim();
-                            const position = (i + 1).toString();
-                            variants[position] = variant;
-                        }
+                    // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
+                    if (fixedPartIndex > 0) {
+                        const variant = currentLibtech.substring(0, fixedPartIndex).trim();
+                        const position = (i).toString();
+                        variants[position] = variant;
                     }
+                    
+                    // Avancer dans le libtech après cette partie fixe
+                    currentIndex = fixedPartIndex + fixedPart.length;
+                    currentLibtech = currentLibtech.substring(currentIndex);
+                    currentIndex = 0;
                 }
+            }
+            
+            // Si il reste du texte après la dernière partie fixe, c'est aussi une variante
+            if (currentLibtech.length > 0) {
+                const lastPosition = (templateParts.length - 1).toString();
+                variants[lastPosition] = currentLibtech.trim();
             }
             
             // Comparer avec les variantes sélectionnées
@@ -806,11 +883,16 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         <div className="variables-section">
                             <h4>Variantes disponibles</h4>
                             {Object.entries(parametricData.variables_by_position).map(([position, options], index) => {
-                                // Déterminer la valeur par défaut en utilisant les variantes extraites du libtech
-                                const defaultOption = selectedVariants[position] || 
+                                // Utiliser la variante extraite du libtech ou la première option disponible
+                                const currentVariant = selectedVariantsState[position] || 
                                     (Array.isArray(options) && options.length > 0 ? options[0] : null);
                                 
-                                console.log("Position:", position, "Index:", index, "Options:", options, "Default:", defaultOption);
+                                console.log(`Position ${position}:`, {
+                                    currentVariant,
+                                    availableOptions: options,
+                                    selectedVariantsState: selectedVariantsState[position]
+                                });
+                                
                                 return (
                                 <div key={position} className="variable-position">
                                     <span className="position-label">Position {index + 1}:</span>
@@ -819,12 +901,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                         options={Array.isArray(options) ? options.map(option => ({ 
                                             value: option, 
                                             label: option,
-                                            isDisabled: isOptionDisabled(position, option)
+                                            // isDisabled: isOptionDisabled(position, option)
                                         })) : []}
-                                        defaultValue={defaultOption ? { value: defaultOption, label: defaultOption } : null}
-                                        value={selectedVariantsState[position] ? 
-                                            { value: selectedVariantsState[position], label: selectedVariantsState[position] } : 
-                                            defaultOption ? { value: defaultOption, label: defaultOption } : null}
+                                        value={currentVariant ? { value: currentVariant, label: currentVariant } : null}
                                         onChange={(selectedOption: SingleValue<{value: string, label: string}>) => {
                                             console.log(`Changed position ${position} to:`, selectedOption);
                                             if (selectedOption) {
@@ -865,19 +944,19 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                     )}
                     
                     {/* Template section for reference */}
-                    {/* {parametricData.template && (
+                    {parametricData.template && (
                         <div className="template-section">
                             <h4>Modèle complet</h4>
                             <p className="template-text">{parametricData.template}</p>
                         </div>
-                    )} */}
+                    )}
                 </div>
             )}
 
             {/* Add Parametric Data Panel */}
-            {/* {object.parametricData && (
+            {object.parametricData && (
                 <ParametricDataPanel parametricData={object.parametricData} />
-            )} */}
+            )}
         </div>
     );
 };

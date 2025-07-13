@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createRoot, Root } from 'react-dom/client'; 
-import { ObjectData } from '../types/ObjectData';
+import { ObjectData, ObjectGroup } from '../types/ObjectData';
 import * as THREE from 'three';
 import '../styles/MaquettePage.css';
 import { startDraggingPanel, closePanel, handleMouseMove } from '../utils/panelUtils';
@@ -22,11 +22,15 @@ import { useMaquetteStore } from '../store/maquetteStore';
 import { BACKEND_URL } from '../config/env';
 import ObjectsPanel from '../components/panels/ObjectsPanel';
 import ObjectControls from '../components/panels/ObjectControlsPanel';
+import MultiSelectionPanel from '../components/panels/MultiSelectionPanel';
 const MaquettePage: React.FC = () => {
     const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
     const raycaster = useRef(new THREE.Raycaster()); 
     const [showUpload, setShowUpload] = useState(false);
     const [showObjectUpload, setShowObjectUpload] = useState(false);
+    const [showAIGeneration, setShowAIGeneration] = useState(false);
+    const [isOrbitMode, setIsOrbitMode] = useState(true);
+    const [isCharacterMode, setIsCharacterMode] = useState(false);
     const mouse = useRef(new THREE.Vector2());
     const cameraRef = useRef<THREE.Camera | null>(null); 
     const orbitControlsRef = useRef<any>(null);
@@ -36,6 +40,9 @@ const MaquettePage: React.FC = () => {
     const draggerRef = useRef<HTMLDivElement>(null);
     const panelRootRef = useRef<Root | null>(null);  
     const [isMoving, setIsMoving] = useState<string | null>(null);
+    const [isMovingMultiple, setIsMovingMultiple] = useState<boolean>(false);
+    const [movingGroupCenter, setMovingGroupCenter] = useState<[number, number, number] | null>(null);
+    const [movingGroupRelativePositions, setMovingGroupRelativePositions] = useState<Map<string, [number, number, number]>>(new Map());
     const [showDimensions, setShowDimensions] = useState<{ [key: string]: boolean }>({});
     const [viewMode, setViewMode] = useState<'3D' | '2D' | 'ObjectOnly'>('3D');
     const is2DView = viewMode === '2D' ;
@@ -70,6 +77,11 @@ const MaquettePage: React.FC = () => {
 
     const [showNavigationHelp, setShowNavigationHelp] = useState(false);
 
+    // États pour la sélection multiple
+    const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
+    const [clipboard, setClipboard] = useState<ObjectGroup | null>(null);
+    const [showMultiSelectionPanel, setShowMultiSelectionPanel] = useState(false);
+
     // Initialiser le hook useObjects avec les états mis à jour
     const objectsUtils = useObjects({
         objects, 
@@ -80,6 +92,16 @@ const MaquettePage: React.FC = () => {
         setShowDimensions,
         setFocusedObjectId,
     });
+
+    // Vérifier que l'élément floating-panel existe au chargement
+    useEffect(() => {
+        const panel = document.getElementById('floating-panel');
+        console.log('🔍 Page loaded - floating-panel element exists:', !!panel);
+        if (panel) {
+            console.log('🔍 Panel initial display style:', panel.style.display);
+            console.log('🔍 Panel computed display style:', window.getComputedStyle(panel).display);
+        }
+    }, []);
  
 
     // Fonction pour étendre un objet
@@ -134,6 +156,96 @@ const MaquettePage: React.FC = () => {
         removeObject(id);
     }, [removeObject]);
 
+    // Fonctions pour la sélection multiple
+    const handleMultiSelect = useCallback((id: string, isCtrlPressed: boolean) => {
+        if (isCtrlPressed) {
+            // Mode sélection multiple : ajouter ou retirer de la sélection
+            setSelectedObjectIds(prev => {
+                if (prev.includes(id)) {
+                    const newSelection = prev.filter(objId => objId !== id);
+                    if (newSelection.length === 0) {
+                        setShowMultiSelectionPanel(false);
+                        setSelectedObjectId(null);
+                    }
+                    return newSelection;
+                } else {
+                    const newSelection = [...prev, id];
+                    if (newSelection.length === 1) {
+                        setSelectedObjectId(id);
+                    }
+                    if (newSelection.length > 1) {
+                        setShowMultiSelectionPanel(true);
+                        setSelectedObjectId(null);
+                    }
+                    return newSelection;
+                }
+            });
+        } else {
+            // Mode sélection simple : sélectionner uniquement cet objet
+            setSelectedObjectIds([id]);
+            setSelectedObjectId(id);
+            setShowMultiSelectionPanel(false);
+        }
+    }, []);
+
+    const handleCopyObjects = useCallback((objectGroup: ObjectGroup) => {
+        setClipboard(objectGroup);
+        console.log('Objects copied to clipboard:', objectGroup);
+    }, []);
+
+    const handlePasteObjects = useCallback((objectGroup: ObjectGroup, targetPosition: [number, number, number]) => {
+        objectsUtils.handlePasteObjects(objectGroup, targetPosition);
+    }, [objectsUtils]);
+
+    const handleClearSelection = useCallback(() => {
+        setSelectedObjectIds([]);
+        setSelectedObjectId(null);
+        setShowMultiSelectionPanel(false);
+    }, []);
+
+    const handleRemoveSelectedObjects = useCallback(() => {
+        objectsUtils.handleRemoveSelectedObjects(selectedObjectIds);
+        setSelectedObjectIds([]);
+        setShowMultiSelectionPanel(false);
+    }, [objectsUtils, selectedObjectIds]);
+
+    const handleMoveSelectedObjects = useCallback(() => {
+        if (selectedObjectIds.length === 0) return;
+        
+        // Calculer le centre du groupe d'objets sélectionnés
+        const selectedObjects = objects.filter(obj => selectedObjectIds.includes(obj.id));
+        const centerPosition: [number, number, number] = [
+            selectedObjects.reduce((sum, obj) => sum + obj.position[0], 0) / selectedObjects.length,
+            selectedObjects.reduce((sum, obj) => sum + obj.position[1], 0) / selectedObjects.length,
+            selectedObjects.reduce((sum, obj) => sum + obj.position[2], 0) / selectedObjects.length
+        ];
+        
+        // Calculer les positions relatives de chaque objet par rapport au centre
+        const relativePositions = new Map<string, [number, number, number]>();
+        selectedObjects.forEach(obj => {
+            const relativePos: [number, number, number] = [
+                obj.position[0] - centerPosition[0],
+                obj.position[1] - centerPosition[1],
+                obj.position[2] - centerPosition[2]
+            ];
+            relativePositions.set(obj.id, relativePos);
+        });
+        
+        // Initialiser le mode déplacement multiple
+        setMovingGroupCenter(centerPosition);
+        setMovingGroupRelativePositions(relativePositions);
+        setIsMovingMultiple(true);
+        setIsMoving(null); // Désactiver le déplacement simple
+    }, [selectedObjectIds, objects]);
+
+    const handleRotateSelectedObjects = useCallback((rotation: [number, number, number]) => {
+        objectsUtils.handleRotateSelectedObjects(selectedObjectIds, rotation);
+    }, [objectsUtils, selectedObjectIds]);
+
+    const handleUpdateSelectedObjectsScale = useCallback((scale: [number, number, number]) => {
+        objectsUtils.handleUpdateSelectedObjectsScale(selectedObjectIds, scale);
+    }, [objectsUtils, selectedObjectIds]);
+
     const floorsUtils = useFloors({
         setObjects,
         setQuote,
@@ -163,15 +275,68 @@ const MaquettePage: React.FC = () => {
         groundPlaneRef.current = plane;
     }, []);
 
+    const handleStopMovingMultiple = useCallback(() => {
+        setIsMovingMultiple(false);
+        setMovingGroupCenter(null);
+        setMovingGroupRelativePositions(new Map());
+    }, []);
+
     useEffect(() => {
         const handleMouseMoveCallback = (e: MouseEvent) => {
             if (isMoving !== null && cameraRef.current) {
                 handleMouseMove(e, isMoving, mouse, raycaster, setObjects, cameraRef.current);
+            } else if (isMovingMultiple && movingGroupCenter && cameraRef.current) {
+                // Gérer le déplacement de plusieurs objets
+                const rect = (e.target as HTMLElement).getBoundingClientRect();
+                mouse.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                raycaster.current.setFromCamera(mouse.current, cameraRef.current);
+                const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                const intersection = new THREE.Vector3();
+                raycaster.current.ray.intersectPlane(groundPlane, intersection);
+
+                // Calculer la nouvelle position du centre du groupe
+                const newCenterPosition: [number, number, number] = [
+                    intersection.x / 2,
+                    movingGroupCenter[1], // Garder la hauteur Y originale
+                    intersection.z / 2
+                ];
+
+                // Mettre à jour la position de tous les objets sélectionnés
+                setObjects((prevObjects) =>
+                    prevObjects.map((obj) => {
+                        if (selectedObjectIds.includes(obj.id)) {
+                            const relativePos = movingGroupRelativePositions.get(obj.id);
+                            if (relativePos) {
+                                return {
+                                    ...obj,
+                                    position: [
+                                        newCenterPosition[0] + relativePos[0],
+                                        newCenterPosition[1] + relativePos[1],
+                                        newCenterPosition[2] + relativePos[2]
+                                    ] as [number, number, number],
+                                };
+                            }
+                        }
+                        return obj;
+                    })
+                );
+
+                // Mettre à jour le centre du groupe
+                setMovingGroupCenter(newCenterPosition);
             }
         };
 
-        if (isMoving !== null) {
+        const handleMouseUpCallback = () => {
+            if (isMovingMultiple) {
+                handleStopMovingMultiple();
+            }
+        };
+
+        if (isMoving !== null || isMovingMultiple) {
             document.addEventListener('mousemove', handleMouseMoveCallback);
+            document.addEventListener('mouseup', handleMouseUpCallback);
             if (orbitControlsRef.current) {
                 orbitControlsRef.current.enabled = false;
             }
@@ -183,8 +348,27 @@ const MaquettePage: React.FC = () => {
 
         return () => {
             document.removeEventListener('mousemove', handleMouseMoveCallback);
+            document.removeEventListener('mouseup', handleMouseUpCallback);
         };
-    }, [isMoving, objects]);
+    }, [isMoving, isMovingMultiple, movingGroupCenter, movingGroupRelativePositions, selectedObjectIds, objects, handleStopMovingMultiple]);
+
+    useEffect(() => {
+        if (is2DView) {
+            if (orbitControlsRef.current) {
+                orbitControlsRef.current.enabled = true;
+            }
+            return;
+        }
+        if (isMoving !== null || isMovingMultiple) {
+            if (orbitControlsRef.current) {
+                orbitControlsRef.current.enabled = false;
+            }
+        } else {
+            if (orbitControlsRef.current) {
+                orbitControlsRef.current.enabled = true;
+            }
+        }
+    }, [isMoving, isMovingMultiple, is2DView, orbitControlsRef]);
 
     useEffect(() => {
         if (orbitControlsRef.current) {
@@ -327,7 +511,13 @@ const MaquettePage: React.FC = () => {
 
     // Fonction pour afficher le panneau d'objet
     const renderObjectPanel = useCallback((selectedObject: ObjectData) => {
+        console.log('🎨 Rendering ObjectPanel for:', selectedObject.details);
+        console.log('🔍 Selected object ID:', selectedObject.id);
+        console.log('🔍 Selected object position:', selectedObject.position);
+        
         const panel = document.getElementById('floating-panel');
+        console.log('🔍 Panel element found:', !!panel);
+        
         setCreatingWallMode(false);
         
         // Mettre à jour l'objet sélectionné
@@ -339,7 +529,14 @@ const MaquettePage: React.FC = () => {
         }
         
         if (panel) {
+            console.log('📋 Panel found, setting display to block');
+            console.log('🔍 Panel current display style:', panel.style.display);
             panel.style.display = 'block';
+            console.log('🔍 Panel display style after setting:', panel.style.display);
+            
+            // Test temporaire : forcer l'affichage avec !important
+            panel.style.setProperty('display', 'block', 'important');
+            console.log('🔍 Panel display style after !important:', panel.style.display);
 
             if (!panelRootRef.current) {
                 panelRootRef.current = createRoot(panel);
@@ -448,7 +645,20 @@ const MaquettePage: React.FC = () => {
 
     // Wrapper pour handleObjectClick qui utilise la fonction du hook
     const onObjectClick = useCallback((id: string, point?: THREE.Vector3) => { 
+        console.log('🎯 Object clicked:', id, point);
+        console.log('🔍 Current viewMode:', viewMode);
+        console.log('🔍 isCreatingSurface:', isCreatingSurface);
+        console.log('🔍 isMovingMultiple:', isMovingMultiple);
+        
+        // Arrêter le déplacement multiple si actif
+        if (isMovingMultiple) {
+            console.log('🛑 Stopping multiple movement');
+            handleStopMovingMultiple();
+            return;
+        }
+
         if (isCreatingSurface && point) {
+            console.log('🏗️ Creating surface mode');
             if (!surfaceStartPoint) {
                 // Premier clic : définir le point de départ
                 setSurfaceStartPoint(point);
@@ -468,9 +678,19 @@ const MaquettePage: React.FC = () => {
                 createSurface(surfaceStartPoint, point);
             }
         } else {
-            objectsUtils.handleObjectClick(id, viewMode, renderObjectPanel);
+            // Gestion de la sélection multiple
+            const isCtrlPressed = false; // Cette valeur sera gérée par GLTFObject
+            console.log('🎯 Handling object selection, isCtrlPressed:', isCtrlPressed);
+            handleMultiSelect(id, isCtrlPressed);
+            
+            // Si c'est une sélection simple, afficher le panneau d'objet
+            if (!isCtrlPressed) {
+                console.log('📋 Calling handleObjectClick for single selection');
+                console.log('🔍 Available objects:', objects.map(obj => ({ id: obj.id, details: obj.details })));
+                objectsUtils.handleObjectClick(id, viewMode, renderObjectPanel);
+            }
         }
-    }, [objectsUtils, viewMode, is2DView, renderObjectPanel, isCreatingSurface, surfaceStartPoint]);
+    }, [objectsUtils, viewMode, is2DView, renderObjectPanel, isCreatingSurface, surfaceStartPoint, handleMultiSelect, isMovingMultiple, handleStopMovingMultiple, objects]);
     
    
   
@@ -816,6 +1036,85 @@ const MaquettePage: React.FC = () => {
         }
     };
 
+    // Fonction pour détecter si l'utilisateur tape dans un input
+    const isTypingInInput = () => {
+        const activeElement = document.activeElement;
+        if (!activeElement) return false;
+        
+        const tagName = activeElement.tagName.toLowerCase();
+        const isInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+        const isContentEditable = activeElement.getAttribute('contenteditable') === 'true';
+        
+        return isInput || isContentEditable;
+    };
+
+    // Effet pour gérer les raccourcis clavier de copier-coller
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Copier (Ctrl+C)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                e.preventDefault();
+                if (selectedObjectIds.length > 0) {
+                    const selectedObjects = objects.filter(obj => selectedObjectIds.includes(obj.id));
+                    const centerPosition: [number, number, number] = [
+                        selectedObjects.reduce((sum, obj) => sum + obj.position[0], 0) / selectedObjects.length,
+                        selectedObjects.reduce((sum, obj) => sum + obj.position[1], 0) / selectedObjects.length,
+                        selectedObjects.reduce((sum, obj) => sum + obj.position[2], 0) / selectedObjects.length
+                    ];
+                    
+                    const relativePositions = new Map<string, [number, number, number]>();
+                    selectedObjects.forEach(obj => {
+                        const relativePos: [number, number, number] = [
+                            obj.position[0] - centerPosition[0],
+                            obj.position[1] - centerPosition[1],
+                            obj.position[2] - centerPosition[2]
+                        ];
+                        relativePositions.set(obj.id, relativePos);
+                    });
+
+                    const objectGroup: ObjectGroup = {
+                        id: uuidv4(),
+                        objects: selectedObjects,
+                        centerPosition,
+                        relativePositions
+                    };
+                    
+                    handleCopyObjects(objectGroup);
+                }
+            }
+            
+            // Coller (Ctrl+V)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                if (clipboard) {
+                    // Calculer une nouvelle position pour le groupe (légèrement décalée)
+                    const newCenterPosition: [number, number, number] = [2, 0, 2];
+                    handlePasteObjects(clipboard, newCenterPosition);
+                }
+            }
+            
+            // Échap pour effacer la sélection
+            if (e.key === 'Escape') {
+                handleClearSelection();
+            }
+            
+            // N : Basculer entre mode Orbite et Vol libre
+            if ((e.key === 'n' || e.key === 'N') && !isTypingInInput()) {
+                e.preventDefault();
+                setIsOrbitMode(!isOrbitMode);
+            }
+            
+            // V : Activer/désactiver le mode Personnage
+            if ((e.key === 'v' || e.key === 'V') && !isTypingInInput()) {
+                e.preventDefault();
+                setIsCharacterMode(!isCharacterMode);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedObjectIds, objects, clipboard, handleCopyObjects, handlePasteObjects, handleClearSelection, isOrbitMode, isCharacterMode]);
+
     return (
         <div id="page">
             <NavigationHelpModal 
@@ -843,6 +1142,12 @@ const MaquettePage: React.FC = () => {
                 isCreatingSurface={isCreatingSurface}
                 setIsCreatingSurface={setIsCreatingSurface}
                 reconstructMaquette={reconstructMaquette}
+                showAIGeneration={showAIGeneration}
+                setShowAIGeneration={setShowAIGeneration}
+                isOrbitMode={isOrbitMode}
+                toggleOrbitMode={() => setIsOrbitMode(!isOrbitMode)}
+                isCharacterMode={isCharacterMode}
+                toggleCharacterMode={() => setIsCharacterMode(!isCharacterMode)}
             />
 
             {/* Add TextureUpload component */}
@@ -900,7 +1205,12 @@ const MaquettePage: React.FC = () => {
                         onClick={onObjectClick}
                         onUpdatePosition={objectsUtils.handleUpdatePosition}
                         isMoving={isMoving}
-                        setIsMoving={setIsMoving}
+                        setIsMoving={(id) => {
+                            setIsMoving(id);
+                            if (id === null && isMovingMultiple) {
+                                handleStopMovingMultiple();
+                            }
+                        }}
                         orbitControlsRef={orbitControlsRef}
                         setCamera={setCamera}
                         showDimensions={showDimensions}
@@ -921,6 +1231,10 @@ const MaquettePage: React.FC = () => {
                         onSurfacePreviewUpdate={handleSurfacePreviewUpdate}
                         handleAddObject={objectsUtils.handleAddObject}
                         onUpdateFaces={objectsUtils.handleUpdateFaces}
+                        selectedObjectIds={selectedObjectIds}
+                        onMultiSelect={handleMultiSelect}
+                        isOrbitMode={isOrbitMode}
+                        isCharacterMode={isCharacterMode}
                     />
 
                     {/* Ajout des contrôles d'objet */}
@@ -937,6 +1251,21 @@ const MaquettePage: React.FC = () => {
                             selectedObject={objects.find(obj => obj.id === selectedObjectId)}
                             onUpdateFaces={objectsUtils.handleUpdateFaces}
                             
+                        />
+                    )}
+
+                    {/* Panneau de sélection multiple */}
+                    {showMultiSelectionPanel && (
+                        <MultiSelectionPanel
+                            selectedObjects={objects.filter(obj => selectedObjectIds.includes(obj.id))}
+                            onCopyObjects={handleCopyObjects}
+                            onPasteObjects={handlePasteObjects}
+                            onClearSelection={handleClearSelection}
+                            onRemoveSelectedObjects={handleRemoveSelectedObjects}
+                            onMoveSelectedObjects={handleMoveSelectedObjects}
+                            onRotateSelectedObjects={handleRotateSelectedObjects}
+                            onUpdateSelectedObjectsScale={handleUpdateSelectedObjectsScale}
+                            clipboard={clipboard}
                         />
                     )}
                 </div>

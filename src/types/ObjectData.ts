@@ -17,6 +17,14 @@ export type FacesData = {
     bottom?: FaceData;  // Face inférieure (Y-)
 };
 
+// Type pour représenter un groupe d'objets sélectionnés
+export type ObjectGroup = {
+    id: string;
+    objects: ObjectData[];
+    centerPosition: [number, number, number]; // Position centrale du groupe
+    relativePositions: Map<string, [number, number, number]>; // Positions relatives de chaque objet par rapport au centre
+};
+
 export type ObjectData = {
     id: string;
     url: string;

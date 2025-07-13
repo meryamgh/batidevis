@@ -35,6 +35,9 @@ type GLTFObjectProps = {
     faces?: FacesData;
     type?: 'wall' | 'floor' | 'object' | 'ceiling';
     onUpdateFaces: (id: string, faces: FacesData) => void;
+    // Nouvelles props pour la sélection multiple
+    isMultiSelected?: boolean;
+    onMultiSelect?: (id: string, isCtrlPressed: boolean) => void;
 };
 
 type MeshWithOutline = {
@@ -58,6 +61,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     faces,
     type,
     isSelected,
+    isMultiSelected,
+    onMultiSelect,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
     const outlineRef = useRef<THREE.LineSegments | null>(null);
@@ -67,6 +72,24 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     
     const defaultScaleRef = useRef([1, 1, 1]);
     const selectedMeshRef = useRef<THREE.Mesh | null>(null);
+
+    // Fonction pour gérer les clics avec support de la sélection multiple
+    const handleClick = (event: any) => {
+        console.log('🎯 GLTFObject handleClick called for object:', id);
+        event.stopPropagation();
+        
+        // Vérifier si Ctrl (ou Cmd sur Mac) est pressé
+        const isCtrlPressed = event.ctrlKey || event.metaKey;
+        console.log('🔍 Ctrl pressed:', isCtrlPressed);
+        
+        if (onMultiSelect && isCtrlPressed) {
+            console.log('🔍 Calling onMultiSelect (Ctrl pressed)');
+            onMultiSelect(id, isCtrlPressed);
+        } else {
+            console.log('🔍 Calling onClick (no Ctrl pressed)');
+            onClick();
+        }
+    };
    
     useEffect(() => {
         if (url !== '') {
@@ -487,9 +510,11 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         }
     }, [scene, selectedFaceIndex, type]);
 
-       useEffect(() => {
+    // Modifier le useEffect pour la création du contour de sélection
+    useEffect(() => {
         if (scene) {
             const newMeshesWithOutlines: MeshWithOutline[] = [];
+
             scene.traverse((child: any) => {
                 if (child.isMesh) {
                     // Supprimer les effets visuels de sélection s'ils existent
@@ -500,60 +525,81 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         child.userData.outlineMesh = null;
                     }
 
-                    // Ajouter l'effet de contour si l'objet est sélectionné
-                    if (isSelected) {
+                    // Ajouter l'effet de sélection pour les murs et sols
+                    if ((isSelected || isMultiSelected) && (!url || child.geometry instanceof THREE.PlaneGeometry || child.geometry instanceof THREE.BoxGeometry)) {
+                        // Sauvegarder la couleur originale si pas encore fait
+                        if (!child.userData.originalColor) {
+                            if (Array.isArray(child.material)) {
+                                child.userData.originalColor = child.material.map((mat: THREE.MeshStandardMaterial) => mat.color.clone());
+                            } else if (child.material) {
+                                child.userData.originalColor = (child.material as THREE.MeshStandardMaterial).color.clone();
+                            }
+                        }
+                        
+                        // Colorer le mur/sol en vert clair transparent
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach((mat: THREE.MeshStandardMaterial) => {
+                                mat.color = new THREE.Color(0x00FF00);
+                                mat.emissive = new THREE.Color(0x00FF00);
+                                mat.emissiveIntensity = 0.5;
+                                mat.transparent = true;
+                                mat.opacity = 0.7;
+                                mat.needsUpdate = true;
+                            });
+                        } else if (child.material) {
+                            const material = child.material as THREE.MeshStandardMaterial;
+                            material.color = new THREE.Color(0x00FF00);
+                            material.emissive = new THREE.Color(0x00FF00);
+                            material.emissiveIntensity = 0.5;
+                            material.transparent = true;
+                            material.opacity = 0.7;
+                            material.needsUpdate = true;
+                        }
+                    } else if (!isSelected && !isMultiSelected && (!url || child.geometry instanceof THREE.PlaneGeometry || child.geometry instanceof THREE.BoxGeometry)) {
+                        // Restaurer la couleur originale pour les murs et sols non sélectionnés
+                        if (child.userData.originalColor) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach((mat: THREE.MeshStandardMaterial, index: number) => {
+                                    if (Array.isArray(child.userData.originalColor)) {
+                                        mat.color.copy(child.userData.originalColor[index]);
+                                    }
+                                    mat.emissive = new THREE.Color(0x000000);
+                                    mat.emissiveIntensity = 0;
+                                    mat.transparent = false;
+                                    mat.opacity = 1;
+                                    mat.needsUpdate = true;
+                                });
+                            } else if (child.material) {
+                                const material = child.material as THREE.MeshStandardMaterial;
+                                material.color.copy(child.userData.originalColor);
+                                material.emissive = new THREE.Color(0x000000);
+                                material.emissiveIntensity = 0;
+                                material.transparent = false;
+                                material.opacity = 1;
+                                material.needsUpdate = true;
+                            }
+                        }
+                    } else if (isSelected || isMultiSelected) {
+                        // Pour les objets 3D, garder la logique des bounding boxes
                         let clonedMesh;
-                        
-                        // Vérifier si c'est un mur ou un sol
-                        const isWallOrFloor = !url || child.geometry instanceof THREE.PlaneGeometry || child.geometry instanceof THREE.BoxGeometry;
-                        
-                        if (isWallOrFloor) {
-                            // Pour les murs et le sol, créer une nouvelle géométrie simple
-                            const isFloor = rotation && rotation[0] === -Math.PI / 2;
-                            
-                            if (isFloor) {
-                                // Pour le sol, utiliser PlaneGeometry
-                                const geometry = new THREE.PlaneGeometry(1, 1);
-                                const material = new THREE.MeshBasicMaterial({ visible: false });
-                                clonedMesh = new THREE.Mesh(geometry, material);
-                                clonedMesh.scale.set(scale[0], scale[2], 1);
-                            } else {
-                                // Pour les murs, utiliser BoxGeometry
-                                const geometry = new THREE.BoxGeometry(1, 1, 1);
-                                const material = new THREE.MeshBasicMaterial({ visible: false });
-                                clonedMesh = new THREE.Mesh(geometry, material);
-                                clonedMesh.scale.set(scale[0], scale[1], scale[2]);
-                            }
-                            
-                            clonedMesh.position.set(
-                                position[0] / 2,
-                                position[1] / 2,
-                                position[2] / 2
-                            );
-                            
-                            if (rotation) {
-                                clonedMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
-                            }
-                        } else {
-                            // Pour les objets 3D importés, cloner comme avant
-                            clonedMesh = child.clone();
-                            clonedMesh.position.set(
-                                child.position.x / 2,
-                                child.position.y / 2,
-                                child.position.z / 2
-                            );
-                            if (child.parent) {
-                                clonedMesh.matrix.copy(child.parent.matrix);
-                            }
+                        clonedMesh = child.clone();
+                        clonedMesh.visible = false;
+                        clonedMesh.position.set(
+                            child.position.x / 2,
+                            child.position.y / 2,
+                            child.position.z / 2
+                        );
+                        if (child.parent) {
+                            clonedMesh.matrix.copy(child.parent.matrix);
                         }
                         
                         clonedMesh.updateMatrix();
                         
                         // Créer la boîte de sélection basée sur le clone
                         const box = new THREE.Box3().setFromObject(clonedMesh);
-                        const boxHelper = new THREE.Box3Helper(box, new THREE.Color(0x000000));
+                        const boxHelper = new THREE.Box3Helper(box, new THREE.Color(isMultiSelected ? 0x00ff00 : 0x000000));
                         const material = boxHelper.material as THREE.LineBasicMaterial;
-                        material.linewidth = 2;
+                        material.linewidth = isMultiSelected ? 3 : 2;
                         material.transparent = true;
                         material.opacity = 1;
 
@@ -582,55 +628,97 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 });
             };
         }
-    }, [scene, isSelected, url]);
+    }, [scene, isSelected, isMultiSelected, url]);
 
-    // // Modifier le useEffect pour la mise à jour du contour
+    // Modifier le useEffect pour la mise à jour de la sélection
     useEffect(() => {
-        if (scene && isSelected) {
+        if (scene) {
             scene.traverse((child: any) => {
-                if (child.isMesh && child.userData.outlineMesh && child.userData.clonedMesh) {
-                    const group = child.userData.outlineMesh;
-                    const clonedMesh = child.userData.clonedMesh;
-                    
-                    // Vérifier si c'est un mur ou un sol
+                if (child.isMesh) {
                     const isWallOrFloor = !url || child.geometry instanceof THREE.PlaneGeometry || child.geometry instanceof THREE.BoxGeometry;
                     
                     if (isWallOrFloor) {
-                        const isFloor = rotation && rotation[0] === -Math.PI / 2;
-                        
-                        if (isFloor) {
-                            clonedMesh.scale.set(scale[0], scale[2], 1);
+                        // Pour les murs et sols, gérer la couleur de sélection
+                        if (isSelected || isMultiSelected) {
+                            // Sauvegarder la couleur originale si pas encore fait
+                            if (!child.userData.originalColor) {
+                                if (Array.isArray(child.material)) {
+                                    child.userData.originalColor = child.material.map((mat: THREE.MeshStandardMaterial) => mat.color.clone());
+                                } else if (child.material) {
+                                    child.userData.originalColor = (child.material as THREE.MeshStandardMaterial).color.clone();
+                                }
+                            }
+                            
+                            // Appliquer l'effet de sélection
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach((mat: THREE.MeshStandardMaterial) => {
+                                    mat.color = new THREE.Color(0x00FF00);
+                                    mat.emissive = new THREE.Color(0x00FF00);
+                                    mat.emissiveIntensity = 0.5;
+                                    mat.transparent = true;
+                                    mat.opacity = 0.7;
+                                    mat.needsUpdate = true;
+                                });
+                            } else if (child.material) {
+                                const material = child.material as THREE.MeshStandardMaterial;
+                                material.color = new THREE.Color(0x00FF00);
+                                material.emissive = new THREE.Color(0x00FF00);
+                                material.emissiveIntensity = 0.5;
+                                material.transparent = true;
+                                material.opacity = 0.7;
+                                material.needsUpdate = true;
+                            }
                         } else {
-                            clonedMesh.scale.set(scale[0], scale[1], scale[2]);
+                            // Restaurer la couleur originale
+                            if (child.userData.originalColor) {
+                                if (Array.isArray(child.material)) {
+                                    child.material.forEach((mat: THREE.MeshStandardMaterial, index: number) => {
+                                        if (Array.isArray(child.userData.originalColor)) {
+                                            mat.color.copy(child.userData.originalColor[index]);
+                                        }
+                                        mat.emissive = new THREE.Color(0x000000);
+                                        mat.emissiveIntensity = 0;
+                                        mat.transparent = false;
+                                        mat.opacity = 1;
+                                        mat.needsUpdate = true;
+                                    });
+                                } else if (child.material) {
+                                    const material = child.material as THREE.MeshStandardMaterial;
+                                    material.color.copy(child.userData.originalColor);
+                                    material.emissive = new THREE.Color(0x000000);
+                                    material.emissiveIntensity = 0;
+                                    material.transparent = false;
+                                    material.opacity = 1;
+                                    material.needsUpdate = true;
+                                }
+                            }
                         }
+                    } else if (child.userData.outlineMesh && child.userData.clonedMesh) {
+                        // Pour les objets 3D, garder la logique des bounding boxes
+                        const group = child.userData.outlineMesh;
+                        const clonedMesh = child.userData.clonedMesh;
                         
-                        clonedMesh.position.set(
-                            position[0] / 2,
-                            position[1] / 2,
-                            position[2] / 2
-                        );
-                        
-                        if (rotation) {
-                            clonedMesh.rotation.set(rotation[0], rotation[1], rotation[2]);
-                        }
-                    } else {
                         clonedMesh.position.set(
                             child.position.x / 2,
                             child.position.y / 2,
                             child.position.z / 2
                         );
+                        clonedMesh.updateMatrix();
+                        
+                        // Mettre à jour la boîte
+                        const boxHelper = group.children[0] as THREE.Box3Helper;
+                        const box = new THREE.Box3().setFromObject(clonedMesh);
+                        boxHelper.box.copy(box);
+                        
+                        // Mettre à jour la couleur selon le type de sélection
+                        const material = boxHelper.material as THREE.LineBasicMaterial;
+                        material.color.setHex(isMultiSelected ? 0x00ff00 : 0x000000);
+                        material.linewidth = isMultiSelected ? 3 : 2;
                     }
-                    
-                    clonedMesh.updateMatrix();
-                    
-                    // Mettre à jour la boîte
-                    const boxHelper = group.children[0] as THREE.Box3Helper;
-                    const box = new THREE.Box3().setFromObject(clonedMesh);
-                    boxHelper.box.copy(box);
                 }
             });
         }
-    }, [scene, isSelected, scale, position, rotation]);
+    }, [scene, isSelected, isMultiSelected, scale, position, rotation]);
 
     return (
         scene && (
@@ -658,7 +746,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                     position={position}
                     ref={meshRef}
                     onClick={(event: any) => {
-                        event.stopPropagation();
+                        handleClick(event);
                         
                         // Détecter la face cliquée
                         if (event.faceIndex !== undefined && event.object.geometry instanceof THREE.BoxGeometry) {
@@ -682,7 +770,6 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                                 faceIndex: event.faceIndex
                             }
                         });
-                        onClick();
                     }}
                 />
             </TransformControls>

@@ -224,106 +224,88 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         <div className="object-controls-compact">
             <h3 className="controls-header" style={{ fontSize: '14px', marginBottom: '8px' }}>{selectedObject?.details}</h3>
 
-            <div className="action-buttons" style={{ display: 'flex', gap: '2px', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        className="icon-button"
-                        onClick={() => selectedObjectId && onRemoveObject(selectedObjectId)}
-                        disabled={!selectedObjectId}
-                        title="Supprimer"
-                        style={{ padding: '2px' }}
-                    >
-                        <DeleteIcon />
-                    </button>
-                    <span style={{ fontSize: '8px', marginTop: '1px' }}>Supprimer</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        className="icon-button"
-                        onClick={onMoveObject}
-                        disabled={!selectedObjectId}
-                        title="Déplacer"
-                        style={{ padding: '2px' }}
-                    >
-                        <MoveIcon />
-                    </button>
-                    <span style={{ fontSize: '8px', marginTop: '1px' }}>Déplacer</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        className="icon-button"
-                        onClick={handleRotate90}
-                        disabled={!selectedObjectId}
-                        title="Rotation 90°"
-                        style={{ padding: '2px' }}
-                    >
-                        <RotateIcon />
-                    </button>
-                    <span style={{ fontSize: '8px', marginTop: '1px' }}>Rotation</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        className="icon-button"
-                        onClick={() => handleExtendWithTracking('right')}
-                        disabled={!selectedObjectId}
-                        title="Dupliquer"
-                        style={{ padding: '2px' }}
-                    >
-                        <DuplicateIcon />
-                    </button>
-                    <span style={{ fontSize: '8px', marginTop: '1px' }}>Dupliquer</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        className="icon-button"
-                        onClick={() => {
-                            if (selectedObject) {
-                                const newWidth = width * 0.8;
-                                const newHeight = height * 0.8;
-                                const newDepth = depth * 0.8;
-                                handleUpdateScale(newWidth, newHeight, newDepth);
-                            }
-                        }}
-                        disabled={!selectedObjectId}
-                        title="En plus petit"
-                        style={{ padding: '2px' }}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19 13H5V11H19V13Z" fill="currentColor"/>
-                        </svg>
-                    </button>
-                    <span style={{ fontSize: '8px', marginTop: '1px' }}>Plus petit</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <button
-                        className="icon-button"
-                        onClick={() => {
-                            if (selectedObject) {
-                                const newWidth = width * 1.2;
-                                const newHeight = height * 1.2;
-                                const newDepth = depth * 1.2;
-                                handleUpdateScale(newWidth, newHeight, newDepth);
-                            }
-                        }}
-                        disabled={!selectedObjectId}
-                        title="En plus grand"
-                        style={{ padding: '2px' }}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19 13H5V11H19V13Z" fill="currentColor"/>
-                            <path d="M13 19V5H11V19H13Z" fill="currentColor"/>
-                        </svg>
-                    </button>
-                    <span style={{ fontSize: '8px', marginTop: '1px' }}>Plus grand</span>
-                </div>
+            <div className="action-buttons" style={{ display: 'flex', flexDirection: 'row', gap: '2px', marginBottom: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                <button
+                    className="icon-button"
+                    onClick={() => selectedObjectId && onRemoveObject(selectedObjectId)}
+                    disabled={!selectedObjectId}
+                    title="Supprimer"
+                    style={{ padding: '2px' }}
+                >
+                    <DeleteIcon />
+                </button>
+                <button
+                    className="icon-button"
+                    onClick={onMoveObject}
+                    disabled={!selectedObjectId}
+                    title="Déplacer"
+                    style={{ padding: '2px' }}
+                >
+                    <MoveIcon />
+                </button>
+                <button
+                    className="icon-button"
+                    onClick={handleRotate90}
+                    disabled={!selectedObjectId}
+                    title="Rotation 90°"
+                    style={{ padding: '2px' }}
+                >
+                    <RotateIcon />
+                </button>
+                <button
+                    className="icon-button"
+                    onClick={() => handleExtendWithTracking('right')}
+                    disabled={!selectedObjectId}
+                    title="Dupliquer"
+                    style={{ padding: '2px' }}
+                >
+                    <DuplicateIcon />
+                </button>
+                <button
+                    className="icon-button"
+                    onClick={() => {
+                        if (selectedObject) {
+                            const newWidth = width * 0.8;
+                            const newHeight = height * 0.8;
+                            const newDepth = depth * 0.8;
+                            handleUpdateScale(newWidth, newHeight, newDepth);
+                        }
+                    }}
+                    disabled={!selectedObjectId}
+                    title="Plus petit"
+                    style={{ padding: '2px' }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 13H5V11H19V13Z" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button
+                    className="icon-button"
+                    onClick={() => {
+                        if (selectedObject) {
+                            const newWidth = width * 1.2;
+                            const newHeight = height * 1.2;
+                            const newDepth = depth * 1.2;
+                            handleUpdateScale(newWidth, newHeight, newDepth);
+                        }
+                    }}
+                    disabled={!selectedObjectId}
+                    title="Plus grand"
+                    style={{ padding: '2px' }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 13H5V11H19V13Z" fill="currentColor"/>
+                        <path d="M13 19V5H11V19H13Z" fill="currentColor"/>
+                    </svg>
+                </button>
             </div>
 
-            <div className="dimensions-section" style={{ marginTop: '4px' }}>
-                <div className="section-header" style={{ marginBottom: '2px' }}>
+            <div className="dimensions-section" style={{ marginTop: '4px', width: '100%' }}>
+                <div className="section-header" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
                     <DimensionsIcon />
                     <span style={{ fontSize: '8px', marginLeft: '2px' }}>Dimensions</span>
                 </div>
-                <div className="dimension-input" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
+                <div className="dimension-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
                     <label style={{ fontSize: '11px', marginRight: '2px', width: '15px' }}>L:</label>
                     <input
                         type="number"
@@ -333,11 +315,9 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                             const newWidth = parseFloat(e.target.value) || 0;
                             handleUpdateScale(newWidth, height, depth);
                         }}
-                        style={{ width: '50px', height: '20px', fontSize: '11px' }}
+                        style={{ width: '40px', height: '20px', fontSize: '11px' }}
                     />
-                </div>
-                <div className="dimension-input" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
-                    <label style={{ fontSize: '11px', marginRight: '2px', width: '15px' }}>H:</label>
+                    <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>H:</label>
                     <input
                         type="number"
                         step="0.01"
@@ -346,11 +326,9 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                             const newHeight = parseFloat(e.target.value) || 0;
                             handleUpdateScale(width, newHeight, depth);
                         }}
-                        style={{ width: '50px', height: '20px', fontSize: '11px' }}
+                        style={{ width: '40px', height: '20px', fontSize: '11px' }}
                     />
-                </div>
-                <div className="dimension-input" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
-                    <label style={{ fontSize: '11px', marginRight: '2px', width: '15px' }}>P:</label>
+                    <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>P:</label>
                     <input
                         type="number"
                         step="0.01"
@@ -359,57 +337,59 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                             const newDepth = parseFloat(e.target.value) || 0;
                             handleUpdateScale(width, height, newDepth);
                         }}
-                        style={{ width: '50px', height: '20px', fontSize: '11px' }}
+                        style={{ width: '40px', height: '20px', fontSize: '11px' }}
                     />
                 </div>
             </div>
 
-            <div className="position-section" style={{ marginTop: '4px' }}>
-                <div className="section-header" style={{ marginBottom: '2px' }}>
+            <div className="position-section" style={{ marginTop: '4px', width: '100%' }}>
+                <div className="section-header" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
                     <PositionIcon />
                     <span style={{ fontSize: '8px', marginLeft: '2px' }}>Position</span>
                 </div>
-                <div className="axis-controls" style={{ marginBottom: '2px', display: 'flex', gap: '2px' }}>
-                    <button 
-                        className={`axis-button ${selectedAxis === 'x' ? 'selected' : ''}`}
-                        onClick={() => setSelectedAxis('x')}
+                <div className="position-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
+                    <div className="axis-controls" style={{ display: 'flex', gap: '2px' }}>
+                        <button 
+                            className={`axis-button ${selectedAxis === 'x' ? 'selected' : ''}`}
+                            onClick={() => setSelectedAxis('x')}
+                            disabled={!selectedObjectId}
+                            style={{ padding: '1px 4px', fontSize: '11px' }}
+                        >
+                            X
+                        </button>
+                        <button 
+                            className={`axis-button ${selectedAxis === 'y' ? 'selected' : ''}`}
+                            onClick={() => setSelectedAxis('y')}
+                            disabled={!selectedObjectId}
+                            style={{ padding: '1px 4px', fontSize: '11px' }}
+                        >
+                            Y
+                        </button>
+                        <button 
+                            className={`axis-button ${selectedAxis === 'z' ? 'selected' : ''}`}
+                            onClick={() => setSelectedAxis('z')}
+                            disabled={!selectedObjectId}
+                            style={{ padding: '1px 4px', fontSize: '11px' }}
+                        >
+                            Z
+                        </button>
+                    </div>
+                    <input
+                        type="range"
+                        min={selectedAxis === 'y' && selectedObject ? getMinYAxis(selectedObject) : "-25"}
+                        max="25"
+                        step="0.01"
+                        value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
+                        onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value))}
+                        className="position-slider"
+                        onMouseDown={handleRangeMouseDown}
                         disabled={!selectedObjectId}
-                        style={{ padding: '1px 4px', fontSize: '11px' }}
-                    >
-                        X
-                    </button>
-                    <button 
-                        className={`axis-button ${selectedAxis === 'y' ? 'selected' : ''}`}
-                        onClick={() => setSelectedAxis('y')}
-                        disabled={!selectedObjectId}
-                        style={{ padding: '1px 4px', fontSize: '11px' }}
-                    >
-                        Y
-                    </button>
-                    <button 
-                        className={`axis-button ${selectedAxis === 'z' ? 'selected' : ''}`}
-                        onClick={() => setSelectedAxis('z')}
-                        disabled={!selectedObjectId}
-                        style={{ padding: '1px 4px', fontSize: '11px' }}
-                    >
-                        Z
-                    </button>
+                        style={{ width: '100%', height: '14px', margin: '0 4px' }}
+                    />
+                    <span className="position-value" style={{ fontSize: '11px', minWidth: '32px', textAlign: 'right' }}>
+                        {position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(1)}
+                    </span>
                 </div>
-                <input
-                    type="range"
-                    min={selectedAxis === 'y' && selectedObject ? getMinYAxis(selectedObject) : "-25"}
-                    max="25"
-                    step="0.01"
-                    value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
-                    onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value))}
-                    className="position-slider"
-                    onMouseDown={handleRangeMouseDown}
-                    disabled={!selectedObjectId}
-                    style={{ width: '100%', height: '14px' }}
-                />
-                <span className="position-value" style={{ fontSize: '11px' }}>
-                    {position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(1)}
-                </span>
             </div>
 
             {selectedObject?.type === 'wall' && (

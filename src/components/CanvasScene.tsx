@@ -38,6 +38,12 @@ type CanvasSceneProps = {
     onSurfacePreviewUpdate: (start: THREE.Vector3, end: THREE.Vector3) => void;
     handleAddObject: (url: string, event: React.DragEvent<HTMLDivElement>, camera: THREE.Camera) => Promise<void>;
     onUpdateFaces: (id: string, faces: FacesData) => void;
+    // Nouvelles props pour la sélection multiple
+    selectedObjectIds?: string[];
+    onMultiSelect?: (id: string, isCtrlPressed: boolean) => void;
+    // Nouvelles props pour les modes de navigation
+    isOrbitMode?: boolean;
+    isCharacterMode?: boolean;
 };
 
 const SurfaceHandler: React.FC<{
@@ -136,6 +142,10 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     onSurfacePreviewUpdate,
     handleAddObject,
     onUpdateFaces,
+    selectedObjectIds,
+    onMultiSelect,
+    isOrbitMode = true,
+    isCharacterMode = false,
 }) => {
     const [firstPersonView, setFirstPersonView] = useState(false);
     const [characterPosition, setCharacterPosition] = useState<THREE.Vector3 | undefined>();
@@ -143,12 +153,13 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     const rotateCharacterRef = useRef<((direction: 'up' | 'down' | 'left' | 'right') => void) | null>(null);
     const [showAllDimensions, setShowAllDimensions] = useState(false);
     const [zoom2D, setZoom2D] = useState(100);
-    const [navigationMode, setNavigationMode] = useState<'orbit' | 'move'>('orbit');
+    const [navigationMode, setNavigationMode] = useState<'orbit' | 'move'>(isOrbitMode ? 'orbit' : 'move');
     const targetPositionRef = useRef<THREE.Vector3 | null>(null);
     const cameraPositionRef = useRef<THREE.Vector3 | null>(null);
     const isMovingToTargetRef = useRef(false);
     const [currentCamera, setCurrentCamera] = useState<THREE.Camera | null>(null);
     const [orbitTarget, setOrbitTarget] = useState(new THREE.Vector3(0, 0, 0));
+    // Supprimer l'état center2D et la synchronisation
 
     // Disable first person view when in ObjectOnly mode or when switching views
     useEffect(() => {
@@ -157,15 +168,36 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         }
     }, [isObjectOnlyView, is2DView]);
 
+    // Synchroniser les modes de navigation avec les props externes
+    useEffect(() => {
+        setNavigationMode(isOrbitMode ? 'orbit' : 'move');
+    }, [isOrbitMode]);
+
+    useEffect(() => {
+        setFirstPersonView(isCharacterMode);
+    }, [isCharacterMode]);
+
  
     const handleKeyPress = (e: KeyboardEvent) => {
-        // Only allow toggling first person view when not in ObjectOnly mode
-        if ((e.key === 'v' || e.key === 'V') && !isObjectOnlyView && !is2DView) {
+        // Fonction pour détecter si l'utilisateur tape dans un input
+        const isTypingInInput = () => {
+            const activeElement = document.activeElement;
+            if (!activeElement) return false;
+            
+            const tagName = activeElement.tagName.toLowerCase();
+            const isInput = tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+            const isContentEditable = activeElement.getAttribute('contenteditable') === 'true';
+            
+            return isInput || isContentEditable;
+        };
+
+        // Only allow toggling first person view when not in ObjectOnly mode and not typing in input
+        if ((e.key === 'v' || e.key === 'V') && !isObjectOnlyView && !is2DView && !isTypingInInput()) {
             setFirstPersonView(!firstPersonView);
         }
         
         // Toggle between orbit and move navigation modes with 'n' key
-        if ((e.key === 'n' || e.key === 'N') && !isObjectOnlyView && !firstPersonView) {
+        if ((e.key === 'n' || e.key === 'N') && !isObjectOnlyView && !firstPersonView && !isTypingInInput()) {
             e.preventDefault(); // Empêcher tout comportement par défaut
             setNavigationMode(prev => prev === 'orbit' ? 'move' : 'orbit');
         }
@@ -382,6 +414,8 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         }
     }, [navigationMode, updateOrbitTarget, currentCamera?.position.x, currentCamera?.position.y, currentCamera?.position.z, firstPersonView, is2DView]);
 
+    // Supprimer l'état center2D et la synchronisation
+
     return (
         <>
             {is2DView && (
@@ -479,13 +513,13 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                             enableRotate={false}
                             enableZoom={true}
                             enablePan={true}
-                            target={[0, 0, 0]}
                             minPolarAngle={Math.PI / 2}
                             maxPolarAngle={Math.PI / 2}
                             enableDamping={false}
                             zoomSpeed={1}
                             panSpeed={1}
                             screenSpacePanning={true}
+                            mouseButtons={{ LEFT: 2, MIDDLE: 1, RIGHT: 0 }}
                         />
                     )}
                     
@@ -544,6 +578,8 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                             type={obj.type}
                             faces={obj.faces}
                             onUpdateFaces={onUpdateFaces}
+                            isMultiSelected={selectedObjectIds?.includes(obj.id)}
+                            onMultiSelect={onMultiSelect}
                         />
                     ))}
 

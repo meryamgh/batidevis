@@ -178,14 +178,16 @@ const FullQuote: React.FC = () => {
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
       let details: string;
+      let unit: string | undefined;
       details = item.parametricData ? item.parametricData.item_details.libtech : item.details;
+      unit = item.parametricData ? item.parametricData.item_details.unite : 'U';
         const existingItem = acc.find(
             (i) => i.details === details && i.price === item.price
         );
         if (existingItem) {
             existingItem.quantity += 1; 
         } else {
-            acc.push({ details: details, price: item.price, quantity: 1 }); 
+            acc.push({ details: details, price: item.price, quantity: 1, unit: unit }); 
         }
         return acc;
     }, [] as AggregatedQuoteItem[]);

@@ -3,6 +3,7 @@ import {  ObjectData } from '../../types/ObjectData';
 import '../../styles/AIGenerationPanel.css';
 import { BACKEND_URL } from '../../config/env';
 import DecorativeObjectSelector from './DecorativeObjectSelector';
+import AIGenerationPanel from './AIGenerationPanel';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
@@ -24,6 +25,12 @@ interface ToolbarProps {
   isCreatingSurface: boolean;
   setIsCreatingSurface: React.Dispatch<React.SetStateAction<boolean>>;
   reconstructMaquette: () => Promise<void>;
+  showAIGeneration: boolean;
+  setShowAIGeneration: React.Dispatch<React.SetStateAction<boolean>>;
+  isOrbitMode: boolean;
+  toggleOrbitMode: () => void;
+  isCharacterMode: boolean;
+  toggleCharacterMode: () => void;
 }
  
 
@@ -44,7 +51,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
   handleAddObject,
   isCreatingSurface,
   setIsCreatingSurface,
-  reconstructMaquette
+  reconstructMaquette,
+  showAIGeneration,
+  setShowAIGeneration,
+  isOrbitMode,
+  toggleOrbitMode,
+  isCharacterMode,
+  toggleCharacterMode
 }) => {
   const handleExport = async () => {
     const exportData = {
@@ -169,6 +182,31 @@ const Toolbar: React.FC<ToolbarProps> = ({
           style={iconButtonStyle}
         >
           ?
+        </button>
+
+        {/* Boutons de navigation */}
+        <button 
+          onClick={toggleOrbitMode}
+          className={`bouton ${isOrbitMode ? 'active' : ''}`}
+          title="Basculer entre mode Orbite et Vol libre (N)"
+          style={{
+            ...iconButtonStyle,
+            backgroundColor: isOrbitMode ? '#e9ecef' : 'white'
+          }}
+        >
+          🎯
+        </button>
+
+        <button 
+          onClick={toggleCharacterMode}
+          className={`bouton ${isCharacterMode ? 'active' : ''}`}
+          title="Activer/désactiver le mode Personnage (V)"
+          style={{
+            ...iconButtonStyle,
+            backgroundColor: isCharacterMode ? '#e9ecef' : 'white'
+          }}
+        >
+          👤
         </button> 
 
         {is2DView && (
@@ -217,6 +255,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
         handleObjectGenerated={handleObjectGenerated} />
       </div>
 
+      <button 
+          onClick={() => setShowAIGeneration(true)} 
+          className="bouton"
+          style={buttonStyle}
+        >
+          Générer un objet 3D avec l'IA
+        </button>
+
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
         <button
           onClick={handleExport}
@@ -236,6 +282,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
           📂
         </button>
       </div>
+      
+      {showAIGeneration && (
+        <AIGenerationPanel
+          onClose={() => setShowAIGeneration(false)}
+          onObjectGenerated={handleObjectGenerated}
+        />
+      )}
     </div>
   );
 };

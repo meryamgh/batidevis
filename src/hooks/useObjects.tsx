@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { ObjectData, FacesData } from '../types/ObjectData';
+import { ObjectData, FacesData, ObjectGroup } from '../types/ObjectData';
 import { v4 as uuidv4 } from 'uuid';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -38,6 +38,13 @@ interface UseObjectsReturn {
   ) => void;
   handleUpdateFaces: (id: string, faces: FacesData) => void;
   handleUpdateObjectParametricData: (id: string, object : any) => void;
+  // Nouvelles fonctionnalités pour la sélection multiple
+  handleCopyObjects: (objectGroup: ObjectGroup) => void;
+  handlePasteObjects: (objectGroup: ObjectGroup, targetPosition: [number, number, number]) => void;
+  handleRemoveSelectedObjects: (selectedObjectIds: string[]) => void;
+  handleMoveSelectedObjects: (selectedObjectIds: string[]) => void;
+  handleRotateSelectedObjects: (selectedObjectIds: string[], rotation: [number, number, number]) => void;
+  handleUpdateSelectedObjectsScale: (selectedObjectIds: string[], scale: [number, number, number]) => void;
 }
 
 export const useObjects = ({
@@ -448,14 +455,22 @@ export const useObjects = ({
     viewMode: '3D' | '2D' | 'ObjectOnly',
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => {
+    console.log('🔍 handleObjectClick called with:', { id, viewMode });
+    console.log('🔍 Available objects:', objects.map(obj => ({ id: obj.id, details: obj.details })));
+    
     if (viewMode === 'ObjectOnly') {
+      console.log('🎯 Setting focused object ID:', id);
       setFocusedObjectId(id);
     }
 
     const selectedObject = objects.find((obj) => obj.id === id);
+    console.log('🔍 Selected object found:', !!selectedObject);
     
     if (selectedObject) {
+      console.log('🎨 Calling renderObjectPanel with:', selectedObject.details);
       renderObjectPanel(selectedObject);
+    } else {
+      console.warn('⚠️ No object found with ID:', id);
     }
   }, [objects, setFocusedObjectId]);
 
@@ -509,6 +524,136 @@ export const useObjects = ({
     console.log("Objects after update:", object);
   }
 
+  // Nouvelles fonctions pour la sélection multiple et le copier-coller
+
+  const handleCopyObjects = useCallback((objectGroup: ObjectGroup) => {
+    // Cette fonction sera gérée au niveau de MaquettePage pour stocker dans le state
+    console.log('Copying object group:', objectGroup);
+  }, []);
+
+  const handlePasteObjects = useCallback((objectGroup: ObjectGroup, targetPosition: [number, number, number]) => {
+    const newObjects: ObjectData[] = [];
+    
+    objectGroup.objects.forEach(originalObject => {
+      const relativePosition = objectGroup.relativePositions.get(originalObject.id);
+      if (relativePosition) {
+        // Calculer la nouvelle position en ajoutant la position relative à la position cible
+        const newPosition: [number, number, number] = [
+          targetPosition[0] + relativePosition[0],
+          targetPosition[1] + relativePosition[1],
+          targetPosition[2] + relativePosition[2]
+        ];
+
+        // Créer une copie de l'objet avec un nouvel ID et la nouvelle position
+        const newObject: ObjectData = {
+          ...originalObject,
+          id: uuidv4(),
+          position: newPosition
+        };
+
+        newObjects.push(newObject);
+      }
+    });
+
+    // Ajouter tous les nouveaux objets à la scène et au devis
+    setObjects(prevObjects => [...prevObjects, ...newObjects]);
+    setQuote(prevQuote => [...prevQuote, ...newObjects]);
+  }, [setObjects, setQuote]);
+
+  const handleRemoveSelectedObjects = useCallback((selectedObjectIds: string[]) => {
+    setObjects(prevObjects => prevObjects.filter(obj => !selectedObjectIds.includes(obj.id)));
+    setQuote(prevQuote => prevQuote.filter(item => !selectedObjectIds.includes(item.id)));
+    setIsMoving(null);
+  }, [setObjects, setQuote, setIsMoving]);
+
+  const handleMoveSelectedObjects = useCallback((selectedObjectIds: string[]) => {
+    // Cette fonction sera gérée au niveau de MaquettePage pour activer le mode déplacement
+    console.log('Moving selected objects:', selectedObjectIds);
+  }, []);
+
+  const handleRotateSelectedObjects = useCallback((selectedObjectIds: string[], rotation: [number, number, number]) => {
+    setObjects(prevObjects =>
+      prevObjects.map(obj =>
+        selectedObjectIds.includes(obj.id) ? { ...obj, rotation } : obj
+      )
+    );
+  }, [setObjects]);
+
+  const handleUpdateSelectedObjectsScale = useCallback((selectedObjectIds: string[], scale: [number, number, number]) => {
+    setObjects(prevObjects =>
+      prevObjects.map(obj => {
+        if (selectedObjectIds.includes(obj.id)) {
+          const roundedScale: [number, number, number] = [
+            Math.round(scale[0] * 1000) / 1000,
+            Math.round(scale[1] * 1000) / 1000,
+            Math.round(scale[2] * 1000) / 1000
+          ];
+
+          // Mettre à jour la boundingBox si elle existe
+          if (obj.boundingBox) {
+            const scaleFactors = [
+              roundedScale[0] / obj.scale[0],
+              roundedScale[1] / obj.scale[1],
+              roundedScale[2] / obj.scale[2]
+            ];
+
+            const newBoundingBox = {
+              min: [
+                Math.round(obj.boundingBox.min[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.min[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.min[2] * scaleFactors[2] * 1000) / 1000
+              ] as [number, number, number],
+              max: [
+                Math.round(obj.boundingBox.max[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.max[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.max[2] * scaleFactors[2] * 1000) / 1000
+              ] as [number, number, number],
+              size: [
+                Math.round(obj.boundingBox.size[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.size[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.size[2] * scaleFactors[2] * 1000) / 1000
+              ] as [number, number, number],
+              center: [
+                Math.round(obj.boundingBox.center[0] * scaleFactors[0] * 1000) / 1000,
+                Math.round(obj.boundingBox.center[1] * scaleFactors[1] * 1000) / 1000,
+                Math.round(obj.boundingBox.center[2] * scaleFactors[2] * 1000) / 1000
+              ] as [number, number, number]
+            };
+
+            return {
+              ...obj,
+              scale: roundedScale,
+              boundingBox: newBoundingBox
+            };
+          }
+
+          return {
+            ...obj,
+            scale: roundedScale
+          };
+        }
+        return obj;
+      })
+    );
+
+    // Mettre à jour également le devis
+    setQuote(prevQuote =>
+      prevQuote.map(item => {
+        if (selectedObjectIds.includes(item.id)) {
+          return {
+            ...item,
+            scale: [
+              Math.round(scale[0] * 1000) / 1000,
+              Math.round(scale[1] * 1000) / 1000,
+              Math.round(scale[2] * 1000) / 1000
+            ]
+          };
+        }
+        return item;
+      })
+    );
+  }, [setObjects, setQuote]);
+
   return {
     handleAddObject,
     handleAddObjectFromData,
@@ -523,7 +668,13 @@ export const useObjects = ({
     getSerializableQuote,
     handleObjectClick,
     handleUpdateFaces,
-    handleUpdateObjectParametricData
+    handleUpdateObjectParametricData,
+    handleCopyObjects,
+    handlePasteObjects,
+    handleRemoveSelectedObjects,
+    handleMoveSelectedObjects,
+    handleRotateSelectedObjects,
+    handleUpdateSelectedObjectsScale
   };
 }; 
 
