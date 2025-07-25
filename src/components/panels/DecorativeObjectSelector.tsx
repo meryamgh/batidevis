@@ -87,10 +87,13 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
         borderRadius: '4px',
         border: '1px solid #ced4da',
         backgroundColor: 'white',
-        fontSize: '14px',
+        fontSize: '12px',
         height: '32px',
         color: '#2D3C54',
-        textShadow: 'none'
+        textShadow: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
     };
 
     return (

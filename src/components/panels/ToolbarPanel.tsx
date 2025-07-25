@@ -127,10 +127,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
     borderRadius: '4px',
     border: '1px solid #ced4da',
     backgroundColor: 'white',
-    fontSize: '14px',
+    fontSize: '12px',
     height: '32px',
     color: '#2D3C54',
-    textShadow: 'none'
+    textShadow: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   };
 
   const iconButtonStyle = {
@@ -138,7 +141,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
     minWidth: '32px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    fontSize: '12px'
   };
 
   return (
@@ -167,7 +171,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 8px center',
             backgroundSize: '16px',
-            paddingRight: '32px'
+            paddingRight: '32px',
+            fontSize: '12px'
           }}
         >
           <option value="ObjectOnly">Object Only</option>
@@ -235,7 +240,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           className="bouton"
           style={buttonStyle}
         >
-          Générer une pièce
+          générer une pièce
         </button>
         
         {(currentFloor > 0 || objects.length > 0) && (
@@ -260,7 +265,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           className="bouton"
           style={buttonStyle}
         >
-          Générer un objet 3D avec l'IA
+          générer un objet 3D avec l'ia
         </button>
 
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
