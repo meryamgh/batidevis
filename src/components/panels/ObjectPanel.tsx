@@ -1,53 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ObjectData, FacesData } from '../../types/ObjectData';
-import '../../styles/Controls.css'; 
-import { v4 as uuidv4 } from 'uuid';
-import * as THREE from 'three';
+import { ObjectData } from '../../types/ObjectData';
+import '../../styles/Controls.css';  
 import '../../styles/ObjectPanel.css';
-import Select, { SingleValue } from 'react-select';
-import { BACKEND_URL } from '../../config/env';
+import Select, { SingleValue } from 'react-select'; 
 import ParametricDataPanel from '../ParametricDataPanel';
         
 type ObjectPanelProps = {
     object: ObjectData;
-    onUpdateTexture: (id: string, newTexture: string) => void;
     onUpdateColor: (id: string, newColor: string) => void;
-    onUpdateScale: (id: string, newScale: [number, number, number]) => void;
     onUpdatePosition: (id: string, position: [number, number, number]) => void;
-    onRemoveObject: (id: string) => void;
-    onMoveObject: () => void;
     onClosePanel: () => void;
     onRotateObject: (id: string, newRotation: [number, number, number]) => void;
-    onToggleShowDimensions: (id: string) => void;
-    customTextures: Record<string, string>;
-    onUpdateRoomDimensions?: (floorId: string, width: number, length: number, height: number) => void;
     onDeselectObject: (id: string) => void;
-    onAddObject: (object: ObjectData) => void;
-    onExtendObject: (object: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => ObjectData;
-    onUpdateFaces?: (id: string, faces: FacesData) => void;
     handleUpdateObjectParametricData: (id: string, object : any) => void;
     parametricData?: any;
 };
 
-// Type pour les noms des faces
-type FaceName = 'front' | 'back' | 'left' | 'right' | 'top' | 'bottom';
 
 const ObjectPanel: React.FC<ObjectPanelProps> = ({
     object,
-    onUpdateTexture,
-    onUpdateScale,
     onUpdatePosition,
-    onRemoveObject,
-    onMoveObject,
     onClosePanel,
     onRotateObject,
-    onToggleShowDimensions,
-    customTextures,
-    onUpdateRoomDimensions,
     onDeselectObject,
-    onAddObject,
-    onExtendObject,
-    onUpdateFaces,
     parametricData,
     handleUpdateObjectParametricData
 }) => {
@@ -58,7 +33,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [color] = useState<string | undefined>(object.color);
     const [rotation, setRotation] = useState<[number, number, number]>(object.rotation || [0, 0, 0]);
     const [isRotating, setIsRotating] = useState(false);
-    const [showDimensions, setShowDimensions] = useState(false);
     const [position, setPosition] = useState<[number, number, number]>(object.position);  
     const [recalculateYPosition, setRecalculateYPosition] = useState(false);
     // États pour les dimensions de la pièce
@@ -69,15 +43,11 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const [lastExtendedObject, setLastExtendedObject] = useState<ObjectData>(object);
     // État pour suivre tous les objets étendus
     const [extendedObjects, setExtendedObjects] = useState<ObjectData[]>([]);
-    const [selectedFace, setSelectedFace] = useState<FaceName>('front');
-    const [faces, setFaces] = useState<FacesData>(object.faces || {});
     // État pour les variantes sélectionnées
     const [selectedVariantsState, setSelectedVariantsState] = useState<Record<string, string>>({});
     
-    // État pour suivre les options désactivées pour chaque position
     const [disabledOptions, setDisabledOptions] = useState<Record<string, Set<string>>>({});
     
-    // Fonction pour extraire les variantes à partir du libtech en utilisant le template
     const extractSelectedVariants = () => {
         if (!parametricData || !parametricData.template_bis || !parametricData.item_details?.libtech) {
             return {};
@@ -97,6 +67,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         
         let currentLibtech = libtech;
         let currentIndex = 0;
+        let variantIndex = 0;
         
         // Pour chaque partie fixe du template
         for (let i = 0; i < templateParts.length; i++) {
@@ -109,8 +80,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
                 if (fixedPartIndex > 0) {
                     const variant = currentLibtech.substring(0, fixedPartIndex).trim();
-                    const position = (i).toString();
+                    const position = variantIndex.toString();
                     selectedVariants[position] = variant;
+                    variantIndex++;
                 }
                 
                 // Avancer dans le libtech après cette partie fixe
@@ -122,8 +94,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         
         // Si il reste du texte après la dernière partie fixe, c'est aussi une variante
         if (currentLibtech.length > 0) {
-            const lastPosition = (templateParts.length - 1).toString();
-            selectedVariants[lastPosition] = currentLibtech.trim();
+            const position = variantIndex.toString();
+            selectedVariants[position] = currentLibtech.trim();
         }
         
         console.log("Extracted variants:", selectedVariants);
@@ -151,6 +123,13 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             }
         }
     }, [parametricData]);
+
+    // Réinitialiser les variantes sélectionnées si pas de données paramétriques ou pas de variantes dans le template
+    useEffect(() => {
+        if (!parametricData?.template_bis || !parametricData?.variables_by_position || !parametricData.template_bis.includes('_')) {
+            setSelectedVariantsState({});
+        }
+    }, [parametricData]);
     
     // Fonction pour mettre à jour la description avec une nouvelle variante
     const updateDescriptionWithNewVariant = (position: string, newVariant: string) => {
@@ -171,11 +150,11 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         let currentIndex = 0;
         let updatedLibtech = libtech;
         let hasUpdated = false;
+        let variantIndex = 0;
         
         // Pour chaque partie fixe du template
         for (let i = 0; i < templateParts.length; i++) {
             const fixedPart = templateParts[i];
-            const positionIndex = i.toString();
             
             // Trouver cette partie fixe dans le libtech
             const fixedPartIndex = currentLibtech.indexOf(fixedPart, currentIndex);
@@ -184,9 +163,10 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                 // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
                 if (fixedPartIndex > 0) {
                     const variant = currentLibtech.substring(0, fixedPartIndex).trim();
+                    const currentPosition = variantIndex.toString();
                     
                     // Si c'est la position que nous cherchons, mettre à jour
-                    if (positionIndex === position) {
+                    if (currentPosition === position) {
                         // Calculer l'index global dans le libtech original
                         const globalIndex = libtech.length - currentLibtech.length + fixedPartIndex;
                         const variantStartIndex = globalIndex - variant.length;
@@ -199,6 +179,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                         hasUpdated = true;
                         break;
                     }
+                    variantIndex++;
                 }
                 
                 // Avancer dans le libtech après cette partie fixe
@@ -210,8 +191,8 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         
         // Si il reste du texte après la dernière partie fixe et que c'est la position recherchée
         if (!hasUpdated && currentLibtech.length > 0) {
-            const lastPosition = (templateParts.length - 1).toString();
-            if (lastPosition === position) {
+            const currentPosition = variantIndex.toString();
+            if (currentPosition === position) {
                 // Remplacer la dernière variante
                 const lastFixedPart = templateParts[templateParts.length - 1];
                 const lastFixedPartIndex = updatedLibtech.lastIndexOf(lastFixedPart);
@@ -359,13 +340,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         
         setDisabledOptions(newDisabledOptions);
     };
-    
-    // Fonction pour vérifier si une option est désactivée
-    const isOptionDisabled = (position: string, option: string) => {
-        return disabledOptions[position]?.has(option) || false;
-    };
-    
-    // Fonction pour générer la description actuelle
+     
     const generateCurrentDescription = () => {
         if (!parametricData || !parametricData.template_bis) {
             return '';
@@ -382,6 +357,49 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         return description;
     };
     
+    // Fonction pour générer le texte avec les variantes sélectionnées
+    const generateTextWithVariants = () => {
+        if (!parametricData || !parametricData.template_bis) {
+            return null;
+        }
+        
+        const template = parametricData.template_bis;
+        const parts = template.split('_');
+        const result = [];
+        let variantIndex = 0;
+        
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            
+            // Ajouter la variante sélectionnée pour cette position (sauf pour la première partie)
+            if (i > 0) {
+                const position = (variantIndex - 1).toString();
+                const selectedVariant = selectedVariantsState[position];
+                if (selectedVariant) {
+                    result.push(<strong key={`variant-${i-1}`} className="selected-variant">{selectedVariant}</strong>);
+                } else {
+                    result.push(<span key={`variant-${i-1}`} className="empty-variant">_</span>);
+                }
+            }
+            
+            // Ajouter la partie fixe
+            result.push(<span key={`fixed-${i}`}>{part}</span>);
+            variantIndex++;
+        }
+        
+        // Ajouter la dernière variante si elle existe et n'a pas déjà été ajoutée
+        const lastVariantIndex = Object.keys(selectedVariantsState).length - 1;
+        if (lastVariantIndex >= 0) {
+            const lastPosition = lastVariantIndex.toString();
+            const lastVariant = selectedVariantsState[lastPosition];
+            if (lastVariant && lastVariantIndex >= variantIndex - 1) {
+                result.push(<strong key="variant-last" className="selected-variant">{lastVariant}</strong>);
+            }
+        }
+        
+        return result;
+    };
+
     // Fonction pour vérifier si la description actuelle correspond à une description similaire
     const checkMatchingDescription = () => {
         if (!parametricData || !parametricData.similar_libtechs_details) {
@@ -473,6 +491,80 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         return { exists: false, suggestions };
     };
     
+    // Fonction pour extraire toutes les variantes possibles depuis la source brute
+    const extractAllPossibleVariants = () => {
+        if (!parametricData || !parametricData.template_bis || !parametricData.similar_libtechs_details) {
+            return {};
+        }
+        
+        const allVariants: Record<string, Set<string>> = {};
+        const template = parametricData.template_bis;
+        const templateParts = template.split('_');
+        
+        // Si il n'y a qu'une seule partie, pas de variantes
+        if (templateParts.length <= 1) {
+            return {};
+        }
+        
+        // Analyser chaque libtech similaire pour extraire toutes les variantes possibles
+        parametricData.similar_libtechs_details.forEach((detail: { libtech?: string }) => {
+            if (!detail.libtech) return;
+            
+            const libtech = detail.libtech;
+            let currentLibtech = libtech;
+            let currentIndex = 0;
+            let variantIndex = 0;
+            
+            // Pour chaque partie fixe du template
+            for (let i = 0; i < templateParts.length; i++) {
+                const fixedPart = templateParts[i];
+                
+                // Trouver cette partie fixe dans le libtech
+                const fixedPartIndex = currentLibtech.indexOf(fixedPart, currentIndex);
+                
+                if (fixedPartIndex !== -1) {
+                    // Si ce n'est pas le début et qu'il y a du texte avant, c'est une variante
+                    if (fixedPartIndex > 0) {
+                        const variant = currentLibtech.substring(0, fixedPartIndex).trim();
+                        const position = variantIndex.toString();
+                        
+                        if (!allVariants[position]) {
+                            allVariants[position] = new Set();
+                        }
+                        allVariants[position].add(variant);
+                        variantIndex++;
+                    }
+                    
+                    // Avancer dans le libtech après cette partie fixe
+                    currentIndex = fixedPartIndex + fixedPart.length;
+                    currentLibtech = currentLibtech.substring(currentIndex);
+                    currentIndex = 0;
+                }
+            }
+            
+            // Si il reste du texte après la dernière partie fixe, c'est aussi une variante
+            if (currentLibtech.length > 0) {
+                const position = variantIndex.toString();
+                if (!allVariants[position]) {
+                    allVariants[position] = new Set();
+                }
+                allVariants[position].add(currentLibtech.trim());
+            }
+        });
+        
+        // Convertir les Sets en Arrays
+        const result: Record<string, string[]> = {};
+        Object.entries(allVariants).forEach(([position, variantsSet]) => {
+            result[position] = Array.from(variantsSet).sort();
+        });
+        
+        console.log("Extracted all possible variants:", result);
+        return result;
+    };
+
+    // Extraire toutes les variantes possibles depuis la source brute
+    const allPossibleVariants = useMemo(() => extractAllPossibleVariants(), [parametricData]);
+    
     // Obtenir l'état de la description
     const descriptionState = useMemo(() => checkMatchingDescription(), [selectedVariantsState, parametricData]);
     
@@ -491,21 +583,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     
     // Vérifier si l'objet est un sol ou un mur
     const isFloor = object.details.includes('Sol');
-    const isWall = object.details.includes('Mur');
-    const isRoomComponent = isFloor || isWall;
-    
-
-    // Styles pour le bouton "Aucune couleur"
-    const noColorButtonStyle = {
-        marginTop: '10px',
-        padding: '8px 16px',
-        backgroundColor: '#f0f0f0',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        width: '100%',
-        textAlign: 'center' as const,
-    };
+ 
 
 
     const getMinYAxis = (object: ObjectData) => {
@@ -515,10 +593,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         return 0;
     }
 
-    const toggleDimensions = () => {
-        onToggleShowDimensions(object.id);
-        setShowDimensions(!showDimensions);
-    };
+    
 
     useEffect(() => {
         if (object) {
@@ -574,15 +649,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
      
 
-    const handleUpdateScale = (newWidth: number, newHeight: number, newDepth: number) => {
-        console.log('updateScale');
-        setWidth(newWidth);
-        setHeight(newHeight);
-        setDepth(newDepth);
-        onUpdateScale(object.id, [newWidth, newHeight, newDepth]);
-
-        setRecalculateYPosition(true);
-    };
+   
 
     useEffect(() => {
         
@@ -603,127 +670,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         setRecalculateYPosition(false);
     }
 
-    const handleUpdatePosition = (axis: 'x' | 'y' | 'z', value: number) => {
-        const newPosition: [number, number, number] = [...position];
-        const axisIndex = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
-        
-        // Vérifier si l'objet est une fenêtre ou une porte
-        const isWindowOrDoor = object.details === 'Fenêtre' || object.details === 'Porte';
-        
-        if (isWindowOrDoor) {
-            // Calculer les limites en fonction des dimensions du mur parent
-            // Pour un mur vertical, la hauteur est sur l'axe Y et la largeur sur l'axe X
-            const wallWidth = object.parentScale?.[0] || 1;  // Largeur du mur
-            const wallHeight = object.parentScale?.[1] || 1; // Hauteur du mur
-            
-            // Définir les limites de déplacement
-            let minLimit = 0;
-            let maxLimit = 0;
-            
-            if (axis === 'x') {
-                // Limite le déplacement horizontal à la largeur du mur
-                minLimit = -wallWidth / 4;
-                maxLimit = wallWidth / 4;
-            } else if (axis === 'y') {
-                // Limite le déplacement vertical à la hauteur du mur
-                minLimit = -wallHeight / 4;
-                maxLimit = wallHeight / 4;
-            } else if (axis === 'z') {
-                // Pour la profondeur, on limite à une petite valeur pour rester sur le mur
-                minLimit = -0.1;
-                maxLimit = 0.1;
-            }
-            
-            // Contraindre la valeur dans les limites
-            value = Math.max(minLimit, Math.min(maxLimit, value));
-        }
-        
-        newPosition[axisIndex] = value;
-        setPosition(newPosition);
-        onUpdatePosition(object.id, newPosition);
-    };
-
-    const toggleRotation = () => {
-        setIsRotating(!isRotating);
-    };
-
-    // Empêcher la propagation des événements pour les contrôles de type range
-    const handleRangeMouseDown = (e: React.MouseEvent) => {
-        e.stopPropagation();
-    };
-
-    // Styles pour le séparateur de textures
-    const textureDividerStyle = {
-        width: '100%',
-        height: '1px',
-        backgroundColor: '#ccc',
-        margin: '10px 0',
-    };
-
-    // Fonction pour appliquer une texture
-    const applyTexture = (textureUrl: string) => {
-        setTexture(textureUrl);
-        onUpdateTexture(object.id, textureUrl);
-    };
- 
-    // Fonction pour gérer les erreurs de chargement d'image
-    const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-        const target = e.target as HTMLImageElement;
-        target.src = "textures/Cube_BaseColor.png"; 
-        target.onerror = null; // Éviter les boucles infinies
-    };
-
-    // Fonction pour mettre à jour les dimensions de la pièce
-    const handleUpdateRoomDimensions = () => { 
-        if (onUpdateRoomDimensions && isFloor) {
-            onUpdateRoomDimensions(object.id, roomWidth, roomLength, roomHeight);
-        }
-    };
-
-    const handleAddWindow = () => {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: '#FFFFFF' });
-        const mesh = new THREE.Mesh(geometry, material);
-
-        const newWindow: ObjectData = {
-            id: uuidv4(),
-            url: `${BACKEND_URL}/files/fenêtre.glb`,
-            price: 200,
-            details: 'Fenêtre',
-            position: object.position,
-            gltf: mesh,
-            rotation: object.rotation,
-            scale: [1, 1, 1],
-            color: '#FFFFFF',
-            parentScale: object.scale,
-            texture: '',
-            isBatiChiffrageObject: false
-        };
-        onAddObject(newWindow);
-    };
-
-    const handleAddDoor = () => {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: '#8B4513' });
-        const mesh = new THREE.Mesh(geometry, material);
-
-        const newDoor: ObjectData = {
-            id: uuidv4(),
-            url: `${BACKEND_URL}/files/porte.glb`,
-            price: 500,
-            details: 'Porte',
-            position: object.position,
-            gltf: mesh,
-            rotation: object.rotation,
-            scale: [1, 1, 1],
-            color: '#8B4513',
-            parentScale: object.scale,
-            texture: '',
-            isBatiChiffrageObject: false
-        };
-        onAddObject(newDoor);
-    };
-
+      
     
 
     // Ajouter l'objet original à extendedObjects lors de l'initialisation
@@ -743,64 +690,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         onClosePanel();
     };
 
-    // Fonction pour obtenir le nom lisible d'une face
-    const getFaceName = (face: FaceName): string => {
-        const names = {
-            front: 'Face avant',
-            back: 'Face arrière',
-            left: 'Face gauche',
-            right: 'Face droite',
-            top: 'Face supérieure',
-            bottom: 'Face inférieure'
-        };
-        return names[face];
-    };
-
-    // Fonction pour appliquer une texture à une face spécifique
-    const applyTextureToFace = (textureUrl: string) => {
-        console.log("Applying texture to face:", {
-            selectedFace,
-            textureUrl,
-            currentFaces: faces,
-            objectId: object.id,
-            objectType: object.type
-        });
-
-        const newFaces = {
-            ...faces,
-            [selectedFace]: {
-                ...faces[selectedFace],
-                texture: textureUrl,
-                // Ne pas inclure la couleur par défaut
-                color: undefined
-            }
-        };
-        console.log("New faces configuration:", newFaces);
-        
-        setFaces(newFaces);
-        if (onUpdateFaces) {
-            console.log("Calling onUpdateFaces with:", {
-                objectId: object.id,
-                newFaces
-            });
-            onUpdateFaces(object.id, newFaces);
-        } else {
-            console.warn("onUpdateFaces is not defined");
-        }
-    };
-
-    // Fonction pour appliquer une couleur à une face spécifique
-    const applyColorToFace = (colorValue: string) => {
-        const newFaces = {
-            ...faces,
-            [selectedFace]: {
-                ...faces[selectedFace],
-                color: colorValue
-            }
-        };
-        setFaces(newFaces);
-        onUpdateFaces?.(object.id, newFaces);
-    };
+   
 
     return (
         <div className="object-panel">
@@ -824,45 +714,54 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                             <h4>Détails de l'article</h4>
                             <div className="item-property">
                                 <span className="item-label">Description:</span>
-                                {parametricData.template_bis ? (
-                                    <p className="item-description">
+                                {parametricData.template_bis && parametricData.template_bis.includes('_') && parametricData.variables_by_position ? (
+                                    <div className="item-description" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
                                         {(() => {
+                                            // On reprend la logique de Variantes disponibles
                                             const template = parametricData.template_bis;
-                                            const libtech = parametricData.item_details.libtech;
                                             const parts = template.split('_');
                                             const result = [];
-                                            
-                                            let currentLibtech = libtech;
-                                            let currentIndex = 0;
-
+                                            let variantIndex = 0;
                                             for (let i = 0; i < parts.length; i++) {
-                                                const part = parts[i];
-                                                const partIndex = currentLibtech.indexOf(part, currentIndex);
-                                                
-                                                if (partIndex !== -1) {
-                                                    // Si ce n'est pas le début, il y a une variante avant
-                                                    if (partIndex > 0 && i > 0) {
-                                                        const variant = currentLibtech.substring(0, partIndex);
-                                                        result.push(<strong key={`variant-${i}`}>{variant}</strong>);
-                                                    }
-                                                    
-                                                    // Ajouter la partie fixe
-                                                    result.push(<span key={`fixed-${i}`}>{part}</span>);
-                                                    
-                                                    // Avancer dans le libtech
-                                                    currentLibtech = currentLibtech.substring(partIndex + part.length);
-                                                    currentIndex = 0;
+                                                // Partie fixe
+                                                result.push(<span key={`fixed-${i}`}>{parts[i]}</span>);
+                                                // Variante (sauf après le dernier)
+                                                if (i < parts.length - 1) {
+                                                    const position = variantIndex.toString();
+                                                    const options = allPossibleVariants[position] || [];
+                                                    const currentVariant = selectedVariantsState[position] || '';
+                                                    result.push(
+                                                        <span key={`select-${i}`} style={{ minWidth: 80, display: 'inline-block', margin: '0 2px' }}>
+                                                            <Select
+                                                                className="inline-variant-select"
+                                                                options={options.map((option: string) => ({ value: option, label: option }))}
+                                                                value={currentVariant ? { value: currentVariant, label: currentVariant } : null}
+                                                                onChange={(selectedOption) => {
+                                                                    if (selectedOption) {
+                                                                        updateDescriptionWithNewVariant(position, selectedOption.value);
+                                                                        updateDisabledOptions(position, selectedOption.value);
+                                                                    }
+                                                                }}
+                                                                isSearchable={false}
+                                                                isClearable={false}
+                                                                menuPortalTarget={document.body}
+                                                                menuPosition="fixed"
+                                                                styles={{
+                                                                    control: (base) => ({ ...base, minHeight: 24, height: 24, fontSize: 13 }),
+                                                                    dropdownIndicator: (base) => ({ ...base, padding: 2 }),
+                                                                    indicatorsContainer: (base) => ({ ...base, height: 24 }),
+                                                                    valueContainer: (base) => ({ ...base, padding: '0 4px' }),
+                                                                    menu: (base) => ({ ...base, zIndex: 100000 })
+                                                                }}
+                                                            />
+                                                        </span>
+                                                    );
+                                                    variantIndex++;
                                                 }
                                             }
-                                            
-                                            // Si il reste du texte après la dernière partie fixe
-                                            if (currentLibtech.length > 0) {
-                                                result.push(<strong key="variant-last">{currentLibtech}</strong>);
-                                            }
-                                            
                                             return result;
                                         })()}
-                                    </p>
+                                    </div>
                                 ) : (
                                     <p className="item-description">{parametricData.item_details.libtech}</p>
                                 )}
@@ -875,14 +774,45 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 <span className="item-label">Unité:</span>
                                 <span className="item-value">{parametricData.item_details.unite}</span>
                             </div>
+                            <span className="item-label">
+                            Texte:
+                            {descriptionState.exists && (
+                                <span className="status-badge valid">✓ Valide</span>
+                            )}
+                            {!descriptionState.exists && Object.keys(selectedVariantsState).length > 0 && (
+                                <span className="status-badge invalid">⚠ Non valide</span>
+                            )}
+                        </span>
                         </div>
                     )}
-                    
-                    {/* Variables by position section with dropdown selectors */}
+
+                    {/* TEXTE AVEC VARIANTES SÉLECTIONNÉES */}
+                    {/* <div className="item-property">
+                        <span className="item-label">
+                            Texte:
+                            {descriptionState.exists && (
+                                <span className="status-badge valid">✓ Valide</span>
+                            )}
+                            {!descriptionState.exists && Object.keys(selectedVariantsState).length > 0 && (
+                                <span className="status-badge invalid">⚠ Non valide</span>
+                            )}
+                        </span>
+                        <div className="text-display">
+                            {parametricData.template_bis ? (
+                                <p className="text-with-variants">
+                                    {generateTextWithVariants()}
+                                </p>
+                            ) : (
+                                <p className="text-with-variants">{parametricData.item_details?.libtech || 'Aucun texte disponible'}</p>
+                            )}
+                        </div>
+                    </div> */}
+
+{/*                     
                     {parametricData.variables_by_position && (
                         <div className="variables-section">
                             <h4>Variantes disponibles</h4>
-                            {Object.entries(parametricData.variables_by_position).map(([position, options], index) => {
+                            {Object.entries(allPossibleVariants).map(([position, options], index) => {
                                 // Utiliser la variante extraite du libtech ou la première option disponible
                                 const currentVariant = selectedVariantsState[position] || 
                                     (Array.isArray(options) && options.length > 0 ? options[0] : null);
@@ -918,7 +848,6 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 );
                             })}
                             
-                            {/* Afficher un message sur la correspondance de la description */}
                             <div className="description-status">
                                 {descriptionState.exists ? (
                                     <div className="matching-description">
@@ -941,22 +870,22 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 )}
                             </div>
                         </div>
-                    )}
+                    )} */}
                     
                     {/* Template section for reference */}
-                    {parametricData.template && (
+                    {/* {parametricData.template && (
                         <div className="template-section">
                             <h4>Modèle complet</h4>
                             <p className="template-text">{parametricData.template}</p>
                         </div>
-                    )}
+                    )} */}
                 </div>
             )}
 
-            {/* Add Parametric Data Panel */}
+            {/* Add Parametric Data Panel
             {object.parametricData && (
                 <ParametricDataPanel parametricData={object.parametricData} />
-            )}
+            )} */}
         </div>
     );
 };
@@ -966,6 +895,13 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 if (!document.getElementById('extend-controls-styles')) {
     const styleSheet = document.createElement('style');
     styleSheet.id = 'extend-controls-styles';
+    document.head.appendChild(styleSheet);
+}
+// Ajout d'un style global pour garantir la visibilité des menus react-select inline
+if (!document.getElementById('inline-variant-select-menu-style')) {
+    const styleSheet = document.createElement('style');
+    styleSheet.id = 'inline-variant-select-menu-style';
+    styleSheet.innerHTML = `.inline-variant-select__menu { z-index: 100010 !important; }`;
     document.head.appendChild(styleSheet);
 }
 

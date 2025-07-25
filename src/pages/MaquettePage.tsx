@@ -511,41 +511,47 @@ const MaquettePage: React.FC = () => {
 
     // Fonction pour afficher le panneau d'objet
     const renderObjectPanel = useCallback((selectedObject: ObjectData) => {
-        console.log('🎨 Rendering ObjectPanel for:', selectedObject.details);
-        console.log('🔍 Selected object ID:', selectedObject.id);
-        console.log('🔍 Selected object position:', selectedObject.position);
-        
+        // Chercher l'objet dans le state (objects) pour voir s'il a déjà une version modifiée
+        const localObject = objects.find(obj => obj.id === selectedObject.id);
+
         const panel = document.getElementById('floating-panel');
-        console.log('🔍 Panel element found:', !!panel);
-        
         setCreatingWallMode(false);
-        
-        // Mettre à jour l'objet sélectionné
         setSelectedObjectId(selectedObject.id);
-        
-        // Si l'objet a une texture, la définir comme texture sélectionnée
         if (selectedObject.texture) {
             setSelectedTexture(selectedObject.texture);
         }
-        
-        if (panel) {
-            console.log('📋 Panel found, setting display to block');
-            console.log('🔍 Panel current display style:', panel.style.display);
-            panel.style.display = 'block';
-            console.log('🔍 Panel display style after setting:', panel.style.display);
-            
-            // Test temporaire : forcer l'affichage avec !important
-            panel.style.setProperty('display', 'block', 'important');
-            console.log('🔍 Panel display style after !important:', panel.style.display);
 
+        if (panel) {
+            panel.style.display = 'block';
+            panel.style.setProperty('display', 'block', 'important');
             if (!panelRootRef.current) {
                 panelRootRef.current = createRoot(panel);
             }
-            
-            // Faire une requête au backend pour obtenir les données paramétriques
+
+            // Si on a déjà des données paramétriques locales, on les utilise
+            if (localObject && localObject.parametricData) {
+                panelRootRef.current?.render(
+                    <ObjectPanel
+                        object={localObject}
+                        onUpdateColor={objectsUtils.handleUpdateColor}
+                        onUpdatePosition={objectsUtils.handleUpdatePosition}
+                        onClosePanel={() => {
+                            closePanel();
+                            setIsMoving(null);
+                            setSelectedObjectId(null);
+                        }}
+                        onRotateObject={objectsUtils.handleRotateObject}
+                        onDeselectObject={() => setSelectedObjectId(null)}
+                        parametricData={localObject.parametricData}
+                        handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
+                    />
+                );
+                return;
+            }
+
+            // Sinon, on fait le fetch comme avant
             const fetchParametricData = async () => {
                 try {
-                    console.log("Fetching parametric data for:", selectedObject.details);
                     const response = await fetch(`${BACKEND_URL}/api/parametric_data`, {
                         method: 'POST',
                         headers: {
@@ -555,88 +561,51 @@ const MaquettePage: React.FC = () => {
                             name: selectedObject.details
                         })
                     });
-                    
                     if (response.ok) {
                         const data = await response.json();
-                        console.log("Received parametric data:", data);
-                        
-                        // Render the panel with parametric data
                         panelRootRef.current?.render(
                             <ObjectPanel
                                 object={selectedObject}
-                                onUpdateTexture={(id, textureUrl) => {
-                                    objectsUtils.handleUpdateTexture(id, textureUrl);
-                                    setSelectedTexture(textureUrl);
-                                }}
                                 onUpdateColor={objectsUtils.handleUpdateColor}
-                                onUpdateScale={objectsUtils.handleUpdateScale}
                                 onUpdatePosition={objectsUtils.handleUpdatePosition}
-                                onRemoveObject={objectsUtils.handleRemoveObject}
-                                customTextures={customTextures}
-                                onMoveObject={() => setIsMoving(selectedObject.id)}
                                 onClosePanel={() => {
                                     closePanel();
                                     setIsMoving(null);
-                                    setSelectedObjectId(null); // Réinitialiser l'objet sélectionné
+                                    setSelectedObjectId(null);
                                 }}
                                 onRotateObject={objectsUtils.handleRotateObject}
-                                onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
-                                onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
                                 onDeselectObject={() => setSelectedObjectId(null)}
-                                onAddObject={objectsUtils.handleAddObjectFromData}
-                                onExtendObject={handleExtendObject}
-                                onUpdateFaces={objectsUtils.handleUpdateFaces}
                                 parametricData={data}
                                 handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                             />
                         );
                     } else {
-                        console.error("Failed to fetch parametric data. Status:", response.status);
-                        // Render the panel without parametric data
                         renderPanelWithoutParametricData();
                     }
                 } catch (error) {
-                    console.error("Error fetching parametric data:", error);
-                    // Render the panel without parametric data
                     renderPanelWithoutParametricData();
                 }
             };
-            
             const renderPanelWithoutParametricData = () => {
                 panelRootRef.current?.render(
                     <ObjectPanel
                         object={selectedObject}
-                        onUpdateTexture={(id, textureUrl) => {
-                            objectsUtils.handleUpdateTexture(id, textureUrl);
-                            setSelectedTexture(textureUrl);
-                        }}
                         onUpdateColor={objectsUtils.handleUpdateColor}
-                        onUpdateScale={objectsUtils.handleUpdateScale}
                         onUpdatePosition={objectsUtils.handleUpdatePosition}
-                        onRemoveObject={objectsUtils.handleRemoveObject}
-                        customTextures={customTextures}
-                        onMoveObject={() => setIsMoving(selectedObject.id)}
                         onClosePanel={() => {
                             closePanel();
                             setIsMoving(null);
-                            setSelectedObjectId(null); // Réinitialiser l'objet sélectionné
+                            setSelectedObjectId(null);
                         }}
                         onRotateObject={objectsUtils.handleRotateObject}
-                        onToggleShowDimensions={objectsUtils.handleToggleShowDimensions}
-                        onUpdateRoomDimensions={floorsUtils.updateRoomDimensions}
                         onDeselectObject={() => setSelectedObjectId(null)}
-                        onAddObject={objectsUtils.handleAddObjectFromData}
-                        onExtendObject={handleExtendObject}
-                        onUpdateFaces={objectsUtils.handleUpdateFaces}
                         handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                     />
                 );
             };
-            
-            // Start the fetch operation
             fetchParametricData();
         }
-    }, [objectsUtils, customTextures, setCreatingWallMode, floorsUtils, handleExtendObject]);
+    }, [objects, objectsUtils, setCreatingWallMode, setSelectedObjectId, setSelectedTexture, setIsMoving, closePanel]);
 
     // Fonction pour basculer l'affichage du panneau de devis
     const toggleQuotePanel = useCallback(() => {
