@@ -190,7 +190,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
             fontWeight: '500'
           }}
         >
-          consulter le devis complet
+          CONSULTER LE DEVIS COMPLET
         </button>
       </div>
     </div>
