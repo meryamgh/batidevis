@@ -75,7 +75,8 @@ const MaquettePage: React.FC = () => {
 
     const [customTextures] = useState<Record<string, string>>({});
 
-    const [showNavigationHelp, setShowNavigationHelp] = useState(false);
+          const [showNavigationHelp, setShowNavigationHelp] = useState(false);
+      const [showMenu, setShowMenu] = useState(false);
 
     // États pour la sélection multiple
     const [selectedObjectIds, setSelectedObjectIds] = useState<string[]>([]);
@@ -1115,11 +1116,183 @@ const MaquettePage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedObjectIds, objects, clipboard, handleCopyObjects, handlePasteObjects, handleClearSelection, isOrbitMode, isCharacterMode]);
 
-    return (
+        return (
         <div id="page">
+            {/* Menu latéral */}
+            {showMenu && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '280px',
+                    height: '100vh',
+                    backgroundColor: 'white',
+                    boxShadow: '2px 0 10px rgba(0,0,0,0.1)',
+                    zIndex: 1000,
+                    padding: '20px',
+                    borderRight: '1px solid #e9ecef'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '32px',
+                        paddingBottom: '16px',
+                        borderBottom: '1px solid #e9ecef'
+                    }}>
+                        <h2 style={{
+                            margin: 0,
+                            fontSize: '20px',
+                            color: '#2D3C54',
+                            fontWeight: '700',
+                            letterSpacing: '-0.5px'
+                        }}>
+                            Menu
+                        </h2>
+                        <button 
+                            onClick={() => setShowMenu(false)}
+                            style={{
+                                background: '#f8f9fa',
+                                border: '1px solid #e9ecef',
+                                fontSize: '16px',
+                                cursor: 'pointer',
+                                color: '#6c757d',
+                                padding: '6px',
+                                borderRadius: '50%',
+                                width: '28px',
+                                height: '28px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#e9ecef';
+                                e.currentTarget.style.color = '#2D3C54';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                e.currentTarget.style.color = '#6c757d';
+                            }}
+                        >
+                            ×
+                        </button>
+                    </div>
+                    
+                    <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <a href="/" style={{
+                            padding: '14px 20px',
+                            textDecoration: 'none',
+                            color: '#2D3C54',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            fontWeight: '500',
+                            fontSize: '15px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            border: '1px solid transparent'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            e.currentTarget.style.borderColor = '#e9ecef';
+                            e.currentTarget.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = 'transparent';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                        }}
+                        >
+                            Accueil
+                        </a>
+                        <a href="/tarifs" style={{
+                            padding: '14px 20px',
+                            textDecoration: 'none',
+                            color: '#2D3C54',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            fontWeight: '500',
+                            fontSize: '15px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            border: '1px solid transparent'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            e.currentTarget.style.borderColor = '#e9ecef';
+                            e.currentTarget.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = 'transparent';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                        }}
+                        >
+                            Tarifs
+                        </a>
+                        <a href="/mes-devis-factures" style={{
+                            padding: '14px 20px',
+                            textDecoration: 'none',
+                            color: '#2D3C54',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            fontWeight: '500',
+                            fontSize: '15px',
+                        display: 'flex',
+                            alignItems: 'center',
+                            border: '1px solid transparent'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            e.currentTarget.style.borderColor = '#e9ecef';
+                            e.currentTarget.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = 'transparent';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                        }}
+                        >
+                            Mes Devis & Factures
+                        </a>
+                        <div style={{
+                            height: '1px',
+                            backgroundColor: '#e9ecef',
+                            margin: '16px 0',
+                            borderRadius: '1px'
+                        }}></div>
+                        <a href="/connexion" style={{
+                            padding: '14px 20px',
+                            textDecoration: 'none',
+                            color: '#2D3C54',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            fontWeight: '500',
+                            fontSize: '15px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            border: '1px solid transparent'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            e.currentTarget.style.borderColor = '#e9ecef';
+                            e.currentTarget.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = 'transparent';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                        }}
+                        >
+                            Connexion / Inscription
+                        </a>
+                    </nav>
+                </div>
+            )}
+
             <NavigationHelpModal 
                 showNavigationHelp={showNavigationHelp} 
-                setShowNavigationHelp={setShowNavigationHelp} 
+                setShowNavigationHelp={setShowNavigationHelp}
             /> 
             <Toolbar 
                 viewMode={viewMode}
@@ -1148,6 +1321,8 @@ const MaquettePage: React.FC = () => {
                 toggleOrbitMode={() => setIsOrbitMode(!isOrbitMode)}
                 isCharacterMode={isCharacterMode}
                 toggleCharacterMode={() => setIsCharacterMode(!isCharacterMode)}
+                showMenu={showMenu}
+                setShowMenu={setShowMenu}
             />
 
             {/* Add TextureUpload component */}

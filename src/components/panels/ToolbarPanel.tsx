@@ -31,6 +31,8 @@ interface ToolbarProps {
   toggleOrbitMode: () => void;
   isCharacterMode: boolean;
   toggleCharacterMode: () => void;
+  showMenu: boolean;
+  setShowMenu: React.Dispatch<React.SetStateAction<boolean>>;
 }
  
 
@@ -57,7 +59,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
   isOrbitMode,
   toggleOrbitMode,
   isCharacterMode,
-  toggleCharacterMode
+  toggleCharacterMode,
+  showMenu,
+  setShowMenu
 }) => {
   const handleExport = async () => {
     const exportData = {
@@ -133,7 +137,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
     textShadow: 'none',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    margin: '0'
   };
 
   const iconButtonStyle = {
@@ -142,7 +147,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '12px'
+    fontSize: '12px',
+    margin: '0'
   };
 
   return (
@@ -154,7 +160,43 @@ const Toolbar: React.FC<ToolbarProps> = ({
       backgroundColor: '#f8f9fa',
       borderBottom: '1px solid #e9ecef'
     }}>
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+      {/* Groupe gauche - Tous les éléments sauf import/export */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        {/* Bouton hamburger pour le menu */}
+        <button 
+          onClick={() => setShowMenu(!showMenu)}
+          style={{
+            ...iconButtonStyle,
+            padding: '6px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            margin: '0'
+          }}
+          title="Menu"
+        >
+          <div style={{
+            width: '16px',
+            height: '2px',
+            backgroundColor: '#2D3C54',
+            borderRadius: '1px'
+          }}></div>
+          <div style={{
+            width: '16px',
+            height: '2px',
+            backgroundColor: '#2D3C54',
+            borderRadius: '1px'
+          }}></div>
+          <div style={{
+            width: '16px',
+            height: '2px',
+            backgroundColor: '#2D3C54',
+            borderRadius: '1px'
+          }}></div>
+        </button>
+
         <select 
           value={viewMode}
           onChange={(e) => {
@@ -172,7 +214,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
             backgroundPosition: 'right 8px center',
             backgroundSize: '16px',
             paddingRight: '32px',
-            fontSize: '12px'
+            fontSize: '12px',
+            margin: '0'
           }}
         >
           <option value="ObjectOnly">Object Only</option>
@@ -184,7 +227,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onClick={() => setShowNavigationHelp(true)} 
           className="bouton help-button"
           title="Aide à la navigation"
-          style={iconButtonStyle}
+          style={{
+            ...iconButtonStyle,
+            margin: '0'
+          }}
         >
           ?
         </button>
@@ -196,7 +242,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title="Basculer entre mode Orbite et Vol libre (N)"
           style={{
             ...iconButtonStyle,
-            backgroundColor: isOrbitMode ? '#e9ecef' : 'white'
+            backgroundColor: isOrbitMode ? '#e9ecef' : 'white',
+            margin: '0'
           }}
         >
           🎯
@@ -208,7 +255,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
           title="Activer/désactiver le mode Personnage (V)"
           style={{
             ...iconButtonStyle,
-            backgroundColor: isCharacterMode ? '#e9ecef' : 'white'
+            backgroundColor: isCharacterMode ? '#e9ecef' : 'white',
+            margin: '0'
           }}
         >
           👤
@@ -218,7 +266,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <>
             <button 
               onClick={() => setCreatingWallMode(!creatingWallMode)}
-              style={buttonStyle}
+              style={{
+                ...buttonStyle,
+                margin: '0'
+              }}
             >
               {creatingWallMode ? 'Terminer' : 'Ajouter un mur'}
             </button>
@@ -227,7 +278,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
               className={`bouton ${isCreatingSurface ? 'active' : ''}`}
               style={{
                 ...buttonStyle,
-                backgroundColor: isCreatingSurface ? '#e9ecef' : 'white'
+                backgroundColor: isCreatingSurface ? '#e9ecef' : 'white',
+                margin: '0'
               }}
             >
               {isCreatingSurface ? 'Terminer' : 'Créer une surface'}
@@ -238,7 +290,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button 
           onClick={() => setShowRoomConfig(true)} 
           className="bouton"
-          style={buttonStyle}
+          style={{
+            ...buttonStyle,
+            margin: '0'
+          }}
         >
           générer une pièce
         </button>
@@ -247,9 +302,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <button 
             onClick={addNewFloor} 
             className="bouton"
-            style={buttonStyle}
+            style={{
+              ...buttonStyle,
+              margin: '0'
+            }}
           >
-            Ajouter un étage
+            ajouter un étage
           </button>
         )}
         <ObjectSelector showObjectUpload={showObjectUpload} 
@@ -258,22 +316,29 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <DecorativeObjectSelector showObjectUpload={showObjectUpload} 
         setShowObjectUpload={setShowObjectUpload} 
         handleObjectGenerated={handleObjectGenerated} />
-      </div>
 
-      <button 
+        <button 
           onClick={() => setShowAIGeneration(true)} 
           className="bouton"
-          style={buttonStyle}
+          style={{
+            ...buttonStyle,
+            margin: '0'
+          }}
         >
           générer un objet 3D avec l'ia
         </button>
+      </div>
 
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+      {/* Groupe droite - Seulement import et export */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
           onClick={handleExport}
           className="bouton icon-button"
           title="Exporter la maquette au format JSON"
-          style={iconButtonStyle}
+          style={{
+            ...iconButtonStyle,
+            margin: '0'
+          }}
         >
           💾
         </button>
@@ -282,9 +347,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onClick={reconstructMaquette}
           className="toolbar-button icon-button"
           title="Charger la maquette"
-          style={iconButtonStyle}
+          style={{
+            ...iconButtonStyle,
+            fontSize: '20px',
+            fontWeight: 'bold',
+            margin: '0'
+          }}
         >
-          📂
+          ⭳
         </button>
       </div>
       

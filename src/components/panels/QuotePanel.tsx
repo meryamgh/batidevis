@@ -29,6 +29,13 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
     setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
   };
 
+  // Fonction pour supprimer du devis ET de la maquette
+  const handleCompleteRemoval = (itemId: string) => {
+    console.log('handleCompleteRemoval appelé avec id:', itemId);
+    setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
+    handleRemoveObject(itemId);
+  };
+
   const buttonStyle = {
     padding: '8px 16px',
     borderRadius: '6px',
@@ -63,7 +70,13 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    gap: '12px'
+    gap: '8px'
+  };
+
+  const buttonsContainerStyle = {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px'
   };
 
   const itemTextStyle = {
@@ -138,7 +151,11 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
             <div key={item.id} style={itemStyle}>
               <div style={itemContentStyle}>
                 <div style={itemTextStyle}>
-                  {item.parametricData ? item.parametricData.item_details.libtech : item.details}
+                  {(item.parametricData ? item.parametricData.item_details.libtech : item.details).split('_').map((part: string, index: number) => (
+                    <div key={index} style={{ marginBottom: index < (item.parametricData ? item.parametricData.item_details.libtech : item.details).split('_').length - 1 ? '4px' : '0' }}>
+                      {part}
+                    </div>
+                  ))}
                   <div style={{
                     fontSize: '12px',
                     color: '#6c757d',
@@ -147,22 +164,43 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                     {item.price.toFixed(2)} €
                   </div>
                 </div>
-                <button 
-                  onClick={() => handleQuoteRemoval(item.id)}
-                  style={buttonStyle}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = '#c82333';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = '#dc3545';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                  }}
-                >
-                  Supprimer du devis
-                </button>
+                <div style={buttonsContainerStyle}>
+                  <button 
+                    onClick={() => handleCompleteRemoval(item.id)}
+                    style={buttonStyle}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = '#c82333';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = '#dc3545';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    }}
+                  >
+                    Supprimer du devis et de la maquette
+                  </button>
+                  <button 
+                    onClick={() => handleQuoteRemoval(item.id)}
+                    style={{
+                      ...buttonStyle,
+                      backgroundColor: '#6c757d'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = '#5a6268';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = '#6c757d';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    }}
+                  >
+                    Supprimer du devis
+                  </button>
+                </div>
               </div>
             </div>
           ))}
