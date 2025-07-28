@@ -8,6 +8,7 @@ const Home: React.FC = () => {
     const [scrollPosition, setScrollPosition] = useState(0);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isReverse, setIsReverse] = useState(false);
+    const [videoOpacity, setVideoOpacity] = useState(1);
     const totalSlides = 5;
     const slidesPerView = 3;
     const maxSlideIndex = totalSlides - slidesPerView;
@@ -67,7 +68,28 @@ const Home: React.FC = () => {
     return (
         <div className="home-container">
             <div className="video-background">
-                <video autoPlay muted loop playsInline className="background-video">
+                <video 
+                    autoPlay 
+                    muted 
+                    loop 
+                    playsInline 
+                    className="background-video"
+                    style={{ opacity: videoOpacity }}
+                    onTimeUpdate={(e) => {
+                        const video = e.currentTarget;
+                        if (video.duration) {
+                            const progress = video.currentTime / video.duration;
+                            // Fondu très subtil : 0.95 à 1.0 au début, 0.95 à 1.0 à la fin
+                            if (progress < 0.05) {
+                                setVideoOpacity(0.95 + (progress * 0.05));
+                            } else if (progress > 0.95) {
+                                setVideoOpacity(0.95 + ((1 - progress) * 0.05));
+                            } else {
+                                setVideoOpacity(1);
+                            }
+                        }
+                    }}
+                >
                     <source src="/Vid.mp4" type="video/mp4" />
                 </video>
                 <div className="video-overlay" style={{
@@ -243,7 +265,7 @@ const Home: React.FC = () => {
                         <div className="premium-grid">
                             <div className="premium-card">
                                 <div className="premium-content">
-                                    <h4>PREMIUM</h4>
+                                    <h4>PREMIUM 1</h4>
                                     <div className="premium-price">
                                         <span className="premium-amount">1000€</span>
                                         <span className="premium-period"> TTC /mois</span>
@@ -258,7 +280,7 @@ const Home: React.FC = () => {
 
                             <div className="premium-card">
                                 <div className="premium-content">
-                                    <h4>PREMIUM+</h4>
+                                    <h4>PREMIUM 2</h4>
                                     <div className="premium-price">
                                         <span className="premium-amount">1500€</span>
                                         <span className="premium-period"> TTC /mois</span>
@@ -273,7 +295,7 @@ const Home: React.FC = () => {
 
                             <div className="premium-card">
                                 <div className="premium-content">
-                                    <h4>PREMIUM++</h4>
+                                    <h4>PREMIUM 3</h4>
                                     <div className="premium-price">
                                         <span className="premium-amount">2500€</span>
                                         <span className="premium-period"> TTC /mois</span>
