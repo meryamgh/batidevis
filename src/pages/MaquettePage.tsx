@@ -75,7 +75,7 @@ const MaquettePage: React.FC = () => {
 
     const [customTextures] = useState<Record<string, string>>({});
 
-          const [showNavigationHelp, setShowNavigationHelp] = useState(false);
+    const [showNavigationHelp, setShowNavigationHelp] = useState(false);
       const [showMenu, setShowMenu] = useState(false);
 
     // États pour la sélection multiple
@@ -1116,7 +1116,7 @@ const MaquettePage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedObjectIds, objects, clipboard, handleCopyObjects, handlePasteObjects, handleClearSelection, isOrbitMode, isCharacterMode]);
 
-        return (
+    return (
         <div id="page">
             {/* Menu latéral */}
             {showMenu && (
@@ -1292,7 +1292,7 @@ const MaquettePage: React.FC = () => {
 
             <NavigationHelpModal 
                 showNavigationHelp={showNavigationHelp} 
-                setShowNavigationHelp={setShowNavigationHelp}
+                setShowNavigationHelp={setShowNavigationHelp} 
             /> 
             <Toolbar 
                 viewMode={viewMode}

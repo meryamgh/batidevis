@@ -66,9 +66,9 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
   };
 
   const itemContentStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+            display: 'flex', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
     width: '100%',
     gap: '8px'
   };
@@ -105,7 +105,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
       backgroundColor: '#f8f9fa',
       height: '100%',
       overflowY: 'auto'
-    }}>
+          }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -161,12 +161,12 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                     color: '#6c757d',
                     marginTop: '4px'
                   }}>
-                    {item.price.toFixed(2)} €
+                {item.price.toFixed(2)} €
                   </div>
                 </div>
                 <div style={buttonsContainerStyle}>
-                  <button 
-                    onClick={() => handleCompleteRemoval(item.id)}
+                <button 
+                  onClick={() => handleCompleteRemoval(item.id)}
                     style={buttonStyle}
                     onMouseOver={(e) => {
                       e.currentTarget.style.backgroundColor = '#c82333';
@@ -177,13 +177,13 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                       e.currentTarget.style.backgroundColor = '#dc3545';
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    }}
-                  >
+                  }}
+                >
                     Supprimer du devis et de la maquette
-                  </button>
-                  <button 
-                    onClick={() => handleQuoteRemoval(item.id)}
-                    style={{
+                </button>
+                <button 
+                  onClick={() => handleQuoteRemoval(item.id)}
+                  style={{
                       ...buttonStyle,
                       backgroundColor: '#6c757d'
                     }}
@@ -196,14 +196,14 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                       e.currentTarget.style.backgroundColor = '#6c757d';
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                    }}
-                  >
-                    Supprimer du devis
-                  </button>
-                </div>
+                  }}
+                >
+                  Supprimer du devis
+                </button>
               </div>
             </div>
-          ))}
+            </div>
+        ))}
         </div>
       )}
       

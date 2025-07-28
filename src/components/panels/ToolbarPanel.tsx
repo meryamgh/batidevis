@@ -243,10 +243,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
           style={{
             ...iconButtonStyle,
             backgroundColor: isOrbitMode ? '#e9ecef' : 'white',
-            margin: '0'
-          }}
-        >
-          🎯
+            margin: '0',
+            fontSize: '16px',
+            fontWeight: 'bold',
+          }}>
+          ✥
         </button>
 
         <button 

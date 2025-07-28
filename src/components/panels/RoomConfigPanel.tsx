@@ -101,12 +101,12 @@ const RoomConfigPanel: React.FC<RoomConfigPanelProps> = ({
           }}>
             Largeur (m):
           </label>
-          <input 
-            type="number" 
-            value={roomConfig.width} 
-            onChange={(e) => setRoomConfig(prev => ({...prev, width: Number(e.target.value)}))}
-            min="1"
-            step="0.5"
+        <input 
+          type="number" 
+          value={roomConfig.width} 
+          onChange={(e) => setRoomConfig(prev => ({...prev, width: Number(e.target.value)}))}
+          min="1"
+          step="0.5"
             style={{
               flex: 1,
               padding: '8px 12px',
@@ -118,8 +118,8 @@ const RoomConfigPanel: React.FC<RoomConfigPanelProps> = ({
             }}
             onFocus={(e) => e.target.style.borderColor = '#2D3C54'}
             onBlur={(e) => e.target.style.borderColor = '#ced4da'}
-          />
-        </div>
+        />
+      </div>
         
         <div style={{
           display: 'flex',
@@ -134,12 +134,12 @@ const RoomConfigPanel: React.FC<RoomConfigPanelProps> = ({
           }}>
             Longueur (m):
           </label>
-          <input 
-            type="number" 
-            value={roomConfig.length} 
-            onChange={(e) => setRoomConfig(prev => ({...prev, length: Number(e.target.value)}))}
-            min="1"
-            step="0.5"
+        <input 
+          type="number" 
+          value={roomConfig.length} 
+          onChange={(e) => setRoomConfig(prev => ({...prev, length: Number(e.target.value)}))}
+          min="1"
+          step="0.5"
             style={{
               flex: 1,
               padding: '8px 12px',
@@ -151,8 +151,8 @@ const RoomConfigPanel: React.FC<RoomConfigPanelProps> = ({
             }}
             onFocus={(e) => e.target.style.borderColor = '#2D3C54'}
             onBlur={(e) => e.target.style.borderColor = '#ced4da'}
-          />
-        </div>
+        />
+      </div>
         
         <div style={{
           display: 'flex',
@@ -167,12 +167,12 @@ const RoomConfigPanel: React.FC<RoomConfigPanelProps> = ({
           }}>
             Hauteur (m):
           </label>
-          <input 
-            type="number" 
-            value={roomConfig.height} 
-            onChange={(e) => setRoomConfig(prev => ({...prev, height: Number(e.target.value)}))}
-            min="1"
-            step="0.5"
+        <input 
+          type="number" 
+          value={roomConfig.height} 
+          onChange={(e) => setRoomConfig(prev => ({...prev, height: Number(e.target.value)}))}
+          min="1"
+          step="0.5"
             style={{
               flex: 1,
               padding: '8px 12px',
@@ -184,7 +184,7 @@ const RoomConfigPanel: React.FC<RoomConfigPanelProps> = ({
             }}
             onFocus={(e) => e.target.style.borderColor = '#2D3C54'}
             onBlur={(e) => e.target.style.borderColor = '#ced4da'}
-          />
+        />
         </div>
       </div>
       
