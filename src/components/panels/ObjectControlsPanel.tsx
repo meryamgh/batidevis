@@ -467,6 +467,45 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                     zIndex: 1000,
                     border: '1px solid #ddd'
                 }}>
+                    {/* Bouton de fermeture */}
+                    <button 
+                        onClick={() => setShowTexturePanel(false)}
+                        style={{
+                            position: 'absolute',
+                            top: '12px',
+                            right: '12px',
+                            background: '#ffffff',
+                            border: '1px solid #ddd',
+                            fontSize: '18px',
+                            cursor: 'pointer',
+                            color: '#666',
+                            padding: '4px',
+                            borderRadius: '50%',
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1001,
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            fontWeight: 'bold'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.color = '#333';
+                            e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            e.currentTarget.style.borderColor = '#adb5bd';
+                            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.15)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.color = '#666';
+                            e.currentTarget.style.backgroundColor = '#ffffff';
+                            e.currentTarget.style.borderColor = '#ddd';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                        }}
+                        title="Fermer"
+                    >
+                        ×
+                    </button>
                     <div className="texture-selector" style={{ maxHeight: '200px', overflowY: 'auto' }}>
                         {isLoadingTextures ? (
                             <p className="texture-loading">Chargement des textures...</p>
