@@ -270,15 +270,15 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
     
     switch (generationStatus.status) {
       case 'pending':
-        return '🚀 Génération démarrée';
+        return 'GÉNÉRATION DÉMARRÉE';
       case 'processing':
-        return '🔄 Génération en cours...';
+        return 'GÉNÉRATION EN COURS...';
       case 'refining':
-        return '🎨 Ajout des textures...';
+        return 'AJOUT DES TEXTURES...';
       case 'completed':
-        return '✅ Génération terminée !';
+        return 'GÉNÉRATION TERMINÉE';
       case 'failed':
-        return '❌ Échec de la génération';
+        return 'ÉCHEC DE LA GÉNÉRATION';
       default:
         return '';
     }
@@ -287,7 +287,7 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
   return (
     <div className="ai-generation-panel">
       <div className="panel-header">
-        <h1>🎨 Générateur 3D</h1>
+        <h1>GÉNÉRATEUR 3D</h1>
         <p>Créez des modèles 3D texturés avec l'IA</p>
         <button className="close-button" onClick={onClose}>×</button>
       </div>
@@ -325,7 +325,7 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
             disabled={isLoading}
           >
             <span className="btn-text">
-              {isLoading ? 'Génération en cours...' : '🚀 Générer le modèle 3D'}
+              {isLoading ? 'GÉNÉRATION EN COURS...' : 'GÉNÉRER LE MODÈLE 3D'}
             </span>
             {isLoading && <span className="spinner"></span>}
           </button>
@@ -348,10 +348,10 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
         
         {showPreview && (
           <div className="download-section">
-            <h4>🎉 Génération terminée !</h4>
+            <h4>GÉNÉRATION TERMINÉE</h4>
             
             <div className="preview-section">
-              <h5>Aperçu du modèle généré :</h5>
+              <h5>APERÇU DU MODÈLE GÉNÉRÉ</h5>
               {previewImage ? (
                 <img src={previewImage} alt="Aperçu du modèle 3D" />
               ) : (
@@ -366,13 +366,13 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
                 className="accept-button" 
                 onClick={handleAccept}
               >
-                📥 Approuver le fichier GLB
+                APPROUVER LE FICHIER GLB
               </button>
               <button 
                 className="reject-button" 
                 onClick={handleReject}
               >
-                ❌ Rejeter le fichier
+                REJETER LE FICHIER
               </button>
             </div>
           </div>

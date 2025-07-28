@@ -7,8 +7,8 @@
   width: 90%;
   max-height: 90vh;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   overflow: hidden;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   z-index: 1000;
@@ -35,15 +35,19 @@
 }
 
 .panel-header h1 {
-  font-size: 2.5em;
+  font-size: 1.4em;
   margin-bottom: 10px;
   font-weight: 600;
+  letter-spacing: 1px;
+  color: #f5f5f5;
 }
 
 .panel-header p {
-  font-size: 1.1em;
-  opacity: 0.9;
+  font-size: 0.8em;
+  opacity: 0.8;
   margin: 0;
+  margin-top: 30px;
+  font-style: italic;
 }
 
 .close-button {
@@ -109,9 +113,9 @@
 .form-group input,
 .form-group textarea {
   width: 100%;
-  padding: 15px;
-  border: 2px solid #e1e5e9;
-  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #e1e5e9;
+  border-radius: 4px;
   font-size: 16px;
   transition: border-color 0.3s ease;
   font-family: inherit;
@@ -140,9 +144,9 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  padding: 15px 30px;
-  border-radius: 10px;
-  font-size: 16px;
+  padding: 12px 30px;
+  border-radius: 4px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -151,6 +155,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
+  letter-spacing: 0.5px;
 }
 
 .generate-button:hover:not(:disabled) {
@@ -186,8 +191,8 @@
 .status-container {
   margin-top: 30px;
   padding: 20px;
-  border-radius: 10px;
-  border: 2px solid;
+  border-radius: 4px;
+  border: 1px solid;
 }
 
 .status-pending {
@@ -222,8 +227,9 @@
 
 .status-container h3 {
   margin: 0 0 10px 0;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .status-container p {
@@ -258,15 +264,16 @@
   text-align: center;
   padding: 20px;
   background: #f8f9fa;
-  border-radius: 10px;
+  border-radius: 4px;
   border: 1px solid #e9ecef;
 }
 
 .download-section h4 {
   margin: 0 0 20px 0;
   color: #333;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .preview-section {
@@ -277,8 +284,9 @@
 .preview-section h5 {
   margin: 0 0 15px 0;
   color: #555;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .preview-section img {
@@ -307,14 +315,15 @@
   background: #4caf50;
   color: white;
   text-decoration: none;
-  padding: 12px 25px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 4px;
   display: inline-block;
   transition: background 0.3s ease;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .accept-button:hover {
