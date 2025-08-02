@@ -512,6 +512,11 @@ const FullQuote: React.FC = () => {
     // Informations de devis
     const [devisNumero, setDevisNumero] = useState<string>('123');
     const [enDateDu, setEnDateDu] = useState<string>('05/10/2024');
+    
+    // Informations complémentaires
+    const [fraisDeplacement, setFraisDeplacement] = useState<string>('');
+    const [tauxHoraire, setTauxHoraire] = useState<string>('');
+    const [modalitesCalcul, setModalitesCalcul] = useState<string>('');
     const [valableJusquau, setValableJusquau] = useState<string>('04/12/2024');
     const [debutTravaux, setDebutTravaux] = useState<string>('05/10/2024');
     const [dureeTravaux, setDureeTravaux] = useState<string>('1 jour');
@@ -640,6 +645,15 @@ const FullQuote: React.FC = () => {
                 break;
             case 'dureeTravaux':
                 setDureeTravaux(newValue);
+                break;
+            case 'fraisDeplacement':
+                setFraisDeplacement(newValue);
+                break;
+            case 'tauxHoraire':
+                setTauxHoraire(newValue);
+                break;
+            case 'modalitesCalcul':
+                setModalitesCalcul(newValue);
                 break;
             default:
                 break;
@@ -1512,6 +1526,108 @@ const FullQuote: React.FC = () => {
                 )}
               </tbody>
             </table>
+
+            {/* Section des informations complémentaires */}
+            <div style={{ 
+              marginTop: '20px', 
+              marginBottom: '20px',
+              padding: '15px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '4px',
+              border: '1px solid #e9ecef'
+            }}>
+              <h3 style={{ 
+                marginBottom: '15px', 
+                color: '#2D3C54',
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }}>
+                Informations complémentaires
+              </h3>
+              
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '15px',
+                fontSize: '14px',
+                lineHeight: '1.6'
+              }}>
+                <div>
+                  <p style={{ marginBottom: '8px' }}>
+                    <strong>Devis établi gratuitement</strong>
+                  </p>
+                  <p style={{ marginBottom: '8px' }}>
+                    <strong>Frais de déplacement :</strong>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={fraisDeplacement}
+                        onChange={(e) => setFraisDeplacement(e.target.value)}
+                        placeholder="Ex: 25€, Inclus, etc."
+                        style={{
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                          fontSize: '14px',
+                          marginLeft: '5px',
+                          width: '150px',
+                          backgroundColor: '#fff'
+                        }}
+                      />
+                    ) : (
+                      <span>{fraisDeplacement}</span>
+                    )}
+                  </p>
+                </div>
+                
+                <div>
+                  <p style={{ marginBottom: '8px' }}>
+                    <strong>Taux horaire de main-d'œuvre TTC :</strong>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={tauxHoraire}
+                        onChange={(e) => setTauxHoraire(e.target.value)}
+                        placeholder="Ex: 45€/h, À définir, etc."
+                        style={{
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                          fontSize: '14px',
+                          marginLeft: '5px',
+                          width: '200px',
+                          backgroundColor: '#fff'
+                        }}
+                      />
+                    ) : (
+                      <span>{tauxHoraire}</span>
+                    )}
+                  </p>
+                  <p style={{ marginBottom: '8px' }}>
+                    <strong>Modalités de calcul du temps estimé :</strong>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={modalitesCalcul}
+                        onChange={(e) => setModalitesCalcul(e.target.value)}
+                        placeholder="Ex: 1 jour prévu, temps non facturé..."
+                        style={{
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                          fontSize: '14px',
+                          marginLeft: '5px',
+                          width: '300px',
+                          backgroundColor: '#fff'
+                        }}
+                      />
+                    ) : (
+                      <span>{modalitesCalcul}</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="condition-total">
               <div className="payment-info">

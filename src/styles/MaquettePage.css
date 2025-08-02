@@ -299,9 +299,7 @@ html, body {
 }
 
 .banner button {
-    margin-right: 15px;
-    margin-bottom: 15px;
-    margin-top: 10px;
+    margin: 0;
     padding: 10px;
     background-color: #3A4D6E;
     color: white;

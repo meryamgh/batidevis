@@ -87,10 +87,14 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
         borderRadius: '4px',
         border: '1px solid #ced4da',
         backgroundColor: 'white',
-        fontSize: '14px',
+        fontSize: '12px',
         height: '32px',
         color: '#2D3C54',
-        textShadow: 'none'
+        textShadow: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0'
     };
 
     return (
@@ -100,17 +104,22 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
                 onClick={() => setIsOpen(!isOpen)}
                 style={buttonStyle}
             >
-                {isOpen ? 'Masquer les objets décoratifs' : 'Afficher les objets décoratifs'}
+                {isOpen ? 'masquer les objets décoratifs' : 'afficher les objets décoratifs'}
             </button>
             {isOpen && (
                 <div className="object-selector-dropdown">
                     <button
                         onClick={() => setShowObjectUpload(true)}
                         className="bouton"
-                        style={buttonStyle}
+                        style={{
+                            ...buttonStyle,
+                            marginLeft: '10px',
+                            marginTop: '10px'
+                        }}
                     >
-                        Upload Objet Décoratif
+                        upload objet décoratif
                     </button>
+                    <br></br>
 
                     {showObjectUpload && <ObjectUpload onClose={() => setShowObjectUpload(false)} />}
 

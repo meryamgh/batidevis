@@ -92,10 +92,14 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
         borderRadius: '4px',
         border: '1px solid #ced4da',
         backgroundColor: 'white',
-        fontSize: '14px',
+        fontSize: '12px',
         height: '32px',
         color: '#2D3C54',
-        textShadow: 'none'
+        textShadow: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0'
     };
 
     return (
@@ -105,24 +109,32 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                 onClick={() => setIsOpen(!isOpen)}
                 style={buttonStyle}
             >
-                {isOpen ? 'Masquer la liste' : 'Afficher la liste des objets'}
+                {isOpen ? 'masquer la liste' : 'afficher la liste des objets'}
             </button>
             {isOpen && (
                 <div className="object-selector-dropdown">
                     <button
                         onClick={() => setShowObjectUpload(true)}
                         className="bouton"
-                        style={buttonStyle}
+                        style={{
+                            ...buttonStyle,
+                            marginLeft: '10px',
+                            marginTop: '10px'
+                        }}
                     >
-                        Upload 3D Object
+                        upload 3D object
                     </button>
                     <button 
                         onClick={() => setShowAIGeneration(true)}
                         className="bouton ai-button"
                         title="Générer un objet 3D avec l'IA"
-                        style={buttonStyle}
+                        style={{
+                            ...buttonStyle,
+                            marginLeft: '10px',
+                            marginTop: '10px'
+                        }}
                     >
-                        Générer votre objet 3D avec l'IA
+                        générer votre objet 3D avec l'ia
                     </button>
 
                     {showAIGeneration && (
@@ -139,7 +151,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                     ) : (
                         <>
                             <div className="object-category">
-                                <h3>Objets Batichiffrage</h3>
+                                <h3>OBJETS BATICHIFFRAGE</h3>
                                 {(() => {
                                     const batichiffrageObjects = objects.filter(obj => obj.isBatiChiffrageObject);
                                     console.log("Batichiffrage objects:", batichiffrageObjects);
