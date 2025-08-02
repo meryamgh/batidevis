@@ -8,8 +8,8 @@ import { ObjectData } from '../types/ObjectData';
 // 80  100 5 ==> 4.2
 // 16 20 
 const WALL_THICKNESS = 0.2;
-const FLOOR_PRICE_PER_SQUARE_METER = 50;
-const WALL_PRICE = 100;
+const FLOOR_PRICE_PER_SQUARE_METER = 80; // Prix au m² pour les dalles/planchers
+const WALL_PRICE_PER_SQUARE_METER = 120; // Prix au m² pour les murs
 const WALL_POSITION_DIVISOR = 4.08;
 // Définition des couleurs avec des valeurs hexadécimales plus vives
 const FLOOR_COLORS = [
@@ -81,11 +81,15 @@ export const useFloors = ({
     boundingBox.min.set(-roomConfig.width/2, -WALL_THICKNESS/2, -roomConfig.length/2);
     boundingBox.max.set(roomConfig.width/2, WALL_THICKNESS/2, roomConfig.length/2);
     
+    // Calculer le prix du sol basé sur sa surface
+    const floorSurface = roomConfig.width * roomConfig.length;
+    const floorPrice = Math.round(floorSurface * FLOOR_PRICE_PER_SQUARE_METER);
+    
     const floorObject: ObjectData = {
       id: uuidv4(),
       url: '',
-      price: FLOOR_PRICE_PER_SQUARE_METER,
-      details: 'Sol (Rez-de-chaussée)',
+      price: floorPrice,
+      details: `Fourniture et pose dalle béton armé - Rez-de-chaussée (L:${roomConfig.width}m × l:${roomConfig.length}m × H:${WALL_THICKNESS}m)`,
       position: [0, WALL_THICKNESS/2, 0], // Ajuster la position Y pour l'épaisseur du sol
       gltf: floorMesh,
       isBatiChiffrageObject: false,
@@ -168,11 +172,18 @@ export const useFloors = ({
         Math.round(wall.scale[2] * 1000) / 1000
       ];
 
+      // Calculer la surface du mur en m² selon son orientation
+      const isHorizontalWall = Math.abs(wall.rotation[1]) < 0.1 || Math.abs(wall.rotation[1] - Math.PI) < 0.1;
+      const wallSurface = isHorizontalWall 
+        ? roomConfig.width * roomConfig.height  // Murs avant/arrière
+        : roomConfig.length * roomConfig.height; // Murs gauche/droit
+      const wallPrice = Math.round(wallSurface * WALL_PRICE_PER_SQUARE_METER);
+      
       const newWallObject: ObjectData = {
         id: uuidv4(),
         url: '',
-        price: Math.round(WALL_PRICE),
-        details: 'Mur (Rez-de-chaussée)',
+        price: wallPrice,
+        details: `Construction mur porteur béton armé - Rez-de-chaussée (L:${isHorizontalWall ? roomConfig.width : roomConfig.length}m × H:${roomConfig.height}m × ép:${WALL_THICKNESS}m)`,
         isBatiChiffrageObject: false,
         position: [
           wall.position[0],
@@ -236,11 +247,15 @@ export const useFloors = ({
     ceilingBoundingBox.min.set(-roomConfig.width/2, -WALL_THICKNESS/2, -roomConfig.length/2);
     ceilingBoundingBox.max.set(roomConfig.width/2, WALL_THICKNESS/2, roomConfig.length/2);
 
+    // Calculer le prix du plafond basé sur sa surface
+    const ceilingSurface = roomConfig.width * roomConfig.length;
+    const ceilingPrice = Math.round(ceilingSurface * FLOOR_PRICE_PER_SQUARE_METER);
+    
     const ceilingObject: ObjectData = {
       id: uuidv4(),
       url: '',
-      price: FLOOR_PRICE_PER_SQUARE_METER,
-      details: 'Plafond (Rez-de-chaussée)',
+      price: ceilingPrice,
+      details: `Fourniture et pose plancher béton armé - Rez-de-chaussée (L:${roomConfig.width}m × l:${roomConfig.length}m × H:${WALL_THICKNESS}m)`,
       position: [0, roomConfig.height/2, 0],
       gltf: ceilingMesh,
       isBatiChiffrageObject: false,
@@ -306,7 +321,7 @@ export const useFloors = ({
       id: uuidv4(),
       url: '',
       price: FLOOR_PRICE_PER_SQUARE_METER,
-      details: `Sol (Étage ${nextFloorNumber})`,
+      details: `Fourniture et pose plancher béton armé - Étage ${nextFloorNumber} (L:${roomConfig.width}m × l:${roomConfig.length}m × H:${WALL_THICKNESS}m)`,
       position: [0, (floorHeight + WALL_THICKNESS/2)/2, 0],
       isBatiChiffrageObject: false,
       gltf: floorMesh,
@@ -390,7 +405,7 @@ export const useFloors = ({
       id: uuidv4(),
       url: '',
       price: FLOOR_PRICE_PER_SQUARE_METER,
-      details: `Plafond (Étage ${nextFloorNumber})`,
+      details: `Fourniture et pose plancher béton armé - Étage ${nextFloorNumber + 1} (L:${roomConfig.width}m × l:${roomConfig.length}m × H:${WALL_THICKNESS}m)`,
       position: [0, (floorHeight + roomConfig.height)/2, 0],
       gltf: ceilingMesh,
       isBatiChiffrageObject: false,
@@ -444,11 +459,18 @@ export const useFloors = ({
         Math.round(wall.scale[2] * 1000) / 1000
       ];
 
+      // Calculer la surface du mur en m² selon son orientation
+      const isHorizontalWall = Math.abs(wall.rotation[1]) < 0.1 || Math.abs(wall.rotation[1] - Math.PI) < 0.1;
+      const wallSurface = isHorizontalWall 
+        ? roomConfig.width * roomConfig.height  // Murs avant/arrière
+        : roomConfig.length * roomConfig.height; // Murs gauche/droit
+      const wallPrice = Math.round(wallSurface * WALL_PRICE_PER_SQUARE_METER);
+
       const newWallObject: ObjectData = {
         id: uuidv4(),
         url: '',
-        price: Math.round(WALL_PRICE),
-        details: `Mur (Étage ${nextFloorNumber})`,
+        price: wallPrice,
+        details: `Construction mur porteur béton armé - Étage ${nextFloorNumber} (L:${isHorizontalWall ? roomConfig.width : roomConfig.length}m × H:${roomConfig.height}m × ép:${WALL_THICKNESS}m)`,
         isBatiChiffrageObject: false,
         position: [
           wall.position[0],
@@ -510,7 +532,7 @@ export const useFloors = ({
     const roundedHeight = Math.round(newHeight * 1000) / 1000;
 
     setObjects((prevObjects: ObjectData[]) => prevObjects.map((obj: ObjectData) => {
-      if (!obj.details.includes(floorId === '0' ? 'Rez-de-chaussée' : `Étage ${floorId}`)) return obj;
+      if (!obj.details.includes(floorId === '0' ? 'Rez-de-chaussée' : `Étage ${floorId}`) && !obj.details.includes(floorId === '0' ? 'Rez-de-chaussée' : `Étage ${parseInt(floorId) + 1}`)) return obj;
 
       if (obj.type === 'floor') {
         const roundedScale: [number, number, number] = [
@@ -536,7 +558,7 @@ export const useFloors = ({
         return {
           ...obj,
           scale: roundedScale,
-          price: Math.round(roundedScale[0] * roundedScale[1] * 15)
+          price: Math.round(roundedScale[0] * roundedScale[1] * WALL_PRICE_PER_SQUARE_METER)
         };
       }
 
@@ -551,7 +573,7 @@ export const useFloors = ({
       // Vérifier si l'objet appartient à l'étage concerné
       const isCurrentFloor = floorId === '0'
         ? matchingObject.details.includes('Rez-de-chaussée')
-        : matchingObject.details.includes(`Étage ${floorId}`);
+        : matchingObject.details.includes(`Étage ${floorId}`) || matchingObject.details.includes(`Étage ${parseInt(floorId) + 1}`);
 
       if (!isCurrentFloor) return item;
 
@@ -573,7 +595,7 @@ export const useFloors = ({
         return {
           ...item,
           scale: roundedScale,
-          price: Math.round(roundedScale[0] * roundedScale[1] * 15)
+          price: Math.round(roundedScale[0] * roundedScale[1] * WALL_PRICE_PER_SQUARE_METER)
         };
       }
 

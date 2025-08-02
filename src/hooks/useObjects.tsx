@@ -5,6 +5,10 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useParametricDataService } from '../services/ParametricDataService';
 
+// Constantes de prix cohérentes avec useFloors.tsx
+const FLOOR_PRICE_PER_SQUARE_METER = 80; // Prix au m² pour les dalles/planchers
+const WALL_PRICE_PER_SQUARE_METER = 120; // Prix au m² pour les murs
+
 
 interface UseObjectsProps {
   objects: ObjectData[]; 
@@ -355,10 +359,10 @@ export const useObjects = ({
             let newPrice = obj.price;
             if (obj.type === 'wall') {
               // Prix basé sur la surface du mur
-              newPrice = Math.round(roundedScale[0] * roundedScale[1] * 15);
-            } else if (obj.type === 'floor') {
-              // Prix basé sur la surface du sol
-              newPrice = Math.round(roundedScale[0] * roundedScale[2] * 25);
+              newPrice = Math.round(roundedScale[0] * roundedScale[1] * WALL_PRICE_PER_SQUARE_METER);
+            } else if (obj.type === 'floor' || obj.type === 'ceiling') {
+              // Prix basé sur la surface du sol/plafond
+              newPrice = Math.round(roundedScale[0] * roundedScale[2] * FLOOR_PRICE_PER_SQUARE_METER);
             }
 
             return {
@@ -396,9 +400,9 @@ export const useObjects = ({
                 Math.round(newScale[2] * 1000) / 1000
               ],
               price: matchingObject.type === 'wall' 
-                ? Math.round(newScale[0] * newScale[1] * 15)
-                : matchingObject.type === 'floor'
-                ? Math.round(newScale[0] * newScale[2] * 25)
+                ? Math.round(newScale[0] * newScale[1] * WALL_PRICE_PER_SQUARE_METER)
+                : (matchingObject.type === 'floor' || matchingObject.type === 'ceiling')
+                ? Math.round(newScale[0] * newScale[2] * FLOOR_PRICE_PER_SQUARE_METER)
                 : item.price
             };
           }
@@ -620,10 +624,21 @@ export const useObjects = ({
               ] as [number, number, number]
             };
 
+            // Calculer le nouveau prix basé sur le type d'objet
+            let newPrice = obj.price;
+            if (obj.type === 'wall') {
+              // Prix basé sur la surface du mur
+              newPrice = Math.round(roundedScale[0] * roundedScale[1] * WALL_PRICE_PER_SQUARE_METER);
+            } else if (obj.type === 'floor' || obj.type === 'ceiling') {
+              // Prix basé sur la surface du sol/plafond
+              newPrice = Math.round(roundedScale[0] * roundedScale[2] * FLOOR_PRICE_PER_SQUARE_METER);
+            }
+
             return {
               ...obj,
               scale: roundedScale,
-              boundingBox: newBoundingBox
+              boundingBox: newBoundingBox,
+              price: newPrice
             };
           }
 
@@ -636,18 +651,32 @@ export const useObjects = ({
       })
     );
 
-    // Mettre à jour également le devis
+    // Mettre à jour également le devis avec les nouveaux prix
     setQuote(prevQuote =>
       prevQuote.map(item => {
         if (selectedObjectIds.includes(item.id)) {
-          return {
-            ...item,
-            scale: [
+          const matchingObject = objects.find(obj => obj.id === item.id);
+          if (matchingObject) {
+            const roundedScale: [number, number, number] = [
               Math.round(scale[0] * 1000) / 1000,
               Math.round(scale[1] * 1000) / 1000,
               Math.round(scale[2] * 1000) / 1000
-            ]
-          };
+            ];
+
+            // Calculer le nouveau prix basé sur le type d'objet
+            let newPrice = item.price;
+            if (matchingObject.type === 'wall') {
+              newPrice = Math.round(roundedScale[0] * roundedScale[1] * WALL_PRICE_PER_SQUARE_METER);
+            } else if (matchingObject.type === 'floor' || matchingObject.type === 'ceiling') {
+              newPrice = Math.round(roundedScale[0] * roundedScale[2] * FLOOR_PRICE_PER_SQUARE_METER);
+            }
+
+            return {
+              ...item,
+              scale: roundedScale,
+              price: newPrice
+            };
+          }
         }
         return item;
       })

@@ -186,8 +186,26 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         if (object.boundingBox) {
             return -object.boundingBox.min[1] / 2;
         }
+        // Fallback pour les objets sans boundingBox
+        if (object.type === 'wall') {
+            return height / 2; // Utiliser la valeur locale height qui est à jour
+        }
         return 0;
     }
+
+    // Logique pour recalculer la position Y quand l'échelle change
+    useEffect(() => {
+        if (selectedObject && recalculateYPosition) {
+            const minY = getMinYAxis(selectedObject);
+            if (minY !== position[1]) {
+                console.log('minY', minY, 'current Y', position[1]);
+                const newPosition: [number, number, number] = [position[0], minY, position[2]];
+                onUpdatePosition(selectedObject.id, newPosition);
+                setPosition(newPosition);
+            }
+            setRecalculateYPosition(false);
+        }
+    }, [recalculateYPosition, height]); // Ajouter height pour que ça se déclenche quand la hauteur change
 
     const handleRangeMouseDown = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -398,7 +416,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                         <span style={{ fontSize: '8px' }}>Face sélectionnée</span>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-                        {['front', 'back', 'left', 'right', 'top', 'bottom'].map((face) => (
+                        {['front', 'back'].map((face) => (
                             <button
                                 key={face}
                                 className={`face-button ${selectedFace === face ? 'selected' : ''}`}

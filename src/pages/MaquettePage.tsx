@@ -671,7 +671,7 @@ const MaquettePage: React.FC = () => {
         
         const geometry = new THREE.BoxGeometry(width, 0.1, depth);
         const material = new THREE.MeshStandardMaterial({ 
-            color: '#808080',
+            color: '#f0f0f0',
             roughness: 0.8,
             metalness: 0.2
         });
@@ -701,7 +701,7 @@ const MaquettePage: React.FC = () => {
             gltf: mesh,
             rotation: [0, 0, 0],
             scale: [width, 0.1, depth],
-            color: '#808080',
+            color: '#f0f0f0',
             isBatiChiffrageObject: false,
             texture: selectedTexture || '',
             boundingBox: boundingBox
@@ -727,7 +727,7 @@ const MaquettePage: React.FC = () => {
             
             const geometry = new THREE.BoxGeometry(width, 0.1, depth);
             const material = new THREE.MeshStandardMaterial({ 
-                color: '#808080',
+                color: '#f0f0f0',
                 roughness: 0.8,
                 metalness: 0.2
             });
@@ -758,7 +758,7 @@ const MaquettePage: React.FC = () => {
                 isBatiChiffrageObject: false,
                 rotation: [0, 0, 0],
                 scale: [width, 0.1, depth],
-                color: '#808080',
+                color: '#f0f0f0',
                 texture: '',
                 boundingBox: boundingBox
             };
@@ -787,8 +787,12 @@ const MaquettePage: React.FC = () => {
         if (!surfacePreview) {
             // Créer un nouvel aperçu avec une géométrie unitaire
             const geometry = new THREE.BoxGeometry(1, 0.1, 1);
+            
+            // Choisir la couleur selon le mode (2D = blanc/gris clair, 3D = gris)
+            const previewColor = is2DView ? '#ffffff' : '#808080';
+            
             const material = new THREE.MeshStandardMaterial({ 
-                color: '#808080',
+                color: previewColor,
                 transparent: true,
                 opacity: 0.5,
                 roughness: 0.8,
@@ -805,10 +809,16 @@ const MaquettePage: React.FC = () => {
             // Mettre à jour l'aperçu existant
             surfacePreview.scale.set(width, 0.1, depth);
             surfacePreview.position.set(centerX, 0.05, centerZ);
+            
+            // Mettre à jour la couleur selon le mode
+            const previewColor = is2DView ? '#ffffff' : '#808080';
+            if (surfacePreview.material instanceof THREE.MeshStandardMaterial) {
+                surfacePreview.material.color.set(previewColor);
+            }
         }
         
         setSurfaceEndPoint(end);
-    }, [surfacePreview]);
+    }, [surfacePreview, is2DView]);
 
     const reconstructMaquette = async () => {
         try {

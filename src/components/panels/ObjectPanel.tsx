@@ -588,7 +588,17 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
 
     const getMinYAxis = (object: ObjectData) => {
         if (object.boundingBox) {
+            // Pour les murs, la position Y minimale doit être la moitié de la hauteur
+            // car les murs sont centrés sur leur hauteur
+            if (object.type === 'wall') {
+                return object.scale[1] / 2; // La moitié de la hauteur du mur
+            }
+            // Pour les autres objets, utiliser la boundingBox
             return -object.boundingBox.min[1] / 2;
+        }
+        // Fallback pour les objets sans boundingBox
+        if (object.type === 'wall') {
+            return object.scale[1] / 2;
         }
         return 0;
     }

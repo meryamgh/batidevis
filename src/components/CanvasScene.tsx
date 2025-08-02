@@ -223,68 +223,119 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         const { scene } = useThree();
         
         useEffect(() => {
+            // Nettoyer les anciennes dimensions
             scene.children = scene.children.filter(child => !child.userData.isDimensionLabel);
 
             if (!is2DView || !showAllDimensions) return;
 
             objects.forEach(obj => {
-                if (obj.details.includes('Mur')) {
+                console.log('Checking object for dimensions:', {
+                    id: obj.id,
+                    details: obj.details,
+                    type: obj.type,
+                    scale: obj.scale,
+                    position: obj.position
+                });
+                
+                if (obj.details.includes('mur') || obj.details.includes('Mur') || obj.type === 'wall') {
+                    console.log('Creating wall dimensions for:', obj.details);
+                    // Affichage des dimensions pour les murs
                     const rotation = obj.rotation || [0, 0, 0];
                     const length = obj.scale[0];
+                    
+                    // Utiliser la vraie position de l'objet (multiplier par 2 si nécessaire)
+                    const realPosition = [
+                        obj.position[0] * 2,
+                        obj.position[1] * 2,
+                        obj.position[2] * 2
+                    ];
                     
                     // Calculer les points de début et de fin du mur
                     const angle = rotation[1];
                     const wallDirection = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
                     const wallStart = new THREE.Vector3(
-                        obj.position[0] - (wallDirection.x * length / 2),
-                        1,
-                        obj.position[2] - (wallDirection.z * length / 2)
+                        realPosition[0] - (wallDirection.x * length / 2),
+                        0,
+                        realPosition[2] - (wallDirection.z * length / 2)
                     );
                     const wallEnd = new THREE.Vector3(
-                        obj.position[0] + (wallDirection.x * length / 2),
-                        1,
-                        obj.position[2] + (wallDirection.z * length / 2)
+                        realPosition[0] + (wallDirection.x * length / 2),
+                        0,
+                        realPosition[2] + (wallDirection.z * length / 2)
                     );
 
-                    // Calculer le point médian et la direction perpendiculaire
-                    const midPoint = new THREE.Vector3().addVectors(wallStart, wallEnd).multiplyScalar(0.5);
-                    const direction = new THREE.Vector3().subVectors(wallEnd, wallStart);
-                    const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize();
-                    const labelPosition = midPoint.clone().add(perpendicular);
-
-                    // Créer l'étiquette de dimension
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    if (context) {
-                        canvas.width = 100;
-                        canvas.height = 40;
-                        context.fillStyle = '#4CAF50';
-                        context.fillRect(0, 0, canvas.width, canvas.height);
-                        context.font = 'bold 20px Arial';
-                        context.fillStyle = 'white';
-                        context.textAlign = 'center';
-                        context.textBaseline = 'middle';
-                        context.fillText(`${length.toFixed(2)}m`, canvas.width / 2, canvas.height / 2);
-                    }
-
-                    const texture = new THREE.CanvasTexture(canvas);
-                    const spriteMaterial = new THREE.SpriteMaterial({ 
-                        map: texture,
-                        depthTest: false,
-                        depthWrite: false
-                    });
-                    const sprite = new THREE.Sprite(spriteMaterial);
-                    sprite.position.copy(labelPosition);
-                    sprite.position.y = 0.05;
-                    sprite.scale.set(1.5, 0.6, 1);
-                    sprite.userData.isDimensionLabel = true;
-                    scene.add(sprite);
+                    // Créer la ligne de dimension avec la même logique que RaycasterHandler
+                    createDimensionLineForObject(scene, wallStart, wallEnd, length, 'L');
+                } else {
+                    console.log('Object not handled for dimensions:', obj.details, obj.type);
                 }
             });
         }, [scene, objects, is2DView, showAllDimensions]);
 
         return null;
     };
+
+    const createDimensionLineForObject = (scene: THREE.Scene, start: THREE.Vector3, end: THREE.Vector3, value: number, label: string) => {
+        // Utiliser la même logique que RaycasterHandler pour l'affichage des dimensions
+        const direction = new THREE.Vector3().subVectors(end, start);
+        const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        
+        // Calculer un décalage perpendiculaire pour l'étiquette
+        // Utiliser une direction fixe pour éviter les problèmes de symétrie
+        let perpendicular;
+        if (Math.abs(direction.x) > Math.abs(direction.z)) {
+            // Ligne plus horizontale, décalage vertical
+            perpendicular = new THREE.Vector3(0, 0, 1).multiplyScalar(1.5);
+        } else {
+            // Ligne plus verticale, décalage horizontal
+            perpendicular = new THREE.Vector3(1, 0, 0).multiplyScalar(1.5);
+        }
+        const labelPosition = midPoint.clone().add(perpendicular);
+
+        // Créer l'étiquette de dimension avec le même style que RaycasterHandler
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (context) {
+            canvas.width = 120;
+            canvas.height = 40;
+            context.fillStyle = '#2196F3';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.font = 'bold 16px Arial';
+            context.fillStyle = 'white';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(`${label}: ${value.toFixed(2)}m`, canvas.width / 2, canvas.height / 2);
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ 
+            map: texture,
+            depthTest: false,
+            depthWrite: false
+        });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.copy(labelPosition);
+        sprite.position.y = 0.05;
+        sprite.scale.set(1.5, 0.6, 1);
+        sprite.userData.isDimensionLabel = true;
+        sprite.renderOrder = 999;
+        scene.add(sprite);
+
+        // Créer la ligne de connexion (optionnel, pour plus de clarté)
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([start, end]);
+        const lineMaterial = new THREE.LineBasicMaterial({ 
+            color: 0x2196F3, 
+            linewidth: 1,
+            depthTest: false,
+            depthWrite: false
+        });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        line.userData.isDimensionLabel = true;
+        line.renderOrder = 999;
+        scene.add(line);
+    };
+
+
 
      
     const LineMeasurement = ({ start, end, length }: { start: THREE.Vector3, end: THREE.Vector3, length: number }) => {
@@ -342,8 +393,18 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         if (!texture) return null;
         
         return (
-            <sprite position={[textPosition.x, 0.2, textPosition.z]} scale={[2, 1, 1]}>
-                <spriteMaterial attach="material" transparent={true} map={texture} />
+            <sprite 
+                position={[textPosition.x, 10, textPosition.z]} 
+                scale={[2, 1, 1]}
+                renderOrder={999}
+            >
+                <spriteMaterial 
+                    attach="material" 
+                    transparent={true} 
+                    map={texture}
+                    depthTest={false}
+                    depthWrite={false}
+                />
             </sprite>
         );
     };
@@ -537,8 +598,26 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                         />
                     )}
 
-                    {/* Afficher le groundPlane seulement en mode 3D ou 2D, pas en mode ObjectOnly */}
-                    {groundPlane && !isObjectOnlyView && <primitive object={groundPlane} />}
+                    {/* Afficher le groundPlane dès l'arrivée sur la page de maquette, pas en mode ObjectOnly */}
+                    {!isObjectOnlyView && (
+                        <>
+                            {groundPlane && <primitive object={groundPlane} />}
+                            {/* Sol gris de secours si groundPlane n'est pas encore créé */}
+                            {!groundPlane && (
+                                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+                                    <planeGeometry args={[100, 100]} />
+                                    <meshStandardMaterial 
+                                        color="#716e6e"
+                                        side={THREE.DoubleSide}
+                                        transparent={true}
+                                        opacity={0.8}
+                                        roughness={0.9}
+                                        metalness={0.1}
+                                    />
+                                </mesh>
+                            )}
+                        </>
+                    )}
                     
                     {/* Afficher la grille en mode 2D , pas en mode ObjectOnly */}
                     {is2DView && !isObjectOnlyView && (
