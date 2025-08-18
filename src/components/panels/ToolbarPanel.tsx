@@ -4,6 +4,7 @@ import '../../styles/AIGenerationPanel.css';
 import { BACKEND_URL } from '../../config/env';
 import DecorativeObjectSelector from './DecorativeObjectSelector';
 import AIGenerationPanel from './AIGenerationPanel';
+import { RotateIcon } from '../icons/ControlIcons';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
@@ -33,6 +34,7 @@ interface ToolbarProps {
   toggleCharacterMode: () => void;
   showMenu: boolean;
   setShowMenu: React.Dispatch<React.SetStateAction<boolean>>;
+  handleLoadBackupMaquette?: () => void;
 }
  
 
@@ -61,33 +63,43 @@ const Toolbar: React.FC<ToolbarProps> = ({
   isCharacterMode,
   toggleCharacterMode,
   showMenu,
-  setShowMenu
+  setShowMenu,
+  handleLoadBackupMaquette
 }) => {
   const handleExport = async () => {
-    const exportData = {
-        objects: objects.map(obj => ({
+    // Fonction pour nettoyer les données avant export
+    const cleanDataForExport = (obj: any) => {
+        const cleanParametricData = obj.parametricData && typeof obj.parametricData === 'object' 
+            ? JSON.parse(JSON.stringify(obj.parametricData)) // Deep clone pour éviter les références circulaires
+            : {};
+            
+        return {
             id: obj.id,
             url: obj.url,
-            price: obj.price,
-            details: obj.details,
+            price: typeof obj.price === 'number' ? obj.price : 100,
+            details: obj.details || 'Objet',
             position: [
                 obj.position[0] * 2,
                 obj.position[1] * 2,
                 obj.position[2] * 2
             ],
-            scale: obj.scale,
-            rotation: obj.rotation || [0, 0, 0],
-            texture: obj.texture,
-            color: obj.color,
+            scale: Array.isArray(obj.scale) ? obj.scale : [1, 1, 1],
+            rotation: Array.isArray(obj.rotation) ? obj.rotation : [0, 0, 0],
+            texture: obj.texture || '',
+            color: obj.color || '',
             startPoint: obj.startPoint,
             endPoint: obj.endPoint,
             parentScale: obj.parentScale,
             boundingBox: obj.boundingBox,
             faces: obj.faces,
-            type: obj.type,
-            parametricData: obj.parametricData,
-            isBatiChiffrageObject: obj.isBatiChiffrageObject
-        }))
+            type: obj.type || 'object',
+            parametricData: cleanParametricData,
+            isBatiChiffrageObject: Boolean(obj.isBatiChiffrageObject)
+        };
+    };
+
+    const exportData = {
+        objects: objects.map(cleanDataForExport)
     };
 
     // Envoyer au backend
@@ -247,7 +259,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             fontSize: '16px',
             fontWeight: 'bold',
           }}>
-          ✥
+          {isOrbitMode ? '✥' : <RotateIcon />}
         </button>
 
         <button 
@@ -320,13 +332,26 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
         <button 
           onClick={() => setShowAIGeneration(true)} 
-          className="bouton"
+          className="bouton ai-button"
+          title="Générer un objet 3D avec l'IA"
           style={{
             ...buttonStyle,
-            margin: '0'
+            margin: '0',
+            background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
+            color: 'white',
+            fontWeight: 'bold',
+            border: 'none',
+            boxShadow: '0 4px 15px rgba(106, 17, 203, 0.3)',
+            fontSize: '13px',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
-          générer un objet 3D avec l'ia
+          ✨ Générer un objet 3D avec l'IA ✨
         </button>
       </div>
 
@@ -335,7 +360,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button
           onClick={handleExport}
           className="bouton icon-button"
-          title="Exporter la maquette au format JSON"
+          title="Sauvegarder la maquette"
           style={{
             ...iconButtonStyle,
             margin: '0'
@@ -347,7 +372,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         <button 
           onClick={reconstructMaquette}
           className="toolbar-button icon-button"
-          title="Charger la maquette"
+          title="Récupérer la dernière sauvegarde"
           style={{
             ...iconButtonStyle,
             fontSize: '20px',
@@ -357,6 +382,22 @@ const Toolbar: React.FC<ToolbarProps> = ({
         >
           ⭳
         </button>
+
+        {handleLoadBackupMaquette && (
+          <button 
+            onClick={handleLoadBackupMaquette}
+            className="toolbar-button icon-button"
+            title="Charger une maquette depuis un fichier"
+            style={{
+              ...iconButtonStyle,
+              fontSize: '16px',
+              fontWeight: 'bold',
+              margin: '0'
+            }}
+          >
+            📁
+          </button>
+        )}
       </div>
       
       {showAIGeneration && (

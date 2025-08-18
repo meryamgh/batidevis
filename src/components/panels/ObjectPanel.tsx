@@ -707,7 +707,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             <div className='close'>
                 <button className='bouton-close' onClick={() => {
                     onDeselectObject(object.id);
-                    handleClosePanel();
+                    onClosePanel();
                 }}>x</button>
             </div>
             <div className='title_popup'>

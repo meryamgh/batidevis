@@ -134,13 +134,18 @@ interface ApiSuggestionResponse {
     }>;
 }
 
+// Fonction utilitaire pour formater les nombres avec des espaces tous les 3 chiffres
+const formatNumber = (num: number): string => {
+    return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
+
 const FullQuote: React.FC = () => {
     const navigate = useNavigate();
     const { quote } = useMaquetteStore();
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
     const [data, setData] = useState<any>(null);
-    const [isEditMode, setIsEditMode] = useState<boolean>(true);
+    const [isEditMode, setIsEditMode] = useState<boolean>(false);
     // YouSign API integration
     const apiKey = import.meta.env.VITE_APP_YOUSIGN_API_KEY ;
     const [youSignClient] = useState<YouSignClient>(() => new YouSignClient(apiKey));
@@ -275,7 +280,7 @@ const FullQuote: React.FC = () => {
                 if (data.matches && data.matches.length > 0) {
                     // Stocker les données complètes de toutes les suggestions
                     const formattedSuggestions = data.matches.map(match => ({
-                        display: `${match.libtech} (${match.prix.toFixed(2)}€/${match.unite})`,
+                        display: `${match.libtech} (${formatNumber(match.prix)}€/${match.unite})`,
                         data: match
                     }));
                     
@@ -563,7 +568,7 @@ const FullQuote: React.FC = () => {
             const frais = fraisDivers.find(f => f.id === id);
             if (frais) {
                 const newItem: AggregatedQuoteItem = {
-                    details: `${frais.libtech} (${frais.prix.toFixed(2)}€/${frais.unite})`,
+                    details: `${frais.libtech} (${formatNumber(frais.prix)}€/${frais.unite})`,
                     price: frais.prix,
                     quantity: 1,
                     unit: frais.unite,
@@ -739,8 +744,8 @@ const FullQuote: React.FC = () => {
                 
                 doc.text(item.quantity.toString(), 130, y);
                 doc.text(item.unit || 'U', 150, y);
-                doc.text(`${item.price.toFixed(2)} €`, 170, y);
-                doc.text(`${(item.price * item.quantity).toFixed(2)} €`, 190, y);
+                doc.text(`${formatNumber(item.price)} €`, 170, y);
+                doc.text(`${formatNumber(item.price * item.quantity)} €`, 190, y);
                 
                 y += 15;
                 
@@ -756,11 +761,11 @@ const FullQuote: React.FC = () => {
             y += 10;
             
             // Totals
-            doc.text(`Total HT: ${totalHT.toFixed(2)} €`, 140, y+10);
-            doc.text(`TVA (${(tvaRate * 100).toFixed(2)}%): ${totalTVA.toFixed(2)} €`, 140, y+20);
-            doc.text(`Total TTC: ${totalTTC.toFixed(2)} €`, 140, y+30);
-            doc.text(`Acompte (${(acompteRate * 100).toFixed(2)}%): ${acompte.toFixed(2)} €`, 140, y+40);
-            doc.text(`Reste à payer: ${resteAPayer.toFixed(2)} €`, 140, y+50);
+            doc.text(`Total HT: ${formatNumber(totalHT)} €`, 140, y+10);
+            doc.text(`TVA (${(tvaRate * 100).toFixed(2)}%): ${formatNumber(totalTVA)} €`, 140, y+20);
+            doc.text(`Total TTC: ${formatNumber(totalTTC)} €`, 140, y+30);
+            doc.text(`Acompte (${(acompteRate * 100).toFixed(2)}%): ${formatNumber(acompte)} €`, 140, y+40);
+            doc.text(`Reste à payer: ${formatNumber(resteAPayer)} €`, 140, y+50);
             
             // Signature area
             y += 70;
@@ -1063,7 +1068,7 @@ const FullQuote: React.FC = () => {
             total_ht: item.price * item.quantity
           })),
           paiement: {
-            conditions: `Acompte ${(acompteRate * 100).toFixed(2)}% du total TTC = ${acompte.toFixed(2)} € TTC à la signature`,
+            conditions: `Acompte ${(acompteRate * 100).toFixed(2)}% du total TTC = ${formatNumber(acompte)} € TTC à la signature`,
             reste_a_facturer: resteAPayer,
             moyens_acceptes: ["Chèque", "Espèces"]
           },
@@ -1470,7 +1475,7 @@ const FullQuote: React.FC = () => {
                             onKeyDown={handleKeyDown}
                             autoFocus
                           />
-                          : `${item.quantity.toFixed(2)}`}
+                          : `${formatNumber(item.quantity)}`}
                       </td>
                       <td>{item.unit || 'U'}</td>
                       <td
@@ -1487,10 +1492,10 @@ const FullQuote: React.FC = () => {
                             onKeyDown={handleKeyDown}
                             autoFocus
                           />
-                          : `${item.price.toFixed(2)} €`}
+                          : `${formatNumber(item.price)} €`}
                       </td>
                       <td>{(tvaRate * 100).toFixed(2)} %</td>
-                      <td>{(item.price * item.quantity).toFixed(2)} €</td>
+                      <td>{formatNumber(item.price * item.quantity)} €</td>
                       {isEditMode && (
                         <td>
                           <button 
@@ -1653,9 +1658,9 @@ const FullQuote: React.FC = () => {
                     >
                       {(acompteRate * 100).toFixed(2)}%
                     </span>
-                  )} du total TTC = {acompte.toFixed(2)} € TTC à la signature
+                                      )} du total TTC = {formatNumber(acompte)} € TTC à la signature
                   <br/>
-                  Reste à facturer : {resteAPayer.toFixed(2)} € TTC
+                  Reste à facturer : {formatNumber(resteAPayer)} € TTC
                   <br/>
                   Méthodes de paiement acceptées : Chèque, Espèces.
                 </p>
@@ -1665,19 +1670,19 @@ const FullQuote: React.FC = () => {
                   <tbody>
                     <tr>
                       <td className='size_description_price'><strong>Total net HT</strong></td>
-                      <td className='size_price'><strong>{totalHT.toFixed(2)} €</strong></td>
+                      <td className='size_price'><strong>{formatNumber(totalHT)} €</strong></td>
                     </tr>
                     <tr>
                       <td>TVA { (tvaRate * 100).toFixed(2) } %</td>
-                      <td>{totalTVA.toFixed(2)} €</td>
+                      <td>{formatNumber(totalTVA)} €</td>
                     </tr>
                     <tr>
                       <td><strong>Total TTC</strong></td>
-                      <td><strong>{totalTTC.toFixed(2)} €</strong></td>
+                      <td><strong>{formatNumber(totalTTC)} €</strong></td>
                     </tr>
                     <tr className='blue'>
                       <td>NET À PAYER</td>
-                      <td>{totalTTC.toFixed(2)} €</td>
+                      <td>{formatNumber(totalTTC)} €</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1807,7 +1812,7 @@ const FullQuote: React.FC = () => {
             >
               {fraisDivers.map((frais) => (
                 <option key={frais.id} value={frais.id}>
-                  {frais.libtech} - {frais.prix.toFixed(2)}€/{frais.unite}
+                  {frais.libtech} - {formatNumber(frais.prix)}€/{frais.unite}
                 </option>
               ))}
             </select>

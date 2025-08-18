@@ -1,6 +1,12 @@
 import React from 'react';
 import { ObjectData } from '../../types/ObjectData';
 import { useNavigate } from 'react-router-dom';
+import { useMaquetteStore } from '../../store/maquetteStore';
+
+// Fonction utilitaire pour formater les nombres avec des espaces tous les 3 chiffres
+const formatNumber = (num: number): string => {
+    return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+};
 
 interface QuotePanelProps {
   quote: ObjectData[];
@@ -17,6 +23,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
   handleRemoveObject
 }) => {
   const navigate = useNavigate();
+  const clearMaquette = useMaquetteStore(state => state.clearMaquette);
 
   const navigateToFullQuote = () => {
     const serializableQuote = getSerializableQuote();
@@ -34,6 +41,13 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
     console.log('handleCompleteRemoval appelé avec id:', itemId);
     setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
     handleRemoveObject(itemId);
+  };
+
+  // Fonction pour nettoyer complètement la maquette et le devis
+  const handleClearAll = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer tous les éléments de la maquette et du devis ?')) {
+      clearMaquette();
+    }
   };
 
   const buttonStyle = {
@@ -135,6 +149,67 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
         backgroundColor: '#2D3C54',
         marginBottom: '20px'
       }} />
+
+      {/* Bouton de nettoyage complet */}
+      {quote.length > 0 && (
+        <div style={{
+          marginBottom: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          alignItems: 'center'
+        }}>
+          <button 
+            onClick={handleClearAll}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontWeight: '500',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#c82333';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc3545';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            }}
+          >
+            Nettoyer la maquette
+          </button>
+          <button 
+          onClick={navigateToFullQuote} 
+          className="full-quote-button"
+          style={{
+            
+            width: '100%',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: '500'
+          }}
+        >
+          CONSULTER LE DEVIS COMPLET
+        </button>
+        </div>
+      )}
+
+{quote.length > 0 && (
+        <div style={totalStyle}>
+          Total: {formatNumber(quote.reduce((sum, item) => sum + item.price, 0))} €
+        </div>
+      )}
       
       {quote.length === 0 ? (
         <div style={{
@@ -151,8 +226,8 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
             <div key={item.id} style={itemStyle}>
               <div style={itemContentStyle}>
                 <div style={itemTextStyle}>
-                  {(item.parametricData ? item.parametricData.item_details.libtech : item.details).split('_').map((part: string, index: number) => (
-                    <div key={index} style={{ marginBottom: index < (item.parametricData ? item.parametricData.item_details.libtech : item.details).split('_').length - 1 ? '4px' : '0' }}>
+                  {(item.parametricData && item.parametricData.item_details && item.parametricData.item_details.libtech ? item.parametricData.item_details.libtech : item.details).split('_').map((part: string, index: number) => (
+                    <div key={index} style={{ marginBottom: index < (item.parametricData && item.parametricData.item_details && item.parametricData.item_details.libtech ? item.parametricData.item_details.libtech : item.details).split('_').length - 1 ? '4px' : '0' }}>
                       {part}
                     </div>
                   ))}
@@ -161,7 +236,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                     color: '#6c757d',
                     marginTop: '4px'
                   }}>
-                {item.price.toFixed(2)} €
+                {formatNumber(item.price)} €
                   </div>
                 </div>
                 <div style={buttonsContainerStyle}>
@@ -209,7 +284,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
       
       {quote.length > 0 && (
         <div style={totalStyle}>
-          Total: {quote.reduce((sum, item) => sum + item.price, 0).toFixed(2)} €
+          Total: {formatNumber(quote.reduce((sum, item) => sum + item.price, 0))} €
         </div>
       )}
       

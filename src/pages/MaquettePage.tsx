@@ -182,12 +182,21 @@ const MaquettePage: React.FC = () => {
                 }
             });
         } else {
-            // Mode sélection simple : sélectionner uniquement cet objet
-            setSelectedObjectIds([id]);
-            setSelectedObjectId(id);
-            setShowMultiSelectionPanel(false);
+            // Mode sélection simple : sélectionner uniquement cet objet ou le désélectionner s'il est déjà sélectionné
+            if (selectedObjectId === id) {
+                // Désélectionner l'objet si on clique dessus à nouveau
+                setSelectedObjectIds([]);
+                setSelectedObjectId(null);
+                setShowMultiSelectionPanel(false);
+                closePanel();
+            } else {
+                // Sélectionner l'objet
+                setSelectedObjectIds([id]);
+                setSelectedObjectId(id);
+                setShowMultiSelectionPanel(false);
+            }
         }
-    }, []);
+    }, [selectedObjectId, closePanel]);
 
     const handleCopyObjects = useCallback((objectGroup: ObjectGroup) => {
         setClipboard(objectGroup);
@@ -202,7 +211,44 @@ const MaquettePage: React.FC = () => {
         setSelectedObjectIds([]);
         setSelectedObjectId(null);
         setShowMultiSelectionPanel(false);
-    }, []);
+        closePanel();
+    }, [closePanel]);
+
+    // Nouvelle fonction pour désélectionner les objets quand on clique sur l'espace vide
+    const handleDeselect = useCallback(() => {
+        console.log('🎯 Deselecting objects - clicked on empty space');
+        setSelectedObjectIds([]);
+        setSelectedObjectId(null);
+        setShowMultiSelectionPanel(false);
+        setIsMoving(null);
+        closePanel();
+    }, [closePanel]);
+
+    // Fonction pour désélectionner un objet spécifique (utilisée par les panneaux)
+    const handleDeselectObject = useCallback((objectId?: string) => {
+        console.log('🎯 Deselecting object:', objectId);
+        setSelectedObjectIds([]);
+        setSelectedObjectId(null);
+        setShowMultiSelectionPanel(false);
+        setIsMoving(null);
+        closePanel();
+    }, [closePanel]);
+
+    // Fonction pour fermer le panneau et désélectionner l'objet
+    const handleClosePanel = useCallback(() => {
+        closePanel();
+        handleDeselectObject();
+    }, [closePanel, handleDeselectObject]);
+
+    // Fonction simple pour fermer juste le panneau (utilisée par onClosePanel)
+    const handleClosePanelOnly = useCallback(() => {
+        closePanel();
+    }, [closePanel]);
+
+    // Fonction simple pour fermer juste le panneau (utilisée par onClosePanel)
+    const closePanelOnly = useCallback(() => {
+        closePanel();
+    }, [closePanel]);
 
     const handleRemoveSelectedObjects = useCallback(() => {
         objectsUtils.handleRemoveSelectedObjects(selectedObjectIds);
@@ -542,7 +588,7 @@ const MaquettePage: React.FC = () => {
                             setSelectedObjectId(null);
                         }}
                         onRotateObject={objectsUtils.handleRotateObject}
-                        onDeselectObject={() => setSelectedObjectId(null)}
+                        onDeselectObject={handleDeselectObject}
                         parametricData={localObject.parametricData}
                         handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                     />
@@ -569,13 +615,9 @@ const MaquettePage: React.FC = () => {
                                 object={selectedObject}
                                 onUpdateColor={objectsUtils.handleUpdateColor}
                                 onUpdatePosition={objectsUtils.handleUpdatePosition}
-                                onClosePanel={() => {
-                                    closePanel();
-                                    setIsMoving(null);
-                                    setSelectedObjectId(null);
-                                }}
+                                onClosePanel={closePanelOnly}
                                 onRotateObject={objectsUtils.handleRotateObject}
-                                onDeselectObject={() => setSelectedObjectId(null)}
+                                onDeselectObject={handleDeselectObject}
                                 parametricData={data}
                                 handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                             />
@@ -599,7 +641,7 @@ const MaquettePage: React.FC = () => {
                             setSelectedObjectId(null);
                         }}
                         onRotateObject={objectsUtils.handleRotateObject}
-                        onDeselectObject={() => setSelectedObjectId(null)}
+                        onDeselectObject={handleDeselectObject}
                         handleUpdateObjectParametricData={objectsUtils.handleUpdateObjectParametricData}
                     />
                 );
@@ -821,6 +863,26 @@ const MaquettePage: React.FC = () => {
         setSurfaceEndPoint(end);
     }, [surfacePreview, is2DView]);
 
+    // Fonction pour nettoyer et valider les données d'un objet
+    const cleanObjectData = (objData: any): any => {
+        return {
+            ...objData,
+            id: objData.id || `obj_${Date.now()}_${Math.random()}`,
+            price: typeof objData.price === 'number' ? objData.price : 100,
+            details: objData.details || 'Objet importé',
+            position: Array.isArray(objData.position) && objData.position.length === 3 ? objData.position : [0, 0, 0],
+            scale: Array.isArray(objData.scale) && objData.scale.length === 3 ? objData.scale : [1, 1, 1],
+            rotation: Array.isArray(objData.rotation) && objData.rotation.length === 3 ? objData.rotation : [0, 0, 0],
+            parametricData: objData.parametricData && typeof objData.parametricData === 'object' ? objData.parametricData : {},
+            texture: objData.texture || '',
+            color: objData.color || '',
+            type: objData.type || 'object',
+            faces: objData.faces && typeof objData.faces === 'object' ? objData.faces : undefined,
+            boundingBox: objData.boundingBox && typeof objData.boundingBox === 'object' ? objData.boundingBox : undefined,
+            isBatiChiffrageObject: Boolean(objData.isBatiChiffrageObject)
+        };
+    };
+
     const reconstructMaquette = async () => {
         try {
             // Charger les données depuis le backend
@@ -828,6 +890,13 @@ const MaquettePage: React.FC = () => {
             if (!response.ok) throw new Error('Erreur lors du chargement');
             
             const data = await response.json();
+            
+            // Nettoyer et valider les données
+            if (!data.objects || !Array.isArray(data.objects)) {
+                console.error('Données de maquette invalides:', data);
+                alert('Les données de maquette sont corrompues ou invalides.');
+                return;
+            }
             
             // Vider la scène actuelle
             setObjects([]);
@@ -837,7 +906,10 @@ const MaquettePage: React.FC = () => {
             const newObjects: ObjectData[] = [];
             
             // Reconstruire chaque objet
-            for (const objData of data.objects) {
+            for (const rawObjData of data.objects) {
+                // Nettoyer et valider les données de l'objet
+                const objData = cleanObjectData(rawObjData);
+                
                 // Diviser les positions par 2 pour la compatibilité avec GLTFObject
                 const adjustedPosition: [number, number, number] = [
                     objData.position[0] / 2,
@@ -853,21 +925,10 @@ const MaquettePage: React.FC = () => {
                         
                         // Créer le nouvel objet avec toutes les propriétés
                         const newObject: ObjectData = {
-                            id: objData.id,
-                            url: objData.url,
+                            ...objData,
                             position: adjustedPosition, // Utiliser la position ajustée
-                            scale: objData.scale,
-                            rotation: objData.rotation,
-                            texture: objData.texture || '',
-                            isBatiChiffrageObject: false,
-                            color: objData.color || '',
-                            type: objData.type,
-                            faces: objData.faces,
-                            parametricData: objData.parametricData || {},
                             gltf: gltf,
-                            price: objData.price || 100,
-                            details: objData.details || 'Objet importé',
-                            boundingBox: objData.boundingBox // Conserver la boundingBox si elle existe
+                            isBatiChiffrageObject: objData.isBatiChiffrageObject || false
                         };
                         
                         newObjects.push(newObject);
@@ -886,9 +947,7 @@ const MaquettePage: React.FC = () => {
                     const newObject: ObjectData = {
                         ...objData,
                         position: adjustedPosition, // Utiliser la position ajustée
-                        gltf: mesh,
-                        price: objData.price || 100,
-                        details: objData.details || `${objData.type === 'floor' ? 'Sol' : 'Mur'}`
+                        gltf: mesh
                     };
                     
                     newObjects.push(newObject);
@@ -911,6 +970,100 @@ const MaquettePage: React.FC = () => {
             
         } catch (error) {
             console.error('Erreur lors de la reconstruction:', error);
+            alert('Erreur lors du chargement de la maquette. Veuillez vérifier que le fichier est valide.');
+        }
+    };
+
+    // Fonction pour récupérer une maquette de sauvegarde
+    const handleLoadBackupMaquette = async () => {
+        try {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+                        
+                        if (!data.objects || !Array.isArray(data.objects)) {
+                            throw new Error('Format de fichier invalide');
+                        }
+                        
+                        // Vider la scène actuelle
+                        setObjects([]);
+                        setQuote([]);
+                        
+                        // Reconstruire avec les données du fichier
+                        const newObjects: ObjectData[] = [];
+                        
+                        for (const rawObjData of data.objects) {
+                            const objData = cleanObjectData(rawObjData);
+                            
+                            const adjustedPosition: [number, number, number] = [
+                                objData.position[0] / 2,
+                                objData.position[1] / 2,
+                                objData.position[2] / 2
+                            ];
+
+                            if (objData.url) {
+                                try {
+                                    const loader = new GLTFLoader();
+                                    const gltf = await loader.loadAsync(objData.url);
+                                    
+                                    const newObject: ObjectData = {
+                                        ...objData,
+                                        position: adjustedPosition,
+                                        gltf: gltf,
+                                        isBatiChiffrageObject: objData.isBatiChiffrageObject || false
+                                    };
+                                    
+                                    newObjects.push(newObject);
+                                } catch (error) {
+                                    console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
+                                }
+                            } else {
+                                const geometry = objData.type === 'floor' 
+                                    ? new THREE.PlaneGeometry(1, 1)
+                                    : new THREE.BoxGeometry(1, 1, 1);
+                                
+                                const material = new THREE.MeshStandardMaterial();
+                                const mesh = new THREE.Mesh(geometry, material);
+                                
+                                const newObject: ObjectData = {
+                                    ...objData,
+                                    position: adjustedPosition,
+                                    gltf: mesh
+                                };
+                                
+                                newObjects.push(newObject);
+                            }
+                        }
+                        
+                        setObjects(newObjects);
+                        setQuote(newObjects);
+                        
+                        // Appliquer les textures et faces
+                        for (const obj of newObjects) {
+                            if (obj.texture) {
+                                objectsUtils.handleUpdateTexture(obj.id, obj.texture);
+                            }
+                            if (obj.faces) {
+                                objectsUtils.handleUpdateFaces(obj.id, obj.faces);
+                            }
+                        }
+                        
+                        alert('Maquette chargée avec succès !');
+                    } catch (error) {
+                        console.error('Erreur lors du chargement du fichier:', error);
+                        alert('Erreur lors du chargement du fichier. Veuillez vérifier que le fichier est valide.');
+                    }
+                }
+            };
+            input.click();
+        } catch (error) {
+            console.error('Erreur lors de l\'ouverture du sélecteur de fichier:', error);
         }
     };
 
@@ -1302,6 +1455,7 @@ const MaquettePage: React.FC = () => {
                 toggleCharacterMode={() => setIsCharacterMode(!isCharacterMode)}
                 showMenu={showMenu}
                 setShowMenu={setShowMenu}
+                handleLoadBackupMaquette={handleLoadBackupMaquette}
             />
 
             {/* Add TextureUpload component */}
@@ -1389,6 +1543,7 @@ const MaquettePage: React.FC = () => {
                         onMultiSelect={handleMultiSelect}
                         isOrbitMode={isOrbitMode}
                         isCharacterMode={isCharacterMode}
+                        onDeselect={handleDeselect}
                     />
 
                     {/* Ajout des contrôles d'objet */}

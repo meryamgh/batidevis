@@ -44,6 +44,8 @@ type CanvasSceneProps = {
     // Nouvelles props pour les modes de navigation
     isOrbitMode?: boolean;
     isCharacterMode?: boolean;
+    // Nouvelle prop pour la désélection
+    onDeselect?: () => void;
 };
 
 const SurfaceHandler: React.FC<{
@@ -146,6 +148,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     onMultiSelect,
     isOrbitMode = true,
     isCharacterMode = false,
+    onDeselect,
 }) => {
     const [firstPersonView, setFirstPersonView] = useState(false);
     const [characterPosition, setCharacterPosition] = useState<THREE.Vector3 | undefined>();
@@ -503,7 +506,13 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
                 style={{ width: '100%', height: '100%' }}
             >
                 <Canvas 
-                    onClick={() => setIsMoving(null)}
+                    onClick={(event) => {
+                        // Si on clique sur le canvas (espace vide), désélectionner les objets
+                        if (event.target === event.currentTarget && onDeselect) {
+                            onDeselect();
+                        }
+                        setIsMoving(null);
+                    }}
                     shadows
                     gl={{ 
                         antialias: true,
