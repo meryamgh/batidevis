@@ -1,0 +1,269 @@
+.extend-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.extend-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.extend-button {
+    flex: 1;
+    padding: 8px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.extend-button:hover {
+    background-color: #e0e0e0;
+}
+
+.extend-button:active {
+    background-color: #d0d0d0;
+}
+
+.extend-controls-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+}
+
+.extend-control-button {
+    flex: 1;
+    padding: 8px;
+    background-color: #ff9999;
+    border: 1px solid #ff6666;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    font-weight: bold;
+}
+
+.extend-control-button:hover {
+    background-color: #ff6666;
+}
+
+.extend-control-button:active {
+    background-color: #ff3333;
+}
+
+.extend-control-button:disabled {
+    background-color: #cccccc;
+    border-color: #bbbbbb;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.face-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.face-button {
+    padding: 8px 12px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+}
+
+.face-button.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.face-button:hover {
+    background-color: '#e0e0e0';
+}
+
+.face-button.selected:hover {
+    background-color: #0056b3;
+}
+
+/* Parametric Data Styles */
+.parametric-data {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.parametric-item {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.parametric-key {
+    font-weight: bold;
+    color: #333;
+}
+
+.parametric-value {
+    color: #555;
+}
+
+/* New improved parametric data styles */
+.item-details, .variables-section, .template-section {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.item-details h4, .variables-section h4, .template-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    color: #0066cc;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.item-property {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-label {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+    font-size: 0.85rem;
+}
+
+.item-value {
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.item-description {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 4px 0;
+    color: #333;
+    text-align: justify;
+}
+
+.variable-position {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+
+.position-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+.position-select {
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.template-text {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin: 0;
+    font-style: italic;
+    color: #666;
+    text-align: justify;
+}
+
+/* Styles pour la section texte avec variantes */
+.text-display {
+    margin-top: 4px;
+}
+
+.text-with-variants {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 4px 0;
+    color: #333;
+    text-align: justify;
+    padding: 8px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.selected-variant {
+    color: #0066cc;
+    background-color: #e6f3ff;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    border: 1px solid #b3d9ff;
+}
+
+.empty-variant {
+    color: #999;
+    font-style: italic;
+    background-color: #f0f0f0;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px dashed #ccc;
+}
+
+/* Styles pour les badges de statut */
+.status-badge {
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-badge.valid {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-badge.invalid {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+#floating-panel {
+  z-index: 1;
+}
+
+/* Correction pour les menus react-select inline dans le panel */
+.inline-variant-select__menu,
+.position-select__menu {
+  position: fixed !important;
+  z-index: 100100 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* S'assurer que le panel parent ne coupe pas les menus */
+.object-panel, .item-details, .panel-section {
+  overflow: visible !important;
+}

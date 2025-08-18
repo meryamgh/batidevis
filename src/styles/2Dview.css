@@ -1,0 +1,53 @@
+.two-d-view-container {
+    position: fixed;
+    top: 10px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    gap: 10px;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.zoom-button {
+    padding: 8px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 40px;
+    height: 40px;
+}
+
+.zoom-in {
+    background-color: #4CAF50;
+}
+
+.zoom-out {
+    background-color: #f44336;
+}
+
+.dimensions-button {
+    padding: 8px 16px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.dimensions-button.show {
+    background-color: #4CAF50;
+}
+
+.dimensions-button.hide {
+    background-color: #f44336;
+} 

@@ -28,7 +28,85 @@ button {
 }
 
 .object-panel {
-    padding: 10px;
+    padding: 15px;
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 320px;
+    position: relative;
+    touch-action: pan-y;
+}
+
+/* Style de la barre de défilement */
+.object-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.object-panel::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.object-panel::-webkit-scrollbar-thumb {
+    background: #B0846A;
+    border-radius: 4px;
+}
+
+.object-panel::-webkit-scrollbar-thumb:hover {
+    background: #946B54;
+}
+
+/* Styles pour les contrôles de type range */
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    outline: none;
+    margin: 10px 0;
+    touch-action: none;
+    pointer-events: auto;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #B0846A;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    touch-action: none;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #946B54;
+    transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #B0846A;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+input[type="range"]::-ms-thumb {
+    width: 16px;
+    height: 16px;
+    background: #B0846A;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
 }
 
 .bouton-popup {
@@ -132,20 +210,1236 @@ button {
     font-family: 'Lato', sans-serif;
     font-variant: small-caps;
     font-size: 14px;
+    color: #2D3C54;
+    white-space: nowrap;
 }
 
 .selection {
-    width: 160px;
-    right: 0;
-    position: absolute;
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    position: relative;
+    right: auto;
 }
 
-.selection-select {
-    width: 168px;
-    right: 0;
+.selection:focus {
+    border-color: #B0846A;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(176, 132, 106, 0.2);
+}
+
+.texture-selector {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: white;
+}
+
+.texture-selector::-webkit-scrollbar {
+    width: 6px;
+}
+
+.texture-selector::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.texture-selector::-webkit-scrollbar-thumb {
+    background: #B0846A;
+    border-radius: 3px;
+}
+
+/* Restaurer les styles pour les options de texture */
+.texture-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.texture-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.texture-option.selected {
+    border-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.texture-preview {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.texture-option span {
+    font-size: 12px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90px;
+}
+
+.texture-selector h4 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Styles pour le message de chargement */
+.texture-selector p {
+    padding: 10px;
+    text-align: center;
+    color: #666;
+}
+
+.deformation-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+.deformation-group {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.deformation-value {
+    background: #e0e0e0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Maintenir les boutons en bas du panneau */
+.button-section {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 15px 0;
+    border-top: 1px solid #eee;
+    margin-top: 15px;
+}
+
+.object-list {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.object-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.object-card {
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.object-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.object-card img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.placeholder-thumbnail {
+    width: 100%;
+    height: 100px;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.placeholder-thumbnail span {
+    font-size: 24px;
+    color: #666;
+}
+
+.object-info {
+    margin-top: 8px;
+}
+
+.object-info h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.object-info p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.toggle-object-list {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.toggle-object-list:hover {
+    background: #45a049;
+}
+
+.object-selector {
+    position: relative;
+    margin: 0;
+}
+
+.object-selector-toggle {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.object-selector-toggle:hover {
+    background-color: #45a049;
+}
+
+.object-selector-dropdown {
     position: absolute;
+    top: 100%;
+    left: 0;
+    width: 400px;
+    max-height: 500px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    margin-top: 5px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.object-selector-list {
+    padding: 16px;
+    overflow-y: auto;
+    max-height: 450px;
+}
+
+.object-selector-dropdown button {
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-bottom: 8px;
+}
+
+.object-category {
+    margin-bottom: 16px;
+}
+
+.object-category h3 {
+    margin: 24px 0 20px 0;
+    font-size: 16px;
+    color: #2D3C54;
+    font-weight: 600;
+    padding: 0 8px;
+    text-align: center;
+}
+
+.object-selector-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 8px;
+    transition: all 0.3s ease;
+    cursor: grab;
+    min-height: 100px;
+}
+
+.object-selector-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    border-color: #2D3C54;
+}
+
+.object-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.object-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.object-name {
+    font-size: 11px;
+    text-align: center;
+    color: #2D3C54;
+    word-break: break-word;
+    max-width: 100%;
+    line-height: 1.3;
+    font-weight: 500;
+    padding: 0 2px;
+}
+
+.panel-section {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f8f8;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    width: calc(100% - 30px);
 }
 
 .container-label {
     position: relative;
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.container-label:last-child {
+    margin-bottom: 0;
+}
+
+.axis-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.axis-button {
+    flex: 1;
+    padding: 8px;
+    background: #e0e0e0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.axis-button.selected {
+    background: #B0846A;
+    color: white;
+}
+
+.position-slider {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.position-value {
+    display: inline-block;
+    min-width: 40px;
+    text-align: center;
+    background: #e0e0e0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+}
+
+.section-title {
+    font-size: 16px;
+    color: #2D3C54;
+    margin-bottom: 10px;
+    font-family: 'Lato', sans-serif;
+    font-variant: small-caps;
+}
+
+.vue3D {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    background-color: #2D3C54;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.vue3D:hover {
+    background-color: #3E5278;
+}
+
+.vue3D.blueprint {
+    background-color: #0066cc;
+}
+
+.vue3D.blueprint:hover {
+    background-color: #0055aa;
+}
+
+/* Styles pour les contrôles du mode Blueprint */
+.blueprint-controls {
+    position: absolute;
+    top: 100px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    max-width: 300px;
+    width: 250px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.blueprint-controls h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    color: #0066cc;
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.blueprint-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.blueprint-button {
+    padding: 8px 12px;
+    background-color: #e6f2ff;
+    border: 1px solid #0066cc;
+    border-radius: 4px;
+    color: #0066cc;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.blueprint-button:hover {
+    background-color: #cce6ff;
+}
+
+.blueprint-button.active {
+    background-color: #0066cc;
+    color: white;
+}
+
+.blueprint-info {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 15px;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 3px solid #0066cc;
+}
+
+.blueprint-info p {
+    margin: 5px 0;
+}
+
+.blueprint-info strong {
+    color: #0066cc;
+}
+
+.blueprint-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.blueprint-action {
+    flex: 1;
+    padding: 6px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.blueprint-action.finish {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #388E3C;
+}
+
+.blueprint-action.cancel {
+    background-color: #F44336;
+    color: white;
+    border-color: #D32F2F;
+}
+
+.blueprint-action:hover {
+    opacity: 0.9;
+}
+
+/* Styles pour les indicateurs de mode de navigation */
+.navigation-mode-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    max-width: 300px;
+    font-family: Arial, sans-serif;
+}
+
+.navigation-mode-button {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    margin: 10px 0;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.navigation-mode-button:hover {
+    background-color: #0055aa;
+}
+
+.navigation-instructions {
+    font-size: 12px;
+    color: #555;
+    margin-top: 10px;
+}
+
+/* Styles améliorés pour la télécommande de navigation */
+.navigation-remote-control {
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.remote-control-title {
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #0066cc;
+    text-align: center;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.remote-control-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.remote-section {
+    background-color: rgba(0, 102, 204, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(0, 102, 204, 0.1);
+}
+
+.remote-section-title {
+    font-weight: bold;
+    color: #0066cc;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.remote-control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.remote-button-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.remote-button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #0077e6, #0055aa);
+    color: white;
+    border: none;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.remote-button:hover {
+    background: linear-gradient(145deg, #0088ff, #0066cc);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
+}
+
+.remote-button:active {
+    transform: scale(0.95) translateY(1px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(145deg, #0055aa, #004488);
+}
+
+/* Styles spécifiques pour les boutons de mouvement */
+.movement-button {
+    background: linear-gradient(145deg, #4CAF50, #388E3C);
+}
+
+.movement-button:hover {
+    background: linear-gradient(145deg, #5CBF60, #43A047);
+}
+
+.movement-button:active {
+    background: linear-gradient(145deg, #388E3C, #2E7D32);
+}
+
+/* Styles pour les contrôles d'orbite */
+.remote-control-orbit {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.remote-orbit-horizontal, .remote-orbit-vertical {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 102, 204, 0.1);
+    border-radius: 25px;
+    padding: 8px 15px;
+}
+
+.orbit-button {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    font-weight: bold;
+    background: linear-gradient(145deg, #FF9800, #F57C00);
+}
+
+.orbit-button:hover {
+    background: linear-gradient(145deg, #FFA726, #FB8C00);
+}
+
+.orbit-button:active {
+    background: linear-gradient(145deg, #F57C00, #EF6C00);
+}
+
+.orbit-label {
+    margin: 0 15px;
+    font-size: 14px;
+    color: #0066cc;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.remote-control-zoom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+    background-color: rgba(0, 102, 204, 0.1);
+    border-radius: 25px;
+    padding: 8px 15px;
+}
+
+.zoom-button {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    font-weight: bold;
+    background: linear-gradient(145deg, #9C27B0, #7B1FA2);
+}
+
+.zoom-button:hover {
+    background: linear-gradient(145deg, #AB47BC, #8E24AA);
+}
+
+.zoom-button:active {
+    background: linear-gradient(145deg, #7B1FA2, #6A1B9A);
+}
+
+.zoom-label {
+    margin: 0 15px;
+    font-size: 14px;
+    color: #0066cc;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.help-button {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+}
+
+.help-button:hover {
+    background-color: #0055aa;
+}
+
+.help-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.help-modal-content {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 2px;
+    max-width: 650px;
+    max-height: 80vh;
+    overflow: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e9ecef;
+}
+
+.help-modal-content h2 {
+    color: #2D3C54;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.help-modal-content h3 {
+    color: #2D3C54;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.8rem 0;
+    padding: 0.5rem 0;
+    border-left: 3px solid #2D3C54;
+    padding-left: 1rem;
+    background: linear-gradient(90deg, rgba(45, 60, 84, 0.1), transparent);
+}
+
+.help-modal-content p {
+    color: #555;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    font-weight: 400;
+}
+
+.help-modal-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 1.5rem 0;
+}
+
+.help-modal-content li {
+    color: #444;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.help-modal-content li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    color: #2D3C54;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.help-modal-content strong {
+    color: #2D3C54;
+    font-weight: 600;
+}
+
+.help-modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 1px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.help-modal-close:hover {
+    background: #e9ecef;
+    color: #2D3C54;
+    border-color: #adb5bd;
+}
+
+/* Scrollbar personnalisée pour le modal */
+.help-modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.help-modal-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 1px;
+}
+
+.help-modal-content::-webkit-scrollbar-thumb {
+    background: #2D3C54;
+    border-radius: 1px;
+}
+
+.help-modal-content::-webkit-scrollbar-thumb:hover {
+    background: #1a2533;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .help-modal-content {
+        margin: 1rem;
+        padding: 1.5rem;
+        max-height: 90vh;
+    }
+    
+    .help-modal-content h2 {
+        font-size: 1.5rem;
+    }
+    
+    .help-modal-content h3 {
+        font-size: 1.1rem;
+    }
+}
+
+/* Ajout de styles pour la grille de textures */
+.texture-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Styles pour les boutons de texture dans le composant Textures */
+.texture-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    margin: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    transition: all 0.2s ease;
+    width: 100px;
+    height: 100px;
+}
+
+.texture-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: #007bff;
+}
+
+.texture-preview-small {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 3px;
+    margin-bottom: 5px;
+}
+
+.texture-button span {
+    font-size: 11px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90px;
+    color: #333;
+}
+
+/* Styles pour les messages d'erreur et d'information */
+.texture-error {
+    background-color: rgba(255, 0, 0, 0.05);
+    border: 1px solid rgba(255, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    color: #d32f2f;
+}
+
+.texture-error .error-details {
+    font-size: 12px;
+    margin: 5px 0;
+    color: #666;
+}
+
+.texture-info {
+    background-color: rgba(0, 0, 255, 0.05);
+    border: 1px solid rgba(0, 0, 255, 0.2);
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px 0;
+    color: #1976d2;
+}
+
+.texture-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Styles pour la section de dimensions de pièce */
+.room-dimensions-section {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.room-dimensions-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.dimension-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dimension-control label {
+    flex: 1;
+    font-weight: 500;
+}
+
+.dimension-control input {
+    flex: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.dimension-info {
+    background-color: #e9f7fe;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.update-room-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.update-room-button:hover {
+    background-color: #45a049;
+}
+
+.remote-section-description {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+    padding: 0 5px;
+}
+
+.zoom-description {
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Styles pour le sélecteur de couleur */
+.color-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.color-preview {
+    width: 100%;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    margin-bottom: 5px;
+}
+
+.color-picker {
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+}
+
+.color-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.color-preset {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.color-preset.selected {
+    border: 2px solid #2D3C54;
+    transform: scale(1.1);
+}
+
+.history-controls {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.history-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #4a90e2;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+}
+
+.history-button:hover {
+    background-color: #357abd;
+}
+
+.history-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.object-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+    padding: 16px;
+    max-height: 350px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin: 8px;
+}
+
+/* Styles pour le panneau de textures */
+.texture-panel {
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.texture-panel .section-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+}
+
+.texture-panel .texture-selector {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 5px;
+}
+
+.texture-panel .texture-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.texture-panel .texture-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.texture-panel .texture-option:hover {
+    background-color: #e0e0e0;
+}
+
+.texture-panel .texture-option.selected {
+    background-color: #d0d0d0;
+    border: 2px solid #4a90e2;
+}
+
+.texture-panel .texture-preview {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+}
+
+.texture-panel .texture-option span {
+    font-size: 12px;
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.texture-panel .texture-loading,
+.texture-panel .texture-error,
+.texture-panel .texture-info {
+    padding: 10px;
+    text-align: center;
+    color: #666;
+}
+
+.texture-panel .texture-error {
+    color: #d32f2f;
+}
+
+.texture-panel .texture-error .error-details {
+    font-size: 12px;
+    margin-top: 5px;
+    color: #999;
 }

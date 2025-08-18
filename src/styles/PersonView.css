@@ -1,0 +1,46 @@
+.person-view-instructions {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+.person-view-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    gap: 5px;
+    z-index: 1000;
+}
+
+.control-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    border: none;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.control-button:active {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.up-button, .down-button {
+    grid-column: 2/3;
+} 

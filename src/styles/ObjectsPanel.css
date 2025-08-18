@@ -1,0 +1,128 @@
+.objects-panel {
+    position: fixed;
+    left: 0;
+    top: 30%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 0 8px 8px 0;
+    padding: 10px;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-height: 40vh;
+    display: flex;
+    flex-direction: row;
+}
+
+.objects-panel.expanded {
+    width: 250px;
+}
+
+.objects-panel.collapsed {
+    width: 40px;
+}
+
+.objects-panel-toggle {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.objects-panel-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.objects-panel h3 {
+    color: white;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    text-align: center;
+}
+
+.objects-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.object-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.object-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.object-item.selected {
+    background-color: rgba(255, 255, 255, 0.3);
+    border: 2px solid #4CAF50;
+}
+
+.object-item img {
+    width: 100%;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 5px;
+}
+
+.object-item span {
+    color: white;
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.objects-loading {
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.objects-error {
+    color: #ff6b6b;
+    text-align: center;
+    padding: 20px;
+}
+
+.error-details {
+    font-size: 12px;
+    color: #ffd8d8;
+    margin-top: 5px;
+}
+
+/* Scrollbar styling */
+.objects-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.objects-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.objects-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.objects-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+} 
