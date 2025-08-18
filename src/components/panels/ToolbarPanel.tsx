@@ -9,7 +9,6 @@ interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
   setShowNavigationHelp: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowUpload: React.Dispatch<React.SetStateAction<boolean>>;
   setShowObjectUpload: React.Dispatch<React.SetStateAction<boolean>>;
   showUpload: boolean;
   showObjectUpload: boolean;
@@ -42,7 +41,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
   viewMode,
   setViewMode,
   setShowNavigationHelp,
-  setShowUpload,
   setShowObjectUpload,
   showObjectUpload,
   setShowRoomConfig,
@@ -327,8 +325,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         setShowObjectUpload={setShowObjectUpload} 
         handleObjectGenerated={handleObjectGenerated} />
         <DecorativeObjectSelector showObjectUpload={showObjectUpload} 
-        setShowObjectUpload={setShowObjectUpload} 
-        handleObjectGenerated={handleObjectGenerated} />
+        setShowObjectUpload={setShowObjectUpload}  />
 
         <button 
           onClick={() => setShowAIGeneration(true)} 

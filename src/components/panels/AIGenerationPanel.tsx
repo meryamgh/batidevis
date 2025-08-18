@@ -113,7 +113,7 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
           if (statusData.files && statusData.files.glb_url) {
             // Stocker le nom de fichier réel généré
             setGeneratedFilename(statusData.files.glb);
-            showDownload(statusData.files.glb_url, statusData.files.glb, taskId);
+            showDownload(taskId);
           }
         } else if (statusData.status === 'FAILED') {
           clearInterval(pollingIntervalRef.current!);
@@ -146,7 +146,7 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
     }, 5000); // Poll every 5 seconds
   };
 
-  const showDownload = (url: string, filename: string, taskId: string) => {
+  const showDownload = (taskId: string) => {
     setShowPreview(true);
     setIsLoading(false);
     loadPreview(taskId);

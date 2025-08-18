@@ -12,13 +12,11 @@ interface ObjectFile {
 interface DecorativeObjectSelectorProps {
     showObjectUpload: boolean;
     setShowObjectUpload: (show: boolean) => void;
-    handleObjectGenerated: (objectUrl: string) => void;
 }
 
 const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({ 
     showObjectUpload, 
-    setShowObjectUpload, 
-    handleObjectGenerated 
+    setShowObjectUpload
 }) => {
     const [objects, setObjects] = useState<ObjectFile[]>([]);
     const [isOpen, setIsOpen] = useState(false);

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ObjectData } from '../../types/ObjectData';
 import '../../styles/Controls.css';  
 import '../../styles/ObjectPanel.css';
-import Select, { SingleValue } from 'react-select'; 
-import ParametricDataPanel from '../ParametricDataPanel';
+import Select  from 'react-select';  
         
 type ObjectPanelProps = {
     object: ObjectData;
@@ -52,6 +51,18 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         if (!parametricData || !parametricData.template_bis || !parametricData.item_details?.libtech) {
             return {};
         }
+        console.log("disabledOptions", disabledOptions)
+        console.log("lastExtendedObject", lastExtendedObject)
+        console.log("roomWidth", roomWidth)
+        console.log("roomLength", roomLength)
+        console.log("roomHeight", roomHeight)
+        console.log("height", height)
+        console.log("width", width)
+        console.log("depth", depth)
+        console.log("texture", texture)
+        console.log("color", color)
+        console.log("rotation", rotation)
+        console.log("isRotating", isRotating)
         
         const template = parametricData.template_bis;
         const libtech = parametricData.item_details.libtech;
@@ -357,48 +368,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         return description;
     };
     
-    // Fonction pour générer le texte avec les variantes sélectionnées
-    const generateTextWithVariants = () => {
-        if (!parametricData || !parametricData.template_bis) {
-            return null;
-        }
-        
-        const template = parametricData.template_bis;
-        const parts = template.split('_');
-        const result = [];
-        let variantIndex = 0;
-        
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            
-            // Ajouter la variante sélectionnée pour cette position (sauf pour la première partie)
-            if (i > 0) {
-                const position = (variantIndex - 1).toString();
-                const selectedVariant = selectedVariantsState[position];
-                if (selectedVariant) {
-                    result.push(<strong key={`variant-${i-1}`} className="selected-variant">{selectedVariant}</strong>);
-                } else {
-                    result.push(<span key={`variant-${i-1}`} className="empty-variant">_</span>);
-                }
-            }
-            
-            // Ajouter la partie fixe
-            result.push(<span key={`fixed-${i}`}>{part}</span>);
-            variantIndex++;
-        }
-        
-        // Ajouter la dernière variante si elle existe et n'a pas déjà été ajoutée
-        const lastVariantIndex = Object.keys(selectedVariantsState).length - 1;
-        if (lastVariantIndex >= 0) {
-            const lastPosition = lastVariantIndex.toString();
-            const lastVariant = selectedVariantsState[lastPosition];
-            if (lastVariant && lastVariantIndex >= variantIndex - 1) {
-                result.push(<strong key="variant-last" className="selected-variant">{lastVariant}</strong>);
-            }
-        }
-        
-        return result;
-    };
+     
 
     // Fonction pour vérifier si la description actuelle correspond à une description similaire
     const checkMatchingDescription = () => {
@@ -691,16 +661,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         }
     }, []); // Dépendance vide pour n'exécuter qu'une seule fois
 
-   
-
-    // Réinitialiser le dernier objet étendu lors de la fermeture du panneau
-    const handleClosePanel = () => {
-        setLastExtendedObject(object);
-        setExtendedObjects([]);
-        onClosePanel();
-    };
-
-   
+    
 
     return (
         <div className="object-panel">

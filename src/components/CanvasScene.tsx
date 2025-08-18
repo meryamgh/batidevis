@@ -8,7 +8,6 @@ import * as THREE from 'three';
 import CameraProvider from './canvaScene/CameraProvider';
 import RaycasterHandler from './canvaScene/RaycasterHandler';
 import MoveControls from './canvaScene/MoveControls';
-import NavigationModeIndicator from './panels/NavigationModeIndicatorPanel';
 import TwoDView from './canvaScene/2Dview';
 import PersonView from './canvaScene/PersonView';
 
@@ -338,79 +337,6 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
         scene.add(line);
     };
 
-
-
-     
-    const LineMeasurement = ({ start, end, length }: { start: THREE.Vector3, end: THREE.Vector3, length: number }) => {
-        // Calculer le point milieu de la ligne
-        const midPoint = new THREE.Vector3().addVectors(
-            new THREE.Vector3(start.x, 0.1, start.z),
-            new THREE.Vector3(end.x, 0.1, end.z)
-        ).multiplyScalar(0.5);
-        
-        // Calculer la direction perpendiculaire à la ligne
-        const direction = new THREE.Vector3().subVectors(
-            new THREE.Vector3(end.x, 0.1, end.z),
-            new THREE.Vector3(start.x, 0.1, start.z)
-        ).normalize();
-        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize().multiplyScalar(0.7);
-        
-        // Position du texte
-        const textPosition = new THREE.Vector3().addVectors(midPoint, perpendicular);
-        
-        // Créer une texture pour le texte
-        const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
-        
-        useEffect(() => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                canvas.width = 256;
-                canvas.height = 128;
-                
-                // Fond avec bordure
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = '#0066cc';
-                ctx.lineWidth = 6;
-                ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
-                
-                // Texte plus grand et plus visible
-                ctx.fillStyle = '#0066cc';
-                ctx.font = 'bold 48px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(`${length.toFixed(2)}m`, canvas.width / 2, canvas.height / 2);
-                
-                const newTexture = new THREE.CanvasTexture(canvas);
-                setTexture(newTexture);
-            }
-            
-            return () => {
-                if (texture) {
-                    texture.dispose();
-                }
-            };
-        }, [length]);
-        
-        if (!texture) return null;
-        
-        return (
-            <sprite 
-                position={[textPosition.x, 10, textPosition.z]} 
-                scale={[2, 1, 1]}
-                renderOrder={999}
-            >
-                <spriteMaterial 
-                    attach="material" 
-                    transparent={true} 
-                    map={texture}
-                    depthTest={false}
-                    depthWrite={false}
-                />
-            </sprite>
-        );
-    };
     
     
 

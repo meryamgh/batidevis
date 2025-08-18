@@ -470,7 +470,7 @@ const FullQuote: React.FC = () => {
     };
 
     // Gestion du logo modifiable
-    const [logoSrc, setLogoSrc] = useState<string>("logo.png");
+    const [logoSrc] = useState<string>("logo.png");
     const [leftLogoSrc, setLeftLogoSrc] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 

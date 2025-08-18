@@ -73,7 +73,6 @@ const MaquettePage: React.FC = () => {
     const [selectedFloor2D, setSelectedFloor2D] = useState(0);
     const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
 
-    const [customTextures] = useState<Record<string, string>>({});
 
     const [showNavigationHelp, setShowNavigationHelp] = useState(false);
       const [showMenu, setShowMenu] = useState(false);
@@ -234,16 +233,7 @@ const MaquettePage: React.FC = () => {
         closePanel();
     }, [closePanel]);
 
-    // Fonction pour fermer le panneau et désélectionner l'objet
-    const handleClosePanel = useCallback(() => {
-        closePanel();
-        handleDeselectObject();
-    }, [closePanel, handleDeselectObject]);
-
-    // Fonction simple pour fermer juste le panneau (utilisée par onClosePanel)
-    const handleClosePanelOnly = useCallback(() => {
-        closePanel();
-    }, [closePanel]);
+    
 
     // Fonction simple pour fermer juste le panneau (utilisée par onClosePanel)
     const closePanelOnly = useCallback(() => {
@@ -1430,7 +1420,6 @@ const MaquettePage: React.FC = () => {
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 setShowNavigationHelp={setShowNavigationHelp}
-                setShowUpload={setShowUpload}
                 setShowObjectUpload={setShowObjectUpload}
                 showUpload={showUpload}
                 showObjectUpload={showObjectUpload}

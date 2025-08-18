@@ -65,7 +65,6 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     onMultiSelect,
 }) => {
     const meshRef = useRef<THREE.Group | THREE.Mesh>(null);
-    const outlineRef = useRef<THREE.LineSegments | null>(null);
     const [scene, setScene] = useState<THREE.Group | THREE.Mesh | null>(null);
     const [selectedFaceIndex, setSelectedFaceIndex] = useState<number | null>(null);
     const [meshesWithOutlines, setMeshesWithOutlines] = useState<MeshWithOutline[]>([]);
@@ -617,7 +616,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             });
 
             setMeshesWithOutlines(newMeshesWithOutlines);
-
+            console.log('Meshes avec outlines:', meshesWithOutlines);
             // Nettoyage lors du démontage
             return () => {
                 newMeshesWithOutlines.forEach(({ mesh, helper }) => {

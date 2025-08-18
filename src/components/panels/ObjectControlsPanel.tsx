@@ -110,6 +110,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
             setCurrentRotation(selectedObject.rotation || [0, 0, 0]);
             setPosition(selectedObject.position);
             setLastExtendedObject(selectedObject);
+            console.log('selectedObject', lastExtendedObject);
             setWidth(selectedObject.scale[0] || 0);
             setHeight(selectedObject.scale[1] || 0);
             setDepth(selectedObject.scale[2] || 0);

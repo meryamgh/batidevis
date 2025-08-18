@@ -9,7 +9,7 @@ interface TexturePanelProps {
   setShowUpload: (show: boolean) => void;
 }
 
-const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTexture, onUploadClick, setShowUpload }) => {
+const TexturePanel: React.FC<TexturePanelProps> = ({ onSelectTexture, selectedTexture, setShowUpload }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const { textures, isLoading, error } = useTextures();
 

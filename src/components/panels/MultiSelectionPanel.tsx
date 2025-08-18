@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ObjectData, ObjectGroup } from '../../types/ObjectData';
 import { v4 as uuidv4 } from 'uuid';
 import '../../styles/MultiSelectionPanel.css';
@@ -26,11 +26,7 @@ const MultiSelectionPanel: React.FC<MultiSelectionPanelProps> = ({
     onUpdateSelectedObjectsScale,
     clipboard
 }) => {
-    const [isSelecting, setIsSelecting] = useState(false);
-    const [selectionBox, setSelectionBox] = useState<{
-        start: [number, number] | null;
-        end: [number, number] | null;
-    }>({ start: null, end: null });
+   
 
     // Calculer la position centrale des objets sélectionnés
     const centerPosition: [number, number, number] = React.useMemo(() => {
