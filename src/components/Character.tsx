@@ -28,7 +28,7 @@ const Character: React.FC<CharacterProps> = ({ isEnabled, onPositionUpdate, onRo
     const { camera } = useThree();
     
     // Load the GLTF model
-    const { scene: characterModel } = useGLTF(`${BACKEND_URL}/files/character.gltf`);
+    const { scene: characterModel } = useGLTF('/gltf/character.gltf');
     
     // Référence pour le lissage des mouvements de caméra
     const targetRotation = useRef<THREE.Euler>(new THREE.Euler(0, 0, 0));

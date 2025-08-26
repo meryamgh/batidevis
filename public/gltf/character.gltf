@@ -1,0 +1,97 @@
+{
+  "accessors": [
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5125,
+      "normalized": false,
+      "count": 62076,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 10348,
+      "type": "VEC3",
+      "max": [
+        0.624222993850708,
+        0.9977819919586182,
+        0.34161698818206787
+      ],
+      "min": [
+        -0.6262419819831848,
+        -1.0004359483718872,
+        -0.34537601470947266
+      ]
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 10348,
+      "type": "VEC3"
+    }
+  ],
+  "asset": {
+    "generator": "pygltflib@v1.16.3",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 248304,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 248304,
+      "byteLength": 124176,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 372480,
+      "byteLength": 124176,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "character.bin",
+      "byteLength": 496656
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2
+          },
+          "indices": 0,
+          "mode": 4
+        }
+      ],
+      "name": "Mesh1"
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "Mesh1"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
