@@ -339,16 +339,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
             fontWeight: 'bold',
             border: 'none',
             boxShadow: '0 4px 15px rgba(106, 17, 203, 0.3)',
-            fontSize: '13px',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            fontSize: '12px',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            textTransform: 'none',
+            letterSpacing: 'normal',
             position: 'relative',
             overflow: 'hidden'
           }}
         >
-          ✨ Générer un objet 3D avec l'IA ✨
+          GÉNÉRER UN OBJET 3D AVEC L'IA
         </button>
       </div>
 
