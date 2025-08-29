@@ -126,7 +126,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
         justifyContent: 'flex-start',
         marginBottom: '20px'
       }}>
-        <img src={"logo-batidevis.jpg"} alt="Logo" style={{
+        <img src={"logo-batidevis-removebg.png"} alt="Logo" style={{
           width: '60px',
           height: 'auto'
         }} />

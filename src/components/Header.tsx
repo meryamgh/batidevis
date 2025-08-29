@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
         <header className={`dynamic-header ${scrollPosition > 50 ? 'scrolled' : ''}`}>
             <nav className="nav-container">
                 <div className="logo">
-                    <img src={"logo-batidevis.jpg"} alt="BatiDevis Logo" className="logo-img" />
+                    <img src={"logo-batidevis-removebg.png"} alt="BatiDevis Logo" className="logo-img" />
                 </div>
                 <div className="nav-links">
                     <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>ACCUEIL</Link>

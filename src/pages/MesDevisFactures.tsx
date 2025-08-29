@@ -160,7 +160,7 @@ const MesDevisFactures: React.FC = () => {
                 <div className="footer-content">
                     <div className="footer-main">
                         <div className="footer-brand">
-                            <img src={"logo-batidevis.jpg"} alt="BatiDevis Logo" className="footer-logo" />
+                            <img src={"logo-batidevis-removebg.png"} alt="BatiDevis Logo" className="footer-logo" />
                             <p>La solution innovante pour vos devis et factures dans le BTP</p>
                         </div>
                         <div className="footer-links">

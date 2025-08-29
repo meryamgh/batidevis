@@ -145,7 +145,7 @@ const FullQuote: React.FC = () => {
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
     const [data, setData] = useState<any>(null);
-    const [isEditMode, setIsEditMode] = useState<boolean>(false);
+    const [isEditMode, setIsEditMode] = useState<boolean>(true);
     // YouSign API integration
     const apiKey = import.meta.env.VITE_APP_YOUSIGN_API_KEY ;
     const [youSignClient] = useState<YouSignClient>(() => new YouSignClient(apiKey));
@@ -235,10 +235,19 @@ const FullQuote: React.FC = () => {
             quantity: 1,
             isNew: true
         };
-        setAggregatedQuote([...aggregatedQuote, newItem]);
+        // Ajouter après les frais obligatoires (en position 2 ou plus)
+        const fraisObligatoiresCount = aggregatedQuote.filter(item => 
+            item.details.includes('Frais de déplacement') || item.details.includes('Taux horaire')
+        ).length;
+        
+        setAggregatedQuote(prev => {
+            const newArray = [...prev];
+            newArray.splice(fraisObligatoiresCount, 0, newItem);
+            return newArray;
+        });
         
         // Automatically start editing the new row
-        const newIndex = aggregatedQuote.length;
+        const newIndex = fraisObligatoiresCount;
         setEditingCell({rowIndex: newIndex, field: 'details'});
         setEditValue("Nouveau produit");
     };
@@ -470,7 +479,6 @@ const FullQuote: React.FC = () => {
     };
 
     // Gestion du logo modifiable
-    const [logoSrc] = useState<string>("logo-batidevis.jpg");
     const [leftLogoSrc, setLeftLogoSrc] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -534,9 +542,26 @@ const FullQuote: React.FC = () => {
         unite: string;
     }
 
+    // Interface pour les frais de déplacement et horaires
+    interface FraisObligatoire {
+        id: number;
+        libtech: string;
+        prix: number;
+        unite: string;
+    }
+
     // État pour les frais divers
     const [fraisDivers, setFraisDivers] = useState<FraisDivers[]>([]);
     const [selectedFraisDivers, setSelectedFraisDivers] = useState<number[]>([]);
+
+    // État pour les frais obligatoires
+    const [fraisDeplacementOptions, setFraisDeplacementOptions] = useState<FraisObligatoire[]>([]);
+    const [selectedFraisDeplacement, setSelectedFraisDeplacement] = useState<number>(0);
+    const [fraisHeureOptions, setFraisHeureOptions] = useState<FraisObligatoire[]>([]);
+    const [selectedFraisHeure, setSelectedFraisHeure] = useState<number>(0);
+    
+         // État pour les frais de devis
+     const [isDevisGratuit, setIsDevisGratuit] = useState<boolean>(true);
 
     // Fonction pour récupérer les frais divers depuis l'API
     const fetchFraisDivers = async () => {
@@ -553,10 +578,106 @@ const FullQuote: React.FC = () => {
         }
     };
 
-    // Appel de la fonction au chargement du composant
+    // Fonction pour récupérer les frais de déplacement depuis l'API
+    const fetchFraisDeplacement = async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/frais/deplacement`);
+            if (response.ok) {
+                const data = await response.json();
+                setFraisDeplacementOptions(data);
+            } else {
+                console.error('Erreur lors de la récupération des frais de déplacement');
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération des frais de déplacement:', error);
+        }
+    };
+
+    // Fonction pour récupérer les frais horaires depuis l'API
+    const fetchFraisHeure = async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/frais/heure`);
+            if (response.ok) {
+                const data = await response.json();
+                setFraisHeureOptions(data);
+            } else {
+                console.error('Erreur lors de la récupération des frais horaires');
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération des frais horaires:', error);
+        }
+    };
+
+    
+
+         // Appel de la fonction au chargement du composant
+     useEffect(() => {
+         fetchFraisDivers();
+         fetchFraisDeplacement();
+         fetchFraisHeure();
+     }, []);
+
+    // Ajouter les frais obligatoires par défaut au devis
     useEffect(() => {
-        fetchFraisDivers();
-    }, []);
+        if (fraisDeplacementOptions.length > 0 && selectedFraisDeplacement === 0) {
+            // Sélectionner le premier frais de déplacement par défaut
+            const defaultFrais = fraisDeplacementOptions[0];
+            setSelectedFraisDeplacement(defaultFrais.id);
+            
+            // Vérifier si le frais de déplacement n'existe pas déjà dans le devis
+            const existingFraisDeplacement = aggregatedQuote.find(item => 
+                item.details.includes('Frais de déplacement')
+            );
+            
+            if (!existingFraisDeplacement) {
+                const newItem: AggregatedQuoteItem = {
+                    details: `Frais de déplacement - ${defaultFrais.libtech} (${formatNumber(defaultFrais.prix)}€/${defaultFrais.unite})`,
+                    price: defaultFrais.prix,
+                    quantity: 1,
+                    unit: defaultFrais.unite,
+                    isNew: false
+                };
+                // Ajouter en première position
+                setAggregatedQuote(prev => [newItem, ...prev]);
+            }
+        }
+    }, [fraisDeplacementOptions, selectedFraisDeplacement]);
+
+    useEffect(() => {
+        if (fraisHeureOptions.length > 0 && selectedFraisHeure === 0) {
+            // Sélectionner le premier frais horaire par défaut
+            const defaultFrais = fraisHeureOptions[0];
+            setSelectedFraisHeure(defaultFrais.id);
+            
+            // Vérifier si le frais horaire n'existe pas déjà dans le devis
+            const existingFraisHeure = aggregatedQuote.find(item => 
+                item.details.includes('Taux horaire')
+            );
+            
+            if (!existingFraisHeure) {
+                const newItem: AggregatedQuoteItem = {
+                    details: `Taux horaire - ${defaultFrais.libtech} (${formatNumber(defaultFrais.prix)}€/${defaultFrais.unite})`,
+                    price: defaultFrais.prix,
+                    quantity: 1,
+                    unit: defaultFrais.unite,
+                    isNew: false
+                };
+                // Ajouter en deuxième position (après le frais de déplacement)
+                setAggregatedQuote(prev => {
+                    const fraisDeplacementIndex = prev.findIndex(item => 
+                        item.details.includes('Frais de déplacement')
+                    );
+                    if (fraisDeplacementIndex >= 0) {
+                        const newArray = [...prev];
+                        newArray.splice(fraisDeplacementIndex + 1, 0, newItem);
+                        return newArray;
+                    } else {
+                        return [newItem, ...prev];
+                    }
+                });
+            }
+        }
+    }, [fraisHeureOptions, selectedFraisHeure]);
 
     // Fonction pour gérer la sélection des frais divers
     const handleFraisDiversChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -574,10 +695,82 @@ const FullQuote: React.FC = () => {
                     unit: frais.unite,
                     isNew: true
                 };
-                setAggregatedQuote(prev => [...prev, newItem]);
+                // Ajouter après les frais obligatoires
+                setAggregatedQuote(prev => {
+                    const fraisObligatoiresCount = prev.filter(item => 
+                        item.details.includes('Frais de déplacement') || item.details.includes('Taux horaire')
+                    ).length;
+                    const newArray = [...prev];
+                    newArray.splice(fraisObligatoiresCount, 0, newItem);
+                    return newArray;
+                });
             }
         });
     };
+
+    // Fonction pour gérer la sélection des frais de déplacement
+    const handleFraisDeplacementChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedId = parseInt(event.target.value);
+        setSelectedFraisDeplacement(selectedId);
+        
+        // Mettre à jour le devis avec le frais de déplacement sélectionné
+        if (selectedId > 0) {
+            const frais = fraisDeplacementOptions.find(f => f.id === selectedId);
+            if (frais) {
+                // Supprimer l'ancien frais de déplacement s'il existe
+                const newQuote = aggregatedQuote.filter(item => !item.details.includes('Frais de déplacement'));
+                
+                const newItem: AggregatedQuoteItem = {
+                    details: `Frais de déplacement - ${frais.libtech} (${formatNumber(frais.prix)}€/${frais.unite})`,
+                    price: frais.prix,
+                    quantity: 1,
+                    unit: frais.unite,
+                    isNew: false
+                };
+                // Toujours en première position
+                setAggregatedQuote([newItem, ...newQuote]);
+            }
+        }
+    };
+
+    // Fonction pour gérer la sélection des frais horaires
+    const handleFraisHeureChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedId = parseInt(event.target.value);
+        setSelectedFraisHeure(selectedId);
+        
+        // Mettre à jour le devis avec le frais horaire sélectionné
+        if (selectedId > 0) {
+            const frais = fraisHeureOptions.find(f => f.id === selectedId);
+            if (frais) {
+                // Supprimer l'ancien frais horaire s'il existe
+                const newQuote = aggregatedQuote.filter(item => !item.details.includes('Taux horaire'));
+                
+                const newItem: AggregatedQuoteItem = {
+                    details: `Taux horaire - ${frais.libtech} (${formatNumber(frais.prix)}€/${frais.unite})`,
+                    price: frais.prix,
+                    quantity: 1,
+                    unit: frais.unite,
+                    isNew: false
+                };
+                // Toujours en deuxième position (après le frais de déplacement)
+                const fraisDeplacementIndex = newQuote.findIndex(item => 
+                    item.details.includes('Frais de déplacement')
+                );
+                if (fraisDeplacementIndex >= 0) {
+                    const newArray = [...newQuote];
+                    newArray.splice(fraisDeplacementIndex + 1, 0, newItem);
+                    setAggregatedQuote(newArray);
+                } else {
+                    // Si pas de frais de déplacement, mettre en première position
+                    setAggregatedQuote([newItem, ...newQuote]);
+                }
+            }
+        }
+    };
+
+    
+
+         
 
     // Pour tous ces champs, on va réutiliser un état "editingField" distinct
     const [editingFieldOutside, setEditingFieldOutside] = useState<string | null>(null);
@@ -921,6 +1114,18 @@ const FullQuote: React.FC = () => {
             return;
         }
 
+        // Validation des frais obligatoires - vérifier seulement que les 2 premières lignes existent
+        if (aggregatedQuote.length < 2) {
+            alert('⚠️ OBLIGATOIRE : Le devis doit contenir au moins 2 lignes');
+            return;
+        }
+
+        // Validation du frais de devis si le devis n'est pas gratuit
+        if (!isDevisGratuit && !aggregatedQuote.some(item => item.details.includes('Frais de devis'))) {
+            alert('⚠️ OBLIGATOIRE : Si le devis n\'est pas gratuit, un frais de devis doit être présent');
+            return;
+        }
+
         setSignatureStatus('preparing');
         try {
             // 1. Prepare proper PDF document
@@ -1113,13 +1318,26 @@ const FullQuote: React.FC = () => {
       setInvoiceEmail('');
     };
 
-    // Add handler for submitting email
+        // Add handler for submitting email
     const handleSubmitInvoiceEmail = () => {
-      if (!invoiceEmail || !invoiceEmail.includes('@')) {
-        alert('Veuillez entrer une adresse email valide');
-        return;
-      }
-      handleSendInvoiceByEmail(invoiceEmail);
+        if (!invoiceEmail || !invoiceEmail.includes('@')) {
+            alert('Veuillez entrer une adresse email valide');
+            return;
+        }
+
+        // Validation des frais obligatoires - vérifier seulement que les 2 premières lignes existent
+        if (aggregatedQuote.length < 2) {
+            alert('⚠️ OBLIGATOIRE : Le devis doit contenir au moins 2 lignes');
+            return;
+        }
+
+        // Validation du frais de devis si le devis n'est pas gratuit
+        if (!isDevisGratuit && !aggregatedQuote.some(item => item.details.includes('Frais de devis'))) {
+            alert('⚠️ OBLIGATOIRE : Si le devis n\'est pas gratuit, un frais de devis doit être présent');
+            return;
+        }
+
+        handleSendInvoiceByEmail(invoiceEmail);
     };
 
     // Fonction pour basculer entre les modes
@@ -1163,7 +1381,29 @@ const FullQuote: React.FC = () => {
                 }}>
                   {leftLogoSrc ? (
                     <>
-                      <img src={leftLogoSrc} alt="Logo" style={{ width: '400px', maxWidth: '100%' }} />
+                      <div style={{
+                        width: '200px',
+                        height: '100px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        backgroundColor: '#ffffff'
+                      }}>
+                        <img 
+                          src={leftLogoSrc} 
+                          alt="Logo" 
+                          style={{ 
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            width: 'auto',
+                            height: 'auto',
+                            objectFit: 'contain'
+                          }} 
+                        />
+                      </div>
                       {isEditMode && (
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '8px' }}>
                           <button 
@@ -1208,7 +1448,7 @@ const FullQuote: React.FC = () => {
                       <div 
                         onClick={handleLogoClick}
                         style={{
-                          width: '100%',
+                          width: '200px',
                           height: '100px',
                           backgroundColor: '#f8f9fa',
                           border: '2px dashed #2D3C54',
@@ -1237,37 +1477,102 @@ const FullQuote: React.FC = () => {
                     accept="image/*"
                   />
                 </div>
-                <div className="devis-header" style={{ border: '1px solid #2D3C54', padding: '15px', borderRadius: '4px' }}>
-                  <div className="logo-info" style={{marginBottom: '15px', display: 'flex', justifyContent: 'center', width: '100%'}}>
-                    <img src={logoSrc} alt="Logo" />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <table className='info-table-devis'>
-                      <tbody>
-                        <tr>
-                          <td>Devis n°</td>
-                          <td><EditableText fieldName="devisNumero" value={devisNumero} /></td>
-                        </tr>
-                        <tr>
-                          <td>En date du</td>
-                          <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
-                        </tr>
-                        <tr>
-                          <td>Valable jusqu'au</td>
-                          <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
-                        </tr>
-                        <tr>
-                          <td>Début des travaux</td>
-                          <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
-                        </tr>
-                        <tr>
-                          <td>Durée estimée à</td>
-                          <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                                                  <div className="devis-header" style={{ border: '1px solid #2D3C54', padding: '15px', borderRadius: '4px' }}>
+                   
+                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                     <table className='info-table-devis'>
+                       <tbody>
+                         <tr>
+                           <td>Devis n°</td>
+                           <td><EditableText fieldName="devisNumero" value={devisNumero} /></td>
+                         </tr>
+                         <tr>
+                           <td>En date du</td>
+                           <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
+                         </tr>
+                         <tr>
+                           <td>Valable jusqu'au</td>
+                           <td><EditableText fieldName="valableJusquau" value={valableJusquau} /></td>
+                         </tr>
+                         <tr>
+                           <td>Début des travaux</td>
+                           <td><EditableText fieldName="debutTravaux" value={debutTravaux} /></td>
+                         </tr>
+                         <tr>
+                           <td>Durée estimée à</td>
+                           <td><EditableText fieldName="dureeTravaux" value={dureeTravaux} /></td>
+                         </tr>
+                                                                                                                                 {(!isDevisGratuit && !isEditMode) ? null : (
+                            <tr>
+<td>Devis établi { !isEditMode ? (isDevisGratuit ? 'gratuitement' : 'payant') : '' }</td>
+<td>
+                                {isEditMode ? (
+                                  <select
+                                    value={isDevisGratuit ? 'gratuit' : 'payant'}
+                                    onChange={(e) => {
+                                      const isGratuit = e.target.value === 'gratuit';
+                                      setIsDevisGratuit(isGratuit);
+                                      
+                                      if (isGratuit) {
+                                        // Si le devis devient gratuit, supprimer les frais de devis
+                                        const newQuote = aggregatedQuote.filter(item => !item.details.includes('Frais de devis'));
+                                        setAggregatedQuote(newQuote);
+                                      } else {
+                                        // Si le devis devient payant, récupérer automatiquement le frais de devis depuis l'API
+                                        fetch(`${BACKEND_URL}/api/frais/devis`)
+                                          .then(response => response.json())
+                                          .then(data => {
+                                            if (data && data.length > 0) {
+                                              const fraisDevis = data[0]; // Prendre le premier frais de devis
+                                              
+                                              // Supprimer l'ancien frais de devis s'il existe
+                                              const newQuote = aggregatedQuote.filter(item => !item.details.includes('Frais de devis'));
+                                              
+                                              const newItem: AggregatedQuoteItem = {
+                                                details: `Frais de devis - ${fraisDevis.libtech} (${formatNumber(fraisDevis.prix)}€/${fraisDevis.unite})`,
+                                                price: fraisDevis.prix,
+                                                quantity: 1,
+                                                unit: fraisDevis.unite,
+                                                isNew: false
+                                              };
+                                              
+                                              // Ajouter après les frais obligatoires (en position 3 ou plus)
+                                              const fraisObligatoiresCount = newQuote.filter(item => 
+                                                item.details.includes('Frais de déplacement') || item.details.includes('Taux horaire')
+                                              ).length;
+                                              const newArray = [...newQuote];
+                                              newArray.splice(fraisObligatoiresCount, 0, newItem);
+                                              setAggregatedQuote(newArray);
+                                            }
+                                          })
+                                          .catch(error => {
+                                            console.error('Erreur lors de la récupération des frais de devis:', error);
+                                          });
+                                      }
+                                    }}
+                                    style={{
+                                      border: '1px solid #ddd',
+                                      borderRadius: '4px',
+                                      padding: '4px 8px',
+                                      fontSize: '12px',
+                                      backgroundColor: '#fff',
+                                      width: '100%',
+                                      maxWidth: '110px'
+                                    }}
+                                  >
+                                    <option value="gratuit">Gratuitement</option>
+                                    <option value="payant">Payant</option>
+                                  </select>
+                                ) : (
+                                 <span></span>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                       </tbody>
+                     </table>
+                   </div>
+                 </div>
               </div>
             </header>
 
@@ -1376,91 +1681,146 @@ const FullQuote: React.FC = () => {
                   return (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td 
-                        className='size_description' 
-                        onClick={() => isEditMode && handleCellClick(index, 'details')}
-                        style={{ position: 'relative', cursor: isEditMode ? 'pointer' : 'default' }}
-                      >
-                        {isEditMode && isEditingDetails ? (
-                          <>
-                            <input
-                              type="text"
-                              value={editValue}
-                              onChange={handleInputChange}
-                              onBlur={handleBlur}
-                              onKeyDown={handleKeyDown}
-                              ref={inputRef}
-                              autoFocus
-                              style={{ width: '100%' }}
-                            />
-                            {suggestions.length > 0 && (
-                              <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: 0,
-                                backgroundColor: 'white',
-                                border: '2px solid #007bff',
-                                borderRadius: '4px',
-                                zIndex: 1000,
-                                width: '100%',
-                                maxHeight: '200px',
-                                overflowY: 'auto',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                              }}>
-                                {suggestions.map((suggestion: string, index: number) => (
-                                  <div
-                                      key={index}
-                                      onMouseDown={(e: React.MouseEvent) => {
-                                          e.preventDefault();
-                                      }}
-                                      onClick={(e: React.MouseEvent) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setIsSuggestionClicking(true);
-                                          
-                                          if (currentSuggestionData && currentSuggestionData[index] && editingCell) {
-                                              const {rowIndex} = editingCell;
-                                              const selectedData = currentSuggestionData[index];
-                                              
-                                              const newQuote = [...aggregatedQuote];
-                                              newQuote[rowIndex] = {
-                                                  ...newQuote[rowIndex],
-                                                  details: selectedData.libtech,
-                                                  price: selectedData.prix,
-                                                  quantity: 1,
-                                                  unit: selectedData.unite,
-                                                  isNew: false
-                                              };
-                                              setAggregatedQuote(newQuote);
-                                              setEditingCell(null);
-                                              setEditValue('');
-                                              setSuggestions([]);
-                                              setCurrentSuggestionData(null);
-                                              
-                                              setTimeout(() => {
-                                                  setIsSuggestionClicking(false);
-                                              }, 300);
-                                          }
-                                      }}
-                                      style={{
-                                          padding: '8px 12px',
-                                          cursor: 'pointer',
-                                          backgroundColor: index === selectedSuggestionIndex ? '#e9f5ff' : 'white',
-                                          color: '#333',
-                                          fontWeight: index === selectedSuggestionIndex ? 'bold' : 'normal',
-                                          borderBottom: index < suggestions.length - 1 ? '1px solid #eee' : 'none'
-                                      }}
-                                  >
-                                      {suggestion}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          item.details
-                        )}
-                      </td>
+                                             <td 
+                         className='size_description' 
+                         style={{ position: 'relative', cursor: isEditMode ? 'pointer' : 'default' }}
+                       >
+                         {isEditMode && isEditingDetails ? (
+                           <>
+                             <input
+                               type="text"
+                               value={editValue}
+                               onChange={handleInputChange}
+                               onBlur={handleBlur}
+                               onKeyDown={handleKeyDown}
+                               ref={inputRef}
+                               autoFocus
+                               style={{ width: '100%' }}
+                             />
+                             {suggestions.length > 0 && (
+                               <div style={{
+                                 position: 'absolute',
+                                 top: '100%',
+                                 left: 0,
+                                 backgroundColor: 'white',
+                                 border: '2px solid #007bff',
+                                 borderRadius: '4px',
+                                 zIndex: 1000,
+                                 width: '100%',
+                                 maxHeight: '200px',
+                                 overflowY: 'auto',
+                                 boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                               }}>
+                                 {suggestions.map((suggestion: string, index: number) => (
+                                   <div
+                                       key={index}
+                                       onMouseDown={(e: React.MouseEvent) => {
+                                           e.preventDefault();
+                                       }}
+                                       onClick={(e: React.MouseEvent) => {
+                                           e.preventDefault();
+                                           e.stopPropagation();
+                                           setIsSuggestionClicking(true);
+                                           
+                                           if (currentSuggestionData && currentSuggestionData[index] && editingCell) {
+                                               const {rowIndex} = editingCell;
+                                               const selectedData = currentSuggestionData[index];
+                                               
+                                               const newQuote = [...aggregatedQuote];
+                                               newQuote[rowIndex] = {
+                                                   ...newQuote[rowIndex],
+                                                   details: selectedData.libtech,
+                                                   price: selectedData.prix,
+                                                   quantity: 1,
+                                                   unit: selectedData.unite,
+                                                   isNew: false
+                                               };
+                                               setAggregatedQuote(newQuote);
+                                               setEditingCell(null);
+                                               setEditValue('');
+                                               setSuggestions([]);
+                                               setCurrentSuggestionData(null);
+                                               
+                                               setTimeout(() => {
+                                                   setIsSuggestionClicking(false);
+                                               }, 300);
+                                           }
+                                       }}
+                                       style={{
+                                           padding: '8px 12px',
+                                           cursor: 'pointer',
+                                           backgroundColor: index === selectedSuggestionIndex ? '#e9f5ff' : 'white',
+                                           color: '#333',
+                                           fontWeight: index === selectedSuggestionIndex ? 'bold' : 'normal',
+                                           borderBottom: index < suggestions.length - 1 ? '1px solid #eee' : 'none'
+                                       }}
+                                   >
+                                       {suggestion}
+                                   </div>
+                                 ))}
+                               </div>
+                             )}
+                           </>
+                                                   ) : item.details.includes('Frais de déplacement') ? (
+                                                                                      isEditMode ? (
+                                                             <select
+                                 value={selectedFraisDeplacement}
+                                 onChange={handleFraisDeplacementChange}
+                                 style={{
+                                   border: '1px solid #ddd',
+                                   borderRadius: '4px',
+                                   padding: '6px 8px',
+                                   fontSize: '12px',
+                                   backgroundColor: '#fff',
+                                   width: '100%',
+                                   maxWidth: '350px',
+                                   lineHeight: '1.4',
+                                   minHeight: '35px'
+                                 }}
+                               >
+                                 <option value={0}>Sélectionner un frais de déplacement</option>
+                                 {fraisDeplacementOptions.map((frais) => (
+                                   <option key={frais.id} value={frais.id}>
+                                     {frais.libtech} | Prix: {formatNumber(frais.prix)}€/{frais.unite}
+                                   </option>
+                                 ))}
+                               </select>
+                            ) : (
+                              <span>{item.details}</span>
+                            )
+                          ) : item.details.includes('Taux horaire') ? (
+                                                        isEditMode ? (
+                                                             <select
+                                 value={selectedFraisHeure}
+                                 onChange={handleFraisHeureChange}
+                                 style={{
+                                   border: '1px solid #ddd',
+                                   borderRadius: '4px',
+                                   padding: '6px 8px',
+                                   fontSize: '12px',
+                                   backgroundColor: '#fff',
+                                   width: '100%',
+                                   maxWidth: '350px',
+                                   lineHeight: '1.4',
+                                   minHeight: '35px'
+                                 }}
+                               >
+                                 <option value={0}>Sélectionner un taux horaire</option>
+                                 {fraisHeureOptions.map((frais) => (
+                                   <option key={frais.id} value={frais.id}>
+                                     {frais.libtech} | Prix: {formatNumber(frais.prix)}€/{frais.unite}
+                                   </option>
+                                 ))}
+                               </select>
+                            ) : (
+                              <span>{item.details}</span>
+                            )
+                         ) : (
+                           <span onClick={() => isEditMode && handleCellClick(index, 'details')}>
+                             {item.details}
+                           </span>
+                         )}
+                       </td>
                       <td
                         onClick={() => isEditMode && handleCellClick(index, 'quantity')}
                         style={{ cursor: isEditMode ? 'pointer' : 'default' }}
@@ -1496,24 +1856,27 @@ const FullQuote: React.FC = () => {
                       </td>
                       <td>{(tvaRate * 100).toFixed(2)} %</td>
                       <td>{formatNumber(item.price * item.quantity)} €</td>
-                      {isEditMode && (
-                        <td>
-                          <button 
-                            onClick={() => handleDeleteRow(index)}
-                            style={{
-                              backgroundColor: '#dc3545',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              padding: '4px 8px',
-                              cursor: 'pointer',
-                              fontSize: '12px'
-                            }}
-                          >
-                            Supprimer
-                          </button>
-                        </td>
-                      )}
+                                             {isEditMode && (
+                         <td>
+                           <button 
+                             onClick={() => handleDeleteRow(index)}
+                             disabled={index < 2}
+                             style={{
+                               backgroundColor: index < 2 ? '#6c757d' : '#dc3545',
+                               color: 'white',
+                               border: 'none',
+                               borderRadius: '4px',
+                               padding: '4px 8px',
+                               cursor: index < 2 ? 'not-allowed' : 'pointer',
+                               fontSize: '12px',
+                               opacity: index < 2 ? 0.6 : 1
+                             }}
+                             title={index < 2 ? 'Les 2 premières lignes sont obligatoires' : 'Supprimer cette ligne'}
+                           >
+                             Supprimer
+                           </button>
+                         </td>
+                       )}
                     </tr>
                   );
                 })}
@@ -1530,109 +1893,7 @@ const FullQuote: React.FC = () => {
                   </tr>
                 )}
               </tbody>
-            </table>
-
-            {/* Section des informations complémentaires */}
-            <div style={{ 
-              marginTop: '20px', 
-              marginBottom: '20px',
-              padding: '15px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '4px',
-              border: '1px solid #e9ecef'
-            }}>
-              <h3 style={{ 
-                marginBottom: '15px', 
-                color: '#2D3C54',
-                fontSize: '16px',
-                fontWeight: 'bold'
-              }}>
-                Informations complémentaires
-              </h3>
-              
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 1fr', 
-                gap: '15px',
-                fontSize: '14px',
-                lineHeight: '1.6'
-              }}>
-                <div>
-                  <p style={{ marginBottom: '8px' }}>
-                    <strong>Devis établi gratuitement</strong>
-                  </p>
-                  <p style={{ marginBottom: '8px' }}>
-                    <strong>Frais de déplacement :</strong>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        value={fraisDeplacement}
-                        onChange={(e) => setFraisDeplacement(e.target.value)}
-                        placeholder="Ex: 25€, Inclus, etc."
-                        style={{
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          padding: '4px 8px',
-                          fontSize: '14px',
-                          marginLeft: '5px',
-                          width: '150px',
-                          backgroundColor: '#fff'
-                        }}
-                      />
-                    ) : (
-                      <span>{fraisDeplacement}</span>
-                    )}
-                  </p>
-                </div>
-                
-                <div>
-                  <p style={{ marginBottom: '8px' }}>
-                    <strong>Taux horaire de main-d'œuvre TTC :</strong>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        value={tauxHoraire}
-                        onChange={(e) => setTauxHoraire(e.target.value)}
-                        placeholder="Ex: 45€/h, À définir, etc."
-                        style={{
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          padding: '4px 8px',
-                          fontSize: '14px',
-                          marginLeft: '5px',
-                          width: '200px',
-                          backgroundColor: '#fff'
-                        }}
-                      />
-                    ) : (
-                      <span>{tauxHoraire}</span>
-                    )}
-                  </p>
-                  <p style={{ marginBottom: '8px' }}>
-                    <strong>Modalités de calcul du temps estimé :</strong>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        value={modalitesCalcul}
-                        onChange={(e) => setModalitesCalcul(e.target.value)}
-                        placeholder="Ex: 1 jour prévu, temps non facturé..."
-                        style={{
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          padding: '4px 8px',
-                          fontSize: '14px',
-                          marginLeft: '5px',
-                          width: '300px',
-                          backgroundColor: '#fff'
-                        }}
-                      />
-                    ) : (
-                      <span>{modalitesCalcul}</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
+                         </table>
 
             <div className="condition-total">
               <div className="payment-info">
@@ -1788,43 +2049,45 @@ const FullQuote: React.FC = () => {
             )}
           </div>
           
-          {/* Frais Divers Section */}
-          <div style={{ 
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            padding: '15px',
-            marginBottom: '20px'
-          }}>
-            <h3 style={{ marginBottom: '10px' }}>Frais divers</h3>
-            <select
-              multiple
-              value={selectedFraisDivers.map(String)}
-              onChange={handleFraisDiversChange}
-              style={{
-                width: '100%',
-                padding: '8px',
-                borderRadius: '4px',
-                border: '1px solid #ddd',
-                minHeight: '100px',
-                marginBottom: '8px'
-              }}
-            >
-              {fraisDivers.map((frais) => (
-                <option key={frais.id} value={frais.id}>
-                  {frais.libtech} - {formatNumber(frais.prix)}€/{frais.unite}
-                </option>
-              ))}
-            </select>
-            <p style={{ 
-              fontSize: '12px', 
-              color: '#666', 
-              margin: '0',
-              fontStyle: 'italic'
-            }}>
-              Maintenez la touche Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs frais
-            </p>
-          </div>
+                     
+
+           {/* Frais Divers Section */}
+           <div style={{ 
+             backgroundColor: '#ffffff',
+             borderRadius: '8px',
+             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+             padding: '15px',
+             marginBottom: '20px'
+           }}>
+             <h3 style={{ marginBottom: '10px' }}>Frais divers</h3>
+             <select
+               multiple
+               value={selectedFraisDivers.map(String)}
+               onChange={handleFraisDiversChange}
+               style={{
+                 width: '100%',
+                 padding: '8px',
+                 borderRadius: '4px',
+                 border: '1px solid #ddd',
+                 minHeight: '100px',
+                 marginBottom: '8px'
+               }}
+             >
+               {fraisDivers.map((frais) => (
+                 <option key={frais.id} value={frais.id}>
+                   {frais.libtech} - {formatNumber(frais.prix)}€/{frais.unite}
+                 </option>
+               ))}
+             </select>
+             <p style={{ 
+               fontSize: '12px', 
+               color: '#666', 
+               margin: '0',
+               fontStyle: 'italic'
+             }}>
+               Maintenez la touche Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs frais
+             </p>
+           </div>
           
           {/* Categories Section */}
           <div style={{ 
