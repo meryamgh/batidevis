@@ -64,13 +64,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         target.onerror = null; // Éviter les boucles infinies
     };
 
-    // Styles pour le séparateur de textures
-    const textureDividerStyle = {
-        width: '100%',
-        height: '1px',
-        backgroundColor: '#ccc',
-        margin: '10px 0',
-    };
+    
 
     // Fonction pour obtenir le nom lisible d'une face
     const getFaceName = (face: FaceName): string => {
