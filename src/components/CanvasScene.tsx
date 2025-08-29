@@ -152,8 +152,8 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
     const [characterPosition, setCharacterPosition] = useState<THREE.Vector3 | undefined>();
     const [characterRotation, setCharacterRotation] = useState<THREE.Euler | undefined>();
     const rotateCharacterRef = useRef<((direction: 'up' | 'down' | 'left' | 'right') => void) | null>(null);
-    const [showAllDimensions, setShowAllDimensions] = useState(false);
-    const [zoom2D, setZoom2D] = useState(100);
+    const [showAllDimensions] = useState(false);
+    const [zoom2D] = useState(100);
     const [navigationMode, setNavigationMode] = useState<'orbit' | 'move'>(isOrbitMode ? 'orbit' : 'move');
     const targetPositionRef = useRef<THREE.Vector3 | null>(null);
     const cameraPositionRef = useRef<THREE.Vector3 | null>(null);
