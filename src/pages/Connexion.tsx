@@ -30,7 +30,7 @@ const Connexion: React.FC = () => {
         acceptTerms: false
     });
 
-    const { signIn, signUp, signInWithToken } = useAuth();
+    const { signIn, signUp } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
