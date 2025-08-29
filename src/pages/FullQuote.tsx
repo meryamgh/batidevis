@@ -529,7 +529,6 @@ const FullQuote: React.FC = () => {
     // Informations complémentaires
     const [fraisDeplacement, setFraisDeplacement] = useState<string>('');
     const [tauxHoraire, setTauxHoraire] = useState<string>('');
-    const [modalitesCalcul, setModalitesCalcul] = useState<string>('');
     const [valableJusquau, setValableJusquau] = useState<string>('04/12/2024');
     const [debutTravaux, setDebutTravaux] = useState<string>('05/10/2024');
     const [dureeTravaux, setDureeTravaux] = useState<string>('1 jour');
@@ -580,6 +579,8 @@ const FullQuote: React.FC = () => {
 
     // Fonction pour récupérer les frais de déplacement depuis l'API
     const fetchFraisDeplacement = async () => {
+      console.log(fraisDeplacement);
+      console.log(tauxHoraire);
         try {
             const response = await fetch(`${BACKEND_URL}/api/frais/deplacement`);
             if (response.ok) {
@@ -849,9 +850,6 @@ const FullQuote: React.FC = () => {
                 break;
             case 'tauxHoraire':
                 setTauxHoraire(newValue);
-                break;
-            case 'modalitesCalcul':
-                setModalitesCalcul(newValue);
                 break;
             default:
                 break;
