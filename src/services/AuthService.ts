@@ -207,37 +207,7 @@ export class AuthService {
      }
   }
 
-  // Connexion avec Google
-  static async signInWithGoogle(): Promise<{ error: string | null }> {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      return { error: error?.message || null };
-    } catch (error) {
-      return { error: 'Erreur lors de la connexion avec Google' };
-    }
-  }
-
-  // Connexion avec LinkedIn
-  static async signInWithLinkedIn(): Promise<{ error: string | null }> {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      return { error: error?.message || null };
-    } catch (error) {
-      return { error: 'Erreur lors de la connexion avec LinkedIn' };
-    }
-  }
+  
 
   // Déconnexion
   static async signOut(): Promise<{ error: string | null }> {
@@ -306,47 +276,5 @@ export class AuthService {
     });
   }
 
-  // Connexion avec un token d'accès existant
-  static async signInWithToken(accessToken: string): Promise<{ user: AuthUser | null; error: string | null }> {
-    try {
-      // Définir la session avec le token
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: '', // Le refresh token peut être vide si vous n'en avez pas
-      });
-
-      if (error) {
-        return { user: null, error: error.message };
-      }
-
-      if (data.user) {
-        // Récupérer les informations du profil
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Erreur lors de la récupération du profil:', profileError);
-        }
-
-        return {
-          user: {
-            id: data.user.id,
-            email: data.user.email || '',
-            last_name: profile?.last_name,
-            first_name: profile?.first_name,
-            company_name: profile?.company_name || data.user.user_metadata?.company_name,
-            created_at: data.user.created_at
-          },
-          error: null
-        };
-      }
-
-      return { user: null, error: 'Erreur lors de la connexion avec le token' };
-    } catch (error) {
-      return { user: null, error: 'Erreur serveur' };
-    }
-  }
+  
 }

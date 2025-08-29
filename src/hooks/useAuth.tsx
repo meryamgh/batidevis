@@ -7,7 +7,6 @@ interface AuthContextType {
   loading: boolean;
   signUp: (data: SignUpData) => Promise<{ success: boolean; user?: AuthUser; error?: string }>;
   signIn: (data: SignInData) => Promise<{ success: boolean; error?: string }>;
-  signInWithToken: (token: string) => Promise<{ success: boolean; error?: string }>;
 
   signOut: () => Promise<{ success: boolean; error?: string }>;
 }
@@ -95,43 +94,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signInWithToken = async (token: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { user: authUser, error } = await AuthService.signInWithToken(token);
-      if (error) {
-        return { success: false, error };
-      }
-      setUser(authUser);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Erreur lors de la connexion avec le token' };
-    }
-  };
+  
 
-  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error } = await AuthService.signInWithGoogle();
-      if (error) {
-        return { success: false, error };
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Erreur lors de la connexion avec Google' };
-    }
-  };
-
-  const signInWithLinkedIn = async (): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error } = await AuthService.signInWithLinkedIn();
-      if (error) {
-        return { success: false, error };
-      }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Erreur lors de la connexion avec LinkedIn' };
-    }
-  };
-
+  
   const signOut = async (): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await AuthService.signOut();
@@ -150,7 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     signUp,
     signIn,
-    signInWithToken,
     signOut,
   };
 
