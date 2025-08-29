@@ -18,26 +18,26 @@
 
 .auth-box {
     background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 500px;
-    padding: 2rem;
-    margin-top: 2rem;
+    max-width: 450px;
+    padding: 1.5rem;
+    margin-top: 1rem;
 }
 
 .auth-switch {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
 .switch-btn {
-    padding: 0.75rem 2rem;
+    padding: 0.625rem 1.5rem;
     border: none;
     background: none;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: #64748b;
     cursor: pointer;
@@ -66,19 +66,118 @@
     background: #884b00;
 }
 
+/* Layout par défaut pour tous les formulaires */
 .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 0.3rem;
+    transition: all 0.3s ease;
+}
+
+/* Layout en 2 colonnes pour l'inscription uniquement */
+.auth-form.signup-form {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+    transition: all 0.3s ease;
+}
+
+.auth-form.signup-form .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.auth-form.signup-form .form-options {
+    grid-column: 1 / -1;
+}
+
+.auth-form.signup-form .auth-submit {
+    grid-column: 1 / -1;
+}
+
+.auth-form.signup-form .social-auth {
+    grid-column: 1 / -1;
+}
+
+/* S'assurer que le formulaire de connexion n'utilise pas Grid */
+.auth-form:not(.signup-form) .form-group {
+    grid-column: auto;
 }
 
 .auth-form h2 {
     text-align: center;
     color: #1e293b;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
     letter-spacing: -0.5px;
+}
+
+.auth-form h2.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Messages d'erreur et de succès */
+.auth-message {
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    animation: slideDown 0.3s ease-out;
+}
+
+.auth-message.error {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.auth-message.success {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Styles pour le composant de chargement */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #884b00;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-container p {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .form-group {
@@ -87,9 +186,9 @@
 
 .form-group input {
     width: 100%;
-    padding: 1.25rem;
+    padding: 0.75rem 1rem;
     border: 2px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 12px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: rgba(255, 255, 255, 0.8);
@@ -106,15 +205,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: 11px;
+    margin-top: 0.25rem;
 }
 
 .remember-me, .terms {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     color: #475569;
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .remember-me input[type="checkbox"]::after,
@@ -142,9 +242,9 @@
 .auth-submit {
     background: linear-gradient(135deg, #d89c00 0%, #ff8a00 100%);
     color: white;
-    padding: 10px 0px;
+    padding: 0.625rem 0;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
@@ -152,6 +252,7 @@
     letter-spacing: 1px;
     position: relative;
     overflow: hidden;
+    margin-top: 0.25rem;
 }
 
 .auth-submit:hover {
@@ -161,16 +262,16 @@
 
 .social-auth {
     text-align: center;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
 }
 
 .social-auth p {
     color: #64748b;
-    font-size: 11px;
-    margin-bottom: 1.5rem;
+    font-size: 10px;
+    margin-bottom: 1rem;
     background: white;
     display: inline-block;
-    padding: 0 1rem;
+    padding: 0 0.75rem;
     position: relative;
     font-weight: 500;
 }
@@ -184,12 +285,12 @@
 .google-btn, .linkedin-btn {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.5rem;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
     border: 2px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 8px;
     background: white;
-    font-size: 12px;
+    font-size: 11px;
     color: #475569;
     font-weight: 500;
     cursor: pointer;
@@ -203,7 +304,7 @@
 
 .google-btn img, .linkedin-btn img {
     width: auto;
-    height: 30px;
+    height: 24px;
 }
 
 /* Animations */
@@ -218,8 +319,56 @@
     }
 }
 
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Transition fluide pour les formulaires */
 .auth-form {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation d'entrée pour les nouveaux formulaires */
+.auth-form.animate-in {
     animation: fadeIn 0.5s ease-out;
+}
+
+/* Transition pour le changement de layout */
+.auth-form.signup-form {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-form:not(.signup-form) {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Classes pour les animations de transition */
+.auth-form.slide-in-right {
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-form.slide-in-left {
+    animation: slideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Responsive Design */
@@ -243,6 +392,17 @@
         padding: 0.75rem 1rem;
         font-size: 11px;
     }
+    
+    /* Retour en une colonne sur mobile pour l'inscription */
+    .auth-form.signup-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+    
+    .auth-form.signup-form .form-group.full-width {
+        grid-column: auto;
+    }
 }
 
 .dynamic-header {
@@ -251,4 +411,24 @@
     position: sticky;
     top: 0;
     z-index: 1000;
+}
+
+.switch-to-login-btn {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.3s ease;
+    display: block;
+    width: 100%;
+}
+
+.switch-to-login-btn:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
 }

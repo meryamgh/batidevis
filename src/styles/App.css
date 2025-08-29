@@ -52,3 +52,300 @@ button:hover {
   background-color: #007bff;
   color: white;
 }
+
+/* Styles pour le menu utilisateur */
+.user-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.user-menu-button {
+  background: linear-gradient(135deg, #884b00 0%, #b45309 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-menu-button:hover {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(136, 75, 0, 0.3);
+}
+
+.user-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-arrow {
+  font-size: 10px;
+  transition: transform 0.3s ease;
+}
+
+.user-menu-container:hover .user-arrow {
+  transform: rotate(180deg);
+}
+
+.user-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
+}
+
+.user-info {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.user-email {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 0.25rem 0;
+  font-weight: 500;
+}
+
+.user-company {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+  font-weight: 400;
+}
+
+.user-menu-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-menu-item:hover {
+  background: #f1f5f9;
+  color: #dc2626;
+}
+
+.user-menu-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 12px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-menu-item:hover {
+  background: #f1f5f9;
+  color: #dc2626;
+  transform: translateX(5px);
+}
+
+.user-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.user-menu-item.signing-out {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.logout-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.user-menu-item:hover .logout-icon {
+  transform: translateX(-2px);
+}
+
+.loading-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #dc2626;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-menu.closing {
+  animation: slideUp 0.3s ease-in forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Notification de déconnexion */
+.logout-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  animation: slideInRight 0.5s ease-out;
+}
+
+.notification-content {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 200px;
+}
+
+.notification-icon {
+  font-size: 16px;
+  animation: bounce 0.6s ease-in-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Styles pour le composant AuthCallback */
+.auth-callback-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+  gap: 2rem;
+}
+
+.auth-callback-container .loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #e2e8f0;
+  border-top: 6px solid #884b00;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.auth-callback-container p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.error-message {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.error-message h2 {
+  color: #fca5a5;
+  margin-bottom: 1rem;
+  font-size: 20px;
+}
+
+.error-message p {
+  color: #cbd5e1;
+  margin-bottom: 1.5rem;
+}
+
+.error-message button {
+  background: linear-gradient(135deg, #884b00 0%, #b45309 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.error-message button:hover {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%);
+  transform: translateY(-2px);
+}

@@ -23,8 +23,10 @@ import { BACKEND_URL } from '../config/env';
 import ObjectsPanel from '../components/panels/ObjectsPanel';
 import ObjectControls from '../components/panels/ObjectControlsPanel';
 import MultiSelectionPanel from '../components/panels/MultiSelectionPanel';
+import { useAuth } from '../hooks/useAuth';
 const MaquettePage: React.FC = () => {
     const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
+    const { user } = useAuth();
     const raycaster = useRef(new THREE.Raycaster()); 
     const [showUpload, setShowUpload] = useState(false);
     const [showObjectUpload, setShowObjectUpload] = useState(false);
@@ -1383,31 +1385,33 @@ const MaquettePage: React.FC = () => {
                             margin: '16px 0',
                             borderRadius: '1px'
                         }}></div>
-                        <a href="/connexion" style={{
-                            padding: '14px 20px',
-                            textDecoration: 'none',
-                            color: '#2D3C54',
-                            borderRadius: '8px',
-                            transition: 'all 0.2s ease',
-                            fontWeight: '500',
-                            fontSize: '15px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            border: '1px solid transparent'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f8f9fa';
-                            e.currentTarget.style.borderColor = '#e9ecef';
-                            e.currentTarget.style.transform = 'translateX(4px)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.borderColor = 'transparent';
-                            e.currentTarget.style.transform = 'translateX(0)';
-                        }}
-                        >
-                            Connexion / Inscription
-                        </a>
+                        {!user && (
+                            <a href="/connexion" style={{
+                                padding: '14px 20px',
+                                textDecoration: 'none',
+                                color: '#2D3C54',
+                                borderRadius: '8px',
+                                transition: 'all 0.2s ease',
+                                fontWeight: '500',
+                                fontSize: '15px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                border: '1px solid transparent'
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                e.currentTarget.style.borderColor = '#e9ecef';
+                                e.currentTarget.style.transform = 'translateX(4px)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.borderColor = 'transparent';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                            }}
+                            >
+                                Connexion / Inscription
+                            </a>
+                        )}
                     </nav>
                 </div>
             )}

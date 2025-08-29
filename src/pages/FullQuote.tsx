@@ -5,6 +5,7 @@ import { useMaquetteStore } from '../store/maquetteStore';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import { BACKEND_URL } from '../config/env';
+import { useAuth } from '../hooks/useAuth';
 // YouSign API client
 class YouSignClient {
   private BASE_URL = 'https://api-sandbox.yousign.app/v3';
@@ -142,6 +143,7 @@ const formatNumber = (num: number): string => {
 const FullQuote: React.FC = () => {
     const navigate = useNavigate();
     const { quote } = useMaquetteStore();
+    const { user } = useAuth();
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
     const [data, setData] = useState<any>(null);
@@ -1102,6 +1104,11 @@ const FullQuote: React.FC = () => {
 
     // Function to start the signature process
     const handleRequestSignature = async () => {
+        // Vérifier si l'utilisateur est connecté
+        if (!user) {
+            navigate('/connexion');
+            return;
+        }
         setShowSignerForm(true);
     };
 
@@ -1312,8 +1319,13 @@ const FullQuote: React.FC = () => {
 
     // Add handler for opening email modal
     const handleOpenInvoiceEmailModal = () => {
-      setShowInvoiceEmailModal(true);
-      setInvoiceEmail('');
+        // Vérifier si l'utilisateur est connecté
+        if (!user) {
+            navigate('/connexion');
+            return;
+        }
+        setShowInvoiceEmailModal(true);
+        setInvoiceEmail('');
     };
 
         // Add handler for submitting email
