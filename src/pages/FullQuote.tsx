@@ -470,7 +470,7 @@ const FullQuote: React.FC = () => {
     };
 
     // Gestion du logo modifiable
-    const [logoSrc] = useState<string>("logo.png");
+    const [logoSrc] = useState<string>("logo-batidevis.jpg");
     const [leftLogoSrc, setLeftLogoSrc] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -881,7 +881,7 @@ const FullQuote: React.FC = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    {showDetails ? 'Hide Details' : 'More Details'}
+                    {showDetails ? 'Cacher les détails' : 'Plus de détails'}
                   </button>
                   
                   {showDetails && (
