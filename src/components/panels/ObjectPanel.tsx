@@ -677,7 +677,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             <p className='texte'>{object.details}</p>
             {parametricData && (
                 <div className="panel-section">
-                    <h3 className="section-title">Données Paramétriques</h3>
+                    <h4 className="section-title">Données Paramétriques</h4>
                     
                     {/* Item details section with improved display */}
                     {parametricData.item_details && (

@@ -241,7 +241,11 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
 
     return (
         <div className="object-controls-compact">
-            <h3 className="controls-header" style={{ fontSize: '14px', marginBottom: '8px' }}>{selectedObject?.details}</h3>
+            <h3 className="controls-header" style={{ fontSize: '14px', marginBottom: '8px' }}>
+                {selectedObject?.details?.includes('-') 
+                    ? selectedObject.details.split('-')[0].trim() 
+                    : selectedObject?.details}
+            </h3>
 
             <div className="action-buttons" style={{ display: 'flex', flexDirection: 'row', gap: '2px', marginBottom: '4px', justifyContent: 'center', alignItems: 'center' }}>
                 <button
@@ -569,8 +573,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                                 
                                 {/* Textures de l'API */}
                                 {apiTextures.length > 0 ? (
-                                    <>
-                                        <div style={textureDividerStyle}></div>
+                                    <> 
                                         <h4 style={{ fontSize: '10px', margin: '5px 0' }}>Textures API</h4>
                                         <div className="texture-grid" style={{ 
                                             display: 'grid', 

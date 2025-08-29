@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -12,6 +12,7 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
     const { user, signOut } = useAuth();
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showLogoutNotification, setShowLogoutNotification] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const currentPath = location.pathname;
 
     const isActive = (path: string) => {
@@ -22,6 +23,34 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
     };
 
     const [isSigningOut, setIsSigningOut] = useState(false);
+
+    // Fermer le menu mobile quand on change de page
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [location.pathname]);
+
+    // Fermer le menu mobile quand on clique en dehors
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Element;
+            if (isMobileMenuOpen && !target.closest('.nav-container')) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        if (isMobileMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            // Empêcher le scroll du body quand le menu mobile est ouvert
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMobileMenuOpen]);
 
     const handleSignOut = async () => {
         setIsSigningOut(true);
@@ -45,6 +74,14 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
         }
     };
 
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <>
             {showLogoutNotification && (
@@ -60,14 +97,26 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
                 <div className="logo">
                     <img src={"logo-batidevis-removebg.png"} alt="BatiDevis Logo" className="logo-img" />
                 </div>
-                <div className="nav-links">
-                    <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>ACCUEIL</Link>
-                    <Link to="/maquette" className={`nav-link ${isActive('/maquette') ? 'active' : ''}`}>MAQUETTE</Link>
-                    <Link to="/tarifs" className={`nav-link ${isActive('/tarifs') ? 'active' : ''}`}>TARIFS</Link>
+                
+                {/* Bouton hamburger pour mobile */}
+                <button 
+                    className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`}
+                    onClick={toggleMobileMenu}
+                    aria-label="Toggle mobile menu"
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <div className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+                    <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`} onClick={closeMobileMenu}>ACCUEIL</Link>
+                    <Link to="/maquette" className={`nav-link ${isActive('/maquette') ? 'active' : ''}`} onClick={closeMobileMenu}>MAQUETTE</Link>
+                    <Link to="/tarifs" className={`nav-link ${isActive('/tarifs') ? 'active' : ''}`} onClick={closeMobileMenu}>TARIFS</Link>
                     
                     {/* Afficher "MES DEVIS & FACTURES" seulement si l'utilisateur est connecté */}
                     {user && (
-                        <Link to="/mes-devis-factures" className={`nav-link ${isActive('/mes-devis-factures') ? 'active' : ''}`}>MES DEVIS & FACTURES</Link>
+                        <Link to="/mes-devis-factures" className={`nav-link ${isActive('/mes-devis-factures') ? 'active' : ''}`} onClick={closeMobileMenu}>MES DEVIS & FACTURES</Link>
                     )}
                     
                     {user ? (
@@ -108,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
                             )}
                         </div>
                     ) : (
-                        <Link to="/connexion" className="button_connexion">CONNEXION / INSCRIPTION</Link>
+                        <Link to="/connexion" className="button_connexion" onClick={closeMobileMenu}>CONNEXION / INSCRIPTION</Link>
                     )}
                 </div>
             </nav>

@@ -52,7 +52,7 @@ const ParametricDataPanel: React.FC<ParametricDataPanelProps> = ({ parametricDat
 
   return (
     <div className="item-details">
-      <h4>Données paramétriques</h4>
+      <h6>Données paramétriques</h6>
       {renderObjectData(parametricData)}
     </div>
   );

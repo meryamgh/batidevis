@@ -235,6 +235,70 @@ button:hover {
   }
 }
 
+/* Media queries pour la responsivité du menu utilisateur */
+@media (max-width: 768px) {
+  .user-menu-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 11px;
+  }
+  
+  .user-name {
+    max-width: 120px;
+  }
+  
+  .user-menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 300px;
+    right: auto;
+  }
+  
+  .user-info {
+    padding: 1.2rem;
+  }
+  
+  .user-email {
+    font-size: 13px;
+  }
+  
+  .user-company {
+    font-size: 12px;
+  }
+  
+  .user-menu-item {
+    padding: 1rem 1.2rem;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-menu-button {
+    padding: 0.5rem 1rem;
+    font-size: 10px;
+  }
+  
+  .user-name {
+    max-width: 100px;
+  }
+  
+  .user-menu {
+    width: 95%;
+    max-width: 280px;
+  }
+  
+  .user-info {
+    padding: 1rem;
+  }
+  
+  .user-menu-item {
+    padding: 0.8rem 1rem;
+    font-size: 12px;
+  }
+}
+
 /* Notification de déconnexion */
 .logout-notification {
   position: fixed;

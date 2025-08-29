@@ -584,7 +584,7 @@ input[type="range"]::-ms-thumb {
 }
 
 .section-title {
-    font-size: 16px;
+    font-size: 10px;
     color: #2D3C54;
     margin-bottom: 10px;
     font-family: 'Lato', sans-serif;

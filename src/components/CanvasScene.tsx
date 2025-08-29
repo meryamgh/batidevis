@@ -7,8 +7,7 @@ import { ObjectData, FacesData } from '../types/ObjectData';
 import * as THREE from 'three';
 import CameraProvider from './canvaScene/CameraProvider';
 import RaycasterHandler from './canvaScene/RaycasterHandler';
-import MoveControls from './canvaScene/MoveControls';
-import TwoDView from './canvaScene/2Dview';
+import MoveControls from './canvaScene/MoveControls'; 
 import PersonView from './canvaScene/PersonView';
 
 type CanvasSceneProps = {
@@ -408,13 +407,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
 
     return (
         <>
-            {is2DView && (
-                <TwoDView 
-                    setZoom2D={setZoom2D}
-                    setShowAllDimensions={setShowAllDimensions}
-                    showAllDimensions={showAllDimensions}
-                />
-            )}
+            {is2DView  }
 
             {firstPersonView && (
                 <PersonView rotateCamera={rotateCamera} />
