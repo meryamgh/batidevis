@@ -8,6 +8,7 @@ import MesDevisFactures from './pages/MesDevisFactures'
 import Profil from './pages/Profil';
 import AuthCallback from './pages/AuthCallback';
 import { AuthProvider } from './hooks/useAuth';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
     return (
@@ -18,7 +19,11 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/tarifs" element={<Tarifs />} />
                 <Route path="/connexion" element={<Connexion />} />
-                <Route path="/mes-devis-factures" element={<MesDevisFactures />} />
+                <Route path="/mes-devis-factures" element={
+                    <ProtectedRoute>
+                        <MesDevisFactures />
+                    </ProtectedRoute>
+                } />
                 <Route path="/profil" element={<Profil />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
             </Routes>

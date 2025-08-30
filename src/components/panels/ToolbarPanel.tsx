@@ -5,6 +5,7 @@ import { BACKEND_URL } from '../../config/env';
 import DecorativeObjectSelector from './DecorativeObjectSelector';
 import AIGenerationPanel from './AIGenerationPanel';
 import { RotateIcon } from '../icons/ControlIcons';
+import { useAuth } from '../../hooks/useAuth';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
@@ -64,7 +65,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setShowMenu,
   handleLoadBackupMaquette
 }) => {
+  const { user } = useAuth();
+
   const handleExport = async () => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      alert('Vous devez être connecté pour sauvegarder une maquette. Veuillez vous connecter.');
+      return;
+    }
+
     // Fonction pour nettoyer les données avant export
     const cleanDataForExport = (obj: any) => {
         const cleanParametricData = obj.parametricData && typeof obj.parametricData === 'object' 
