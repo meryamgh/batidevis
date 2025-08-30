@@ -1499,10 +1499,6 @@ const FullQuote: React.FC = () => {
         }
     };
 
-    // Function to regenerate devis number
-    const regenerateDevisNumber = () => {
-        setDevisNumero(generateUniqueDevisNumber());
-    };
 
     // Function to open save devis modal
     const handleOpenSaveDevisModal = () => {

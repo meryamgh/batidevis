@@ -3,11 +3,14 @@ import { ObjectData } from '../types/ObjectData';
 
 type SetStateAction<T> = T | ((prev: T) => T);
 
+// Type for quote objects without gltf property
+type QuoteObjectData = Omit<ObjectData, 'gltf'>;
+
 interface MaquetteState {
     objects: ObjectData[];
-    quote: ObjectData[];
+    quote: QuoteObjectData[];
     setObjects: (objects: SetStateAction<ObjectData[]>) => void;
-    setQuote: (quote: SetStateAction<ObjectData[]>) => void;
+    setQuote: (quote: SetStateAction<QuoteObjectData[]>) => void;
     addObject: (object: ObjectData) => void;
     removeObject: (id: string) => void;
     updateObject: (id: string, updates: Partial<ObjectData>) => void;
@@ -24,29 +27,32 @@ export const useMaquetteStore = create<MaquetteState>((set) => ({
     setQuote: (quote) => set((state) => ({
         quote: typeof quote === 'function' ? quote(state.quote) : quote
     })),
-    addObject: (object) => set((state) => ({
-        objects: [...state.objects, object],
-        quote: [...state.quote, object]
-    })),
+    addObject: (object) => set((state) => {
+        const { gltf, ...quoteObject } = object;
+        return {
+            objects: [...state.objects, object],
+            quote: [...state.quote, quoteObject]
+        };
+    }),
     removeObject: (id) => set((state) => ({
         objects: state.objects.filter(obj => obj.id !== id),
         quote: state.quote.filter(obj => obj.id !== id)
     })),
-    updateObject: (id, updates) => set((state) => ({
-        objects: state.objects.map(obj => 
-            obj.id === id ? { ...obj, ...updates } : obj
-        ),
-        quote: state.quote.map(obj => 
-            obj.id === id ? { ...obj, ...updates } : obj
-        )
-    })),
+    updateObject: (id, updates) => set((state) => {
+        const { gltf, ...quoteUpdates } = updates;
+        return {
+            objects: state.objects.map(obj => 
+                obj.id === id ? { ...obj, ...updates } : obj
+            ),
+            quote: state.quote.map(obj => 
+                obj.id === id ? { ...obj, ...quoteUpdates } : obj
+            )
+        };
+    }),
     clearMaquette: () => set({ objects: [], quote: [] }),
     syncObjectsAndQuote: () => set((state) => {
-        // Synchroniser quote avec objects
-        const syncedQuote = state.objects.map(obj => ({
-            ...obj,
-            gltf: undefined // Exclure gltf de quote car il ne peut pas être sérialisé
-        }));
+        // Synchroniser quote avec objects en excluant gltf
+        const syncedQuote: QuoteObjectData[] = state.objects.map(({ gltf, ...obj }) => obj);
         return { quote: syncedQuote };
     })
 })); 
