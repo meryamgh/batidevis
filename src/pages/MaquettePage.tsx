@@ -104,6 +104,9 @@ const MaquettePage: React.FC = () => {
             throw new Error('Format de données invalide');
         }
         
+        console.log('🔄 Chargement de la maquette avec', data.objects.length, 'objets');
+        console.log('📊 Données brutes reçues:', JSON.stringify(data, null, 2));
+        
         // Vider la scène actuelle
         setObjects([]);
         setQuote([]);
@@ -112,13 +115,18 @@ const MaquettePage: React.FC = () => {
         const newObjects: ObjectData[] = [];
         
         for (const rawObjData of data.objects) {
+            console.log('🔍 Données brutes de l\'objet:', JSON.stringify(rawObjData, null, 2));
+            
             const objData = cleanObjectData(rawObjData);
             
-            const adjustedPosition: [number, number, number] = [
-                objData.position[0] / 2,
-                objData.position[1] / 2,
-                objData.position[2] / 2
-            ];
+            console.log('🧹 Données nettoyées de l\'objet:', {
+                id: objData.id,
+                type: objData.type,
+                position: objData.position,
+                scale: objData.scale,
+                rotation: objData.rotation,
+                url: objData.url
+            });
 
             if (objData.url) {
                 try {
@@ -127,12 +135,13 @@ const MaquettePage: React.FC = () => {
                     
                     const newObject: ObjectData = {
                         ...objData,
-                        position: adjustedPosition,
+                        position: objData.position, // Utiliser la position originale
                         gltf: gltf,
                         isBatiChiffrageObject: objData.isBatiChiffrageObject || false
                     };
                     
                     newObjects.push(newObject);
+                    console.log('✅ Objet GLTF chargé:', newObject.id, 'à la position:', newObject.position);
                 } catch (error) {
                     console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
                 }
@@ -146,26 +155,39 @@ const MaquettePage: React.FC = () => {
                 
                 const newObject: ObjectData = {
                     ...objData,
-                    position: adjustedPosition,
+                    position: objData.position, // Utiliser la position originale
                     gltf: mesh
                 };
                 
                 newObjects.push(newObject);
+                console.log('✅ Objet géométrique chargé:', newObject.id, 'à la position:', newObject.position);
             }
         }
+        
+        console.log('🎯 Mise à jour de la scène avec', newObjects.length, 'objets');
+        console.log('📋 Liste finale des objets avec positions:', newObjects.map(obj => ({
+            id: obj.id,
+            position: obj.position,
+            scale: obj.scale
+        })));
         
         setObjects(newObjects);
         setQuote(newObjects);
         
-        // Appliquer les textures et faces
-        for (const obj of newObjects) {
-            if (obj.texture) {
-                objectsUtils.handleUpdateTexture(obj.id, obj.texture);
+        // Appliquer les textures et faces après un délai pour s'assurer que les objets sont bien chargés
+        setTimeout(() => {
+            console.log('🎨 Application des textures et faces pour', newObjects.length, 'objets');
+            for (const obj of newObjects) {
+                if (obj.texture) {
+                    console.log('🎨 Application de la texture pour:', obj.id);
+                    objectsUtils.handleUpdateTexture(obj.id, obj.texture);
+                }
+                if (obj.faces) {
+                    console.log('🔲 Application des faces pour:', obj.id);
+                    objectsUtils.handleUpdateFaces(obj.id, obj.faces);
+                }
             }
-            if (obj.faces) {
-                objectsUtils.handleUpdateFaces(obj.id, obj.faces);
-            }
-        }
+        }, 500); // Délai plus long pour s'assurer que tous les objets sont bien chargés
     };
 
     // Charger automatiquement une maquette si elle est passée en paramètre de navigation
@@ -175,6 +197,15 @@ const MaquettePage: React.FC = () => {
             if (location.state.maquetteName) {
                 alert(`Maquette "${location.state.maquetteName}" chargée avec succès !`);
             }
+            
+            // Recentrer la caméra après le chargement de la maquette
+            setTimeout(() => {
+                if (orbitControlsRef.current) {
+                    console.log('🎥 Recentrage de la caméra après chargement de la maquette');
+                    orbitControlsRef.current.reset();
+                    orbitControlsRef.current.update();
+                }
+            }, 1000);
         }
     }, [location.state]);
 
@@ -940,14 +971,41 @@ const MaquettePage: React.FC = () => {
 
     // Fonction pour nettoyer et valider les données d'un objet
     const cleanObjectData = (objData: any): any => {
+        // Validation et nettoyage des positions
+        let position = [0, 0, 0];
+        if (Array.isArray(objData.position) && objData.position.length === 3) {
+            position = objData.position.map((coord: any) => {
+                const num = Number(coord);
+                return isNaN(num) ? 0 : num;
+            });
+        }
+        
+        // Validation et nettoyage des échelles
+        let scale = [1, 1, 1];
+        if (Array.isArray(objData.scale) && objData.scale.length === 3) {
+            scale = objData.scale.map((coord: any) => {
+                const num = Number(coord);
+                return isNaN(num) ? 1 : num;
+            });
+        }
+        
+        // Validation et nettoyage des rotations
+        let rotation = [0, 0, 0];
+        if (Array.isArray(objData.rotation) && objData.rotation.length === 3) {
+            rotation = objData.rotation.map((coord: any) => {
+                const num = Number(coord);
+                return isNaN(num) ? 0 : num;
+            });
+        }
+        
         return {
             ...objData,
             id: objData.id || `obj_${Date.now()}_${Math.random()}`,
             price: typeof objData.price === 'number' ? objData.price : 100,
             details: objData.details || 'Objet importé',
-            position: Array.isArray(objData.position) && objData.position.length === 3 ? objData.position : [0, 0, 0],
-            scale: Array.isArray(objData.scale) && objData.scale.length === 3 ? objData.scale : [1, 1, 1],
-            rotation: Array.isArray(objData.rotation) && objData.rotation.length === 3 ? objData.rotation : [0, 0, 0],
+            position: position,
+            scale: scale,
+            rotation: rotation,
             parametricData: objData.parametricData && typeof objData.parametricData === 'object' ? objData.parametricData : {},
             texture: objData.texture || '',
             color: objData.color || '',
@@ -989,13 +1047,6 @@ const MaquettePage: React.FC = () => {
                 // Nettoyer et valider les données de l'objet
                 const objData = cleanObjectData(rawObjData);
                 
-                // Diviser les positions par 2 pour la compatibilité avec GLTFObject
-                const adjustedPosition: [number, number, number] = [
-                    objData.position[0] / 2,
-                    objData.position[1] / 2,
-                    objData.position[2] / 2
-                ];
-
                 if (objData.url) {
                     // Pour les objets GLTF
                     try {
@@ -1005,7 +1056,7 @@ const MaquettePage: React.FC = () => {
                         // Créer le nouvel objet avec toutes les propriétés
                         const newObject: ObjectData = {
                             ...objData,
-                            position: adjustedPosition, // Utiliser la position ajustée
+                            position: objData.position, // Utiliser la position originale
                             gltf: gltf,
                             isBatiChiffrageObject: objData.isBatiChiffrageObject || false
                         };
@@ -1025,7 +1076,7 @@ const MaquettePage: React.FC = () => {
                     
                     const newObject: ObjectData = {
                         ...objData,
-                        position: adjustedPosition, // Utiliser la position ajustée
+                        position: objData.position, // Utiliser la position originale
                         gltf: mesh
                     };
                     
@@ -1277,6 +1328,7 @@ const MaquettePage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedObjectIds, objects, clipboard, handleCopyObjects, handlePasteObjects, handleClearSelection, isOrbitMode, isCharacterMode]);
 
+    
     return (
         <div id="page">
             {/* Menu latéral */}

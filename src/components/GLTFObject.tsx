@@ -359,13 +359,38 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     // }, [scene, color, texture, type]);
 
 
+    // Effet pour tracker quand meshRef est défini
+    useEffect(() => {
+        if (meshRef.current) {
+            console.log('🎯 GLTFObject: meshRef défini pour objet', id, 'avec position:', position);
+            console.log('🎯 GLTFObject: Position actuelle du mesh:', {
+                x: meshRef.current.position.x,
+                y: meshRef.current.position.y,
+                z: meshRef.current.position.z
+            });
+        }
+    }, [meshRef.current, id, position]);
+
     // Effet pour mettre à jour la position
     useEffect(() => {
         if (meshRef.current && position) {
+            console.log('🎯 GLTFObject: Application de la position', position, 'à l\'objet', id);
+            console.log('🎯 GLTFObject: Position avant application:', {
+                x: meshRef.current.position.x,
+                y: meshRef.current.position.y,
+                z: meshRef.current.position.z
+            });
+            
             meshRef.current.position.set(position[0], position[1], position[2]);
             meshRef.current.updateMatrixWorld(true);
+            
+            console.log('🎯 GLTFObject: Position après application:', {
+                x: meshRef.current.position.x,
+                y: meshRef.current.position.y,
+                z: meshRef.current.position.z
+            });
         }
-    }, [position]);
+    }, [position, id]);
 
     // Nouvel effet simplifié pour la mise à jour des textures des faces
     useEffect(() => {

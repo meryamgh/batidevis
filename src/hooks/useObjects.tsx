@@ -209,11 +209,23 @@ export const useObjects = ({
   }, [ setQuote, setIsMoving]);
 
   const handleUpdatePosition = (id: string, position: [number, number, number]) => {
-    console.log("Updating position in useObjects:", position);
+    console.log("Updating position in useObjects:", id, position);
+    
+    // Mettre à jour les deux listes (objects et quote) pour maintenir la synchronisation
     setObjects((prev) =>
       prev.map((obj) => {
         if (obj.id === id) {
-          console.log("Found object to update:", obj.id);
+          console.log("Found object to update in objects:", obj.id, "new position:", position);
+          return { ...obj, position };
+        }
+        return obj;
+      })
+    );
+    
+    setQuote((prev) =>
+      prev.map((obj) => {
+        if (obj.id === id) {
+          console.log("Found object to update in quote:", obj.id, "new position:", position);
           return { ...obj, position };
         }
         return obj;
@@ -222,47 +234,49 @@ export const useObjects = ({
   };
 
   const handleUpdateTexture = (id: string, newTexture: string) => {
-    setObjects((prevObjects) =>
-      prevObjects.map((obj) => {
-        if (obj.id === id) {
-          // Si l'objet a des faces spécifiques et est de type mur ou sol
-          if ((obj.type === 'wall' || obj.type === 'floor') && obj.faces) {
-            const updatedFaces = { ...obj.faces };
-            // Pour les sols, on met à jour uniquement la face supérieure
-            if (obj.type === 'floor') {
-              updatedFaces.top = {
-                ...updatedFaces.top,
-                texture: newTexture
-              };
-            }
-            // Pour les murs, on met à jour la face sélectionnée (si définie)
-            else if (obj.type === 'wall') {
-              // Si aucune face n'est sélectionnée, on applique à toutes les faces
-              const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'] as const;
-              faces.forEach(face => {
-                if (updatedFaces[face]) {
-                  updatedFaces[face] = {
-                    ...updatedFaces[face],
-                    texture: newTexture
-                  };
-                } else {
-                  updatedFaces[face] = {
-                    texture: newTexture
-                  };
-                }
-              });
-            }
-            return {
-              ...obj,
-              faces: updatedFaces
+    const updateObject = (obj: ObjectData) => {
+      if (obj.id === id) {
+        // Si l'objet a des faces spécifiques et est de type mur ou sol
+        if ((obj.type === 'wall' || obj.type === 'floor') && obj.faces) {
+          const updatedFaces = { ...obj.faces };
+          // Pour les sols, on met à jour uniquement la face supérieure
+          if (obj.type === 'floor') {
+            updatedFaces.top = {
+              ...updatedFaces.top,
+              texture: newTexture
             };
           }
-          // Pour les autres objets, on garde le comportement par défaut
-          return { ...obj, texture: newTexture };
+          // Pour les murs, on met à jour la face sélectionnée (si définie)
+          else if (obj.type === 'wall') {
+            // Si aucune face n'est sélectionnée, on applique à toutes les faces
+            const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'] as const;
+            faces.forEach(face => {
+              if (updatedFaces[face]) {
+                updatedFaces[face] = {
+                  ...updatedFaces[face],
+                  texture: newTexture
+                };
+              } else {
+                updatedFaces[face] = {
+                  texture: newTexture
+                };
+              }
+            });
+          }
+          return {
+            ...obj,
+            faces: updatedFaces
+          };
         }
-        return obj;
-      })
-    );
+        // Pour les autres objets, on garde le comportement par défaut
+        return { ...obj, texture: newTexture };
+      }
+      return obj;
+    };
+
+    // Mettre à jour les deux listes
+    setObjects((prevObjects) => prevObjects.map(updateObject));
+    setQuote((prevQuote) => prevQuote.map(updateObject));
   };
 
   const handleUpdateColor = useCallback((id: string, newColor: string) => {
@@ -416,11 +430,19 @@ export const useObjects = ({
   
 
   const handleRotateObject = (id: string, newRotation: [number, number, number]) => {
+    // Mettre à jour les deux listes pour maintenir la synchronisation
     setObjects((prevObjects) =>
       prevObjects.map((obj) =>
         obj.id === id ? { ...obj, rotation: newRotation } : obj
       )
     );
+    
+    setQuote((prevQuote) =>
+      prevQuote.map((obj) =>
+        obj.id === id ? { ...obj, rotation: newRotation } : obj
+      )
+    );
+    
     return [id, newRotation] as [string, [number, number, number]];
   };
 
@@ -480,34 +502,37 @@ export const useObjects = ({
 
   const handleUpdateFaces = useCallback((id: string, faces: FacesData) => {
     console.log('handleUpdateFaces called with:', { id, faces });
-    setObjects((prevObjects) =>
-      prevObjects.map((obj) => {
-        if (obj.id === id) {
-          console.log('Updating object faces:', {
-            objectId: obj.id,
-            oldFaces: obj.faces,
-            newFaces: faces
-          });
-          
-          // Créer un nouvel objet faces en ne conservant que les propriétés définies
-          const cleanedFaces = Object.entries(faces).reduce((acc, [faceName, faceData]) => {
-            // Assertion de type pour faceName
-            const face = faceName as keyof FacesData;
-            acc[face] = {};
-            if (faceData.texture !== undefined) acc[face].texture = faceData.texture;
-            if (faceData.color !== undefined && faceData.color !== null) acc[face].color = faceData.color;
-            return acc;
-          }, {} as FacesData);
+    
+    const updateObject = (obj: ObjectData) => {
+      if (obj.id === id) {
+        console.log('Updating object faces:', {
+          objectId: obj.id,
+          oldFaces: obj.faces,
+          newFaces: faces
+        });
+        
+        // Créer un nouvel objet faces en ne conservant que les propriétés définies
+        const cleanedFaces = Object.entries(faces).reduce((acc, [faceName, faceData]) => {
+          // Assertion de type pour faceName
+          const face = faceName as keyof FacesData;
+          acc[face] = {};
+          if (faceData.texture !== undefined) acc[face].texture = faceData.texture;
+          if (faceData.color !== undefined && faceData.color !== null) acc[face].color = faceData.color;
+          return acc;
+        }, {} as FacesData);
 
-          return {
-            ...obj,
-            faces: cleanedFaces
-          };
-        }
-        return obj;
-      })
-    );
-  }, [setObjects]);
+        return {
+          ...obj,
+          faces: cleanedFaces
+        };
+      }
+      return obj;
+    };
+
+    // Mettre à jour les deux listes
+    setObjects((prevObjects) => prevObjects.map(updateObject));
+    setQuote((prevQuote) => prevQuote.map(updateObject));
+  }, [setObjects, setQuote]);
 
 
   const handleUpdateObjectParametricData = (id: string, object : any) => {

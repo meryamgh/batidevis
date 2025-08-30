@@ -6,6 +6,7 @@ import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import { BACKEND_URL } from '../config/env';
 import { useAuth } from '../hooks/useAuth';
+import { DevisService, DevisData } from '../services/DevisService';
 // YouSign API client
 class YouSignClient {
   private BASE_URL = 'https://api-sandbox.yousign.app/v3';
@@ -142,7 +143,7 @@ const formatNumber = (num: number): string => {
 
 const FullQuote: React.FC = () => {
     const navigate = useNavigate();
-    const { quote } = useMaquetteStore();
+    const { quote, syncObjectsAndQuote } = useMaquetteStore();
     const { user } = useAuth();
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
@@ -182,21 +183,35 @@ const FullQuote: React.FC = () => {
     const [showInvoiceEmailModal, setShowInvoiceEmailModal] = useState<boolean>(false);
     const [invoiceEmail, setInvoiceEmail] = useState<string>('');
 
+    // States for saving devis
+    const [isSavingDevis, setIsSavingDevis] = useState<boolean>(false);
+    const [showSaveDevisModal, setShowSaveDevisModal] = useState<boolean>(false);
+    const [devisName, setDevisName] = useState<string>('');
+    const [devisDescription, setDevisDescription] = useState<string>('');
+
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
       let details: string;
       let unit: string | undefined;
-      details = item.parametricData ? item.parametricData.item_details.libtech : item.details;
-      unit = item.parametricData ? item.parametricData.item_details.unite : 'U';
-        const existingItem = acc.find(
-            (i) => i.details === details && i.price === item.price
-        );
-        if (existingItem) {
-            existingItem.quantity += 1; 
-        } else {
-            acc.push({ details: details, price: item.price, quantity: 1, unit: unit }); 
-        }
-        return acc;
+      
+      // Vérification sécurisée de la structure des données
+      if (item.parametricData && item.parametricData.item_details) {
+        details = item.parametricData.item_details.libtech || item.details || 'Produit sans nom';
+        unit = item.parametricData.item_details.unite || 'U';
+      } else {
+        details = item.details || 'Produit sans nom';
+        unit = 'U';
+      }
+      
+      const existingItem = acc.find(
+          (i) => i.details === details && i.price === item.price
+      );
+      if (existingItem) {
+          existingItem.quantity += 1; 
+      } else {
+          acc.push({ details: details, price: item.price, quantity: 1, unit: unit }); 
+      }
+      return acc;
     }, [] as AggregatedQuoteItem[]);
 
     const [aggregatedQuote, setAggregatedQuote] = useState<AggregatedQuoteItem[]>(initialAggregated);
@@ -524,8 +539,16 @@ const FullQuote: React.FC = () => {
     const [clientTel, setClientTel] = useState<string>('0678891223');
     const [clientEmail, setClientEmail] = useState<string>('sociétébatiment@gmail.com');
 
+    // Fonction pour générer un numéro de devis unique
+    const generateUniqueDevisNumber = (): string => {
+        const timestamp = Date.now();
+        const randomPart = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const year = new Date().getFullYear();
+        return `${year}-${timestamp}-${randomPart}`;
+    };
+
     // Informations de devis
-    const [devisNumero, setDevisNumero] = useState<string>('123');
+    const [devisNumero, setDevisNumero] = useState<string>(generateUniqueDevisNumber());
     const [enDateDu, setEnDateDu] = useState<string>('05/10/2024');
     
     // Informations complémentaires
@@ -1158,6 +1181,34 @@ const FullQuote: React.FC = () => {
             setSignatureStatus('sent');
             setSignatureUrl(signerResponse.signature_link);
             setShowSignerForm(false);
+
+            // 6. Sauvegarder automatiquement le devis avec le statut 'sent' si pas déjà sauvegardé
+            try {
+                const devisData = prepareDevisData();
+                const devisName = `Devis ${devisNumero} - ${societeBatiment}`;
+                if (user!=null) {
+                  const savedDevis = await DevisService.saveDevisWithUserId(
+                    devisName,
+                    devisData,
+                    user.id,
+                    `Devis envoyé pour signature à ${signerEmail}`
+                );
+                      // Mettre à jour le statut du devis sauvegardé
+                      await DevisService.updateDevisStatus(
+                        savedDevis.id!,
+                        'sent',
+                        signatureRequest.id,
+                        signerResponse.signature_link
+                    );
+                    
+                    console.log('Devis sauvegardé et statut mis à jour:', savedDevis);
+              }
+                
+           
+            } catch (saveError) {
+                console.error('Erreur lors de la sauvegarde automatique du devis:', saveError);
+                // Ne pas bloquer le processus de signature si la sauvegarde échoue
+            }
         } catch (error) {
             console.error('Error in signature process:', error);
             setSignatureStatus('error');
@@ -1328,6 +1379,144 @@ const FullQuote: React.FC = () => {
         setInvoiceEmail('');
     };
 
+    // Function to prepare devis data for saving
+    const prepareDevisData = (): DevisData => {
+        return {
+            info: {
+                devoTitle,
+                devoName,
+                devoAddress,
+                devoCity,
+                devoSiren,
+                societeBatiment,
+                clientAdresse,
+                clientCodePostal,
+                clientTel,
+                clientEmail,
+                devisNumero,
+                enDateDu,
+                valableJusquau,
+                debutTravaux,
+                dureeTravaux,
+                fraisDeplacement,
+                tauxHoraire,
+                isDevisGratuit,
+                logo: leftLogoSrc
+            },
+            lines: aggregatedQuote.map(item => ({
+                details: item.details,
+                price: item.price,
+                quantity: item.quantity,
+                unit: item.unit
+            })),
+            totals: {
+                totalHT,
+                totalTVA,
+                totalTTC,
+                acompte,
+                resteAPayer,
+                tvaRate,
+                acompteRate
+            }
+        };
+    };
+
+    // Function to handle saving devis with maquette
+    const handleSaveDevis = async () => {
+        if (!user) {
+            navigate('/connexion');
+            return;
+        }
+
+        if (!devisName.trim()) {
+            alert('Veuillez entrer un nom pour le devis');
+            return;
+        }
+
+        setIsSavingDevis(true);
+        try {
+            // Synchroniser les objets et le quote avant la sauvegarde
+            console.log('🔄 Synchronisation des objets et du quote avant sauvegarde');
+            syncObjectsAndQuote();
+            
+            const devisData = prepareDevisData();
+            
+            // Préparer les données de la maquette
+            console.log('💾 Préparation des données de maquette pour sauvegarde:', quote.length, 'objets');
+            
+            const maquetteData = {
+                objects: quote.map((obj: any) => {
+                    console.log('📦 Objet à sauvegarder:', {
+                        id: obj.id,
+                        details: obj.details,
+                        position: obj.position,
+                        scale: obj.scale,
+                        rotation: obj.rotation,
+                        type: obj.type
+                    });
+                    
+                    return {
+                        id: obj.id,
+                        url: obj.url,
+                        price: obj.price,
+                        details: obj.details,
+                        position: obj.position,
+                        texture: obj.texture,
+                        scale: obj.scale,
+                        rotation: obj.rotation,
+                        color: obj.color,
+                        startPoint: obj.startPoint,
+                        endPoint: obj.endPoint,
+                        parentScale: obj.parentScale,
+                        boundingBox: obj.boundingBox,
+                        faces: obj.faces,
+                        type: obj.type,
+                        parametricData: obj.parametricData,
+                        isBatiChiffrageObject: obj.isBatiChiffrageObject || false
+                    };
+                })
+            };
+
+            // Sauvegarder le devis avec sa maquette associée
+            const { devis, maquette } = await DevisService.saveDevisWithMaquette(
+                devisName.trim(),
+                devisData,
+                maquetteData,
+                devisDescription.trim() || undefined,
+                user.id
+            );
+            
+            console.log('Devis et maquette sauvegardés avec succès:', { devis, maquette });
+            alert('Devis et maquette sauvegardés avec succès!');
+            setShowSaveDevisModal(false);
+            setDevisName('');
+            setDevisDescription('');
+        } catch (error) {
+            console.error('Erreur lors de la sauvegarde du devis:', error);
+            alert('Erreur lors de la sauvegarde du devis. Veuillez réessayer.');
+        } finally {
+            setIsSavingDevis(false);
+        }
+    };
+
+    // Function to regenerate devis number
+    const regenerateDevisNumber = () => {
+        setDevisNumero(generateUniqueDevisNumber());
+    };
+
+    // Function to open save devis modal
+    const handleOpenSaveDevisModal = () => {
+        if (!user) {
+            navigate('/connexion');
+            return;
+        }
+        
+        // Set default name based on client and devis number
+        const defaultName = `Devis ${devisNumero} - ${societeBatiment}`;
+        setDevisName(defaultName);
+        setShowSaveDevisModal(true);
+    };
+
         // Add handler for submitting email
     const handleSubmitInvoiceEmail = () => {
         if (!invoiceEmail || !invoiceEmail.includes('@')) {
@@ -1492,10 +1681,13 @@ const FullQuote: React.FC = () => {
                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                      <table className='info-table-devis'>
                        <tbody>
-                         <tr>
-                           <td>Devis n°</td>
-                           <td><EditableText fieldName="devisNumero" value={devisNumero} /></td>
-                         </tr>
+                                                   <tr>
+                            <td>Devis n°</td>
+                            <td style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <EditableText fieldName="devisNumero" value={devisNumero} />
+                              
+                            </td>
+                          </tr>
                          <tr>
                            <td>En date du</td>
                            <td><EditableText fieldName="enDateDu" value={enDateDu} /></td>
@@ -1983,42 +2175,60 @@ const FullQuote: React.FC = () => {
           padding: '20px',
           backgroundColor: '#f8f9fa'
         }}>
-          {/* Electronic Signature Button */}
-          <div className="signature-actions" style={{ marginBottom: '20px' }}>
-            {signatureStatus === 'idle' && (
-              <button 
-                onClick={handleRequestSignature}
-                style={{ 
-                  padding: '10px 20px', 
-                  backgroundColor: '#007bff', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '4px', 
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  marginRight: '10px',
-                  width: '100%',
-                  marginBottom: '10px'
-                }}
-              >
-                Demander signature électronique
-              </button>
-            )}
+          {/* Save Devis Button */}
+          <div className="devis-actions" style={{ marginBottom: '20px' }}>
             <button
-              onClick={handleOpenInvoiceEmailModal}
+              onClick={handleOpenSaveDevisModal}
               style={{
                 padding: '10px 20px',
-                backgroundColor: '#28a745',
+                backgroundColor: '#17a2b8',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '16px',
-                width: '100%'
+                width: '100%',
+                marginBottom: '10px'
               }}
             >
-              Envoyer la facture électronique
+              💾 Sauvegarder le devis
             </button>
+            
+            {/* Electronic Signature Button */}
+            <div className="signature-actions" style={{ marginBottom: '10px' }}>
+              {signatureStatus === 'idle' && (
+                <button 
+                  onClick={handleRequestSignature}
+                  style={{ 
+                    padding: '10px 20px', 
+                    backgroundColor: '#007bff', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    width: '100%',
+                    marginBottom: '10px'
+                  }}
+                >
+                  Demander signature électronique
+                </button>
+              )}
+              <button
+                onClick={handleOpenInvoiceEmailModal}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  width: '100%'
+                }}
+              >
+                Envoyer la facture électronique
+              </button>
             
             {signatureStatus === 'preparing' && (
               <div>Préparation de la demande de signature...</div>
@@ -2057,6 +2267,7 @@ const FullQuote: React.FC = () => {
                 Une erreur est survenue lors de la demande de signature. Veuillez réessayer.
               </div>
             )}
+          </div>
           </div>
           
                      
@@ -2349,6 +2560,90 @@ const FullQuote: React.FC = () => {
                   }}
                 >
                   Envoyer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Save Devis Modal */}
+        {showSaveDevisModal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              width: '400px',
+              maxWidth: '90%'
+            }}>
+              <h3 style={{ marginTop: 0 }}>Sauvegarder le devis</h3>
+              
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Nom du devis *</label>
+                <input
+                  type="text"
+                  value={devisName}
+                  onChange={e => setDevisName(e.target.value)}
+                  style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+                  placeholder="Nom du devis"
+                />
+              </div>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px' }}>Description (optionnel)</label>
+                <textarea
+                  value={devisDescription}
+                  onChange={e => setDevisDescription(e.target.value)}
+                  style={{ 
+                    width: '100%', 
+                    padding: '8px', 
+                    boxSizing: 'border-box',
+                    minHeight: '80px',
+                    resize: 'vertical'
+                  }}
+                  placeholder="Description du devis..."
+                />
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <button
+                  onClick={() => setShowSaveDevisModal(false)}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annuler
+                </button>
+                
+                <button
+                  onClick={handleSaveDevis}
+                  disabled={isSavingDevis}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: isSavingDevis ? '#6c757d' : '#17a2b8',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: isSavingDevis ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isSavingDevis ? 'Sauvegarde...' : 'Sauvegarder'}
                 </button>
               </div>
             </div>

@@ -12,6 +12,7 @@ interface MaquetteState {
     removeObject: (id: string) => void;
     updateObject: (id: string, updates: Partial<ObjectData>) => void;
     clearMaquette: () => void;
+    syncObjectsAndQuote: () => void;
 }
 
 export const useMaquetteStore = create<MaquetteState>((set) => ({
@@ -39,5 +40,13 @@ export const useMaquetteStore = create<MaquetteState>((set) => ({
             obj.id === id ? { ...obj, ...updates } : obj
         )
     })),
-    clearMaquette: () => set({ objects: [], quote: [] })
+    clearMaquette: () => set({ objects: [], quote: [] }),
+    syncObjectsAndQuote: () => set((state) => {
+        // Synchroniser quote avec objects
+        const syncedQuote = state.objects.map(obj => ({
+            ...obj,
+            gltf: undefined // Exclure gltf de quote car il ne peut pas être sérialisé
+        }));
+        return { quote: syncedQuote };
+    })
 })); 

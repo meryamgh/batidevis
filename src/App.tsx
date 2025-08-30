@@ -4,8 +4,7 @@ import FullQuote from './pages/FullQuote';
 import Home from './pages/Home';
 import Tarifs from './pages/Tarifs';
 import Connexion from './pages/Connexion'
-import MesDevisFactures from './pages/MesDevisFactures'
-import MesMaquettes from './pages/MesMaquettes'
+import MesDevisFactures from './pages/MesDevisFactures' 
 import Profil from './pages/Profil';
 import AuthCallback from './pages/AuthCallback';
 import { AuthProvider } from './hooks/useAuth';
@@ -24,12 +23,7 @@ function App() {
                     <ProtectedRoute>
                         <MesDevisFactures />
                     </ProtectedRoute>
-                } />
-                <Route path="/mes-maquettes" element={
-                    <ProtectedRoute>
-                        <MesMaquettes />
-                    </ProtectedRoute>
-                } />
+                } /> 
                 <Route path="/profil" element={<Profil />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
             </Routes>
