@@ -25,7 +25,6 @@ export class AuthService {
               first_name: data.first_name,
               last_name: data.last_name,
               company_name: data.company_name,
-              full_name: `${data.first_name} ${data.last_name}`,
             }
           }),
         });
@@ -96,7 +95,6 @@ export class AuthService {
               first_name: data.first_name,
               last_name: data.last_name,
               company_name: data.company_name,
-              full_name: `${data.first_name} ${data.last_name}`,
             }
           }
         });
@@ -170,11 +168,22 @@ export class AuthService {
         console.log('AuthService.signIn - Réponse API REST:', responseData);
         
         if (response.ok && responseData.user) {
+          // Récupérer les données du profil depuis la base de données
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', responseData.user.id)
+            .single();
+
+          console.log('AuthService.signIn - Profil récupéré:', profile);
+          console.log('AuthService.signIn - Erreur profil:', profileError);
+
           const userData = {
             id: responseData.user.id,
             email: responseData.user.email || '',
-            full_name: responseData.user.user_metadata?.full_name || '',
-            company_name: responseData.user.user_metadata?.company_name || '',
+            first_name: profile?.first_name || responseData.user.user_metadata?.first_name || '',
+            last_name: profile?.last_name || responseData.user.user_metadata?.last_name || '',
+            company_name: profile?.company_name || responseData.user.user_metadata?.company_name || '',
             created_at: responseData.user.created_at
           };
           
@@ -244,11 +253,107 @@ export class AuthService {
         document.cookie = 'supabase_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         return { user: null, error: null };
       }
+
+      // Si les données du profil sont manquantes, les récupérer depuis la base de données
+      if (!sessionData.user.first_name && !sessionData.user.last_name) {
+        console.log('getCurrentUser - Données de profil manquantes, récupération depuis la DB');
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', sessionData.user.id)
+          .single();
+
+        if (profile && !profileError) {
+          const updatedUser = {
+            ...sessionData.user,
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
+            company_name: profile.company_name || ''
+          };
+
+          // Mettre à jour le cookie avec les nouvelles données
+          const expires = new Date();
+          expires.setMonth(expires.getMonth() + 1);
+          
+          document.cookie = `supabase_session=${JSON.stringify({
+            ...sessionData,
+            user: updatedUser
+          })}; expires=${expires.toUTCString()}; path=/; SameSite=Strict; Secure`;
+
+          return { user: updatedUser, error: null };
+        }
+      }
       
       return { user: sessionData.user, error: null };
     } catch (error) {
       console.error('Erreur getCurrentUser catch:', error);
       return { user: null, error: 'Erreur serveur' };
+    }
+  }
+
+  // Mettre à jour le profil utilisateur
+  static async updateProfile(userId: string, profileData: Partial<AuthUser>): Promise<{ user: AuthUser | null; error: string | null }> {
+    try {
+      console.log('AuthService.updateProfile - Mise à jour du profil pour:', userId);
+      console.log('AuthService.updateProfile - Données:', profileData);
+
+      // Récupérer la session actuelle
+      const sessionCookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('supabase_session='));
+      
+      if (!sessionCookie) {
+        return { user: null, error: 'Session non trouvée' };
+      }
+
+      const sessionData = JSON.parse(decodeURIComponent(sessionCookie.split('=')[1]));
+
+      // Récupérer l'email de l'utilisateur actuel
+      const currentUser = sessionData.user;
+      
+      // Mettre à jour la base de données Supabase
+      const { data: updatedProfile, error: dbError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          email: currentUser.email, // Inclure l'email actuel
+          first_name: profileData.first_name,
+          last_name: profileData.last_name,
+          company_name: profileData.company_name,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('AuthService.updateProfile - Erreur DB:', dbError);
+        return { user: null, error: 'Erreur lors de la mise à jour en base de données' };
+      }
+
+      console.log('AuthService.updateProfile - Profil mis à jour en DB:', updatedProfile);
+      
+      // Mettre à jour les données utilisateur dans la session
+      const updatedUser = {
+        ...sessionData.user,
+        first_name: updatedProfile.first_name || '',
+        last_name: updatedProfile.last_name || '',
+        company_name: updatedProfile.company_name || ''
+      };
+
+      // Mettre à jour le cookie de session
+      const expires = new Date();
+      expires.setMonth(expires.getMonth() + 1);
+      
+      document.cookie = `supabase_session=${JSON.stringify({
+        ...sessionData,
+        user: updatedUser
+      })}; expires=${expires.toUTCString()}; path=/; SameSite=Strict; Secure`;
+
+      console.log('AuthService.updateProfile - Profil mis à jour avec succès');
+      return { user: updatedUser, error: null };
+    } catch (error) {
+      console.error('AuthService.updateProfile - Erreur:', error);
+      return { user: null, error: 'Erreur lors de la mise à jour du profil' };
     }
   }
 
@@ -275,6 +380,4 @@ export class AuthService {
       }
     });
   }
-
-  
 }

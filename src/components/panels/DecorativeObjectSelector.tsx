@@ -106,17 +106,7 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
             </button>
             {isOpen && (
                 <div className="object-selector-dropdown">
-                    <button
-                        onClick={() => setShowObjectUpload(true)}
-                        className="bouton"
-                        style={{
-                            ...buttonStyle,
-                            marginLeft: '10px',
-                            marginTop: '10px'
-                        }}
-                    >
-                        upload objet décoratif
-                    </button>
+                    
                     <br></br>
 
                     {showObjectUpload && <ObjectUpload onClose={() => setShowObjectUpload(false)} />}

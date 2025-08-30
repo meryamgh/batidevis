@@ -36,12 +36,17 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
             if (isMobileMenuOpen && !target.closest('.nav-container')) {
                 setIsMobileMenuOpen(false);
             }
+            if (showUserMenu && !target.closest('.user-menu-container')) {
+                setShowUserMenu(false);
+            }
         };
 
-        if (isMobileMenuOpen) {
+        if (isMobileMenuOpen || showUserMenu) {
             document.addEventListener('mousedown', handleClickOutside);
             // Empêcher le scroll du body quand le menu mobile est ouvert
-            document.body.style.overflow = 'hidden';
+            if (isMobileMenuOpen) {
+                document.body.style.overflow = 'hidden';
+            }
         } else {
             document.body.style.overflow = 'unset';
         }
@@ -50,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.body.style.overflow = 'unset';
         };
-    }, [isMobileMenuOpen]);
+    }, [isMobileMenuOpen, showUserMenu]);
 
     const handleSignOut = async () => {
         setIsSigningOut(true);
@@ -70,7 +75,6 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
             console.error('Erreur lors de la déconnexion:', error);
         } finally {
             setIsSigningOut(false);
-            setShowUserMenu(false);
         }
     };
 
@@ -129,15 +133,13 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
                                 <span className="user-arrow">▼</span>
                             </button>
                             {showUserMenu && (
-                                <div className={`user-menu ${isSigningOut ? 'closing' : ''}`}>
-                                    <div className="user-info">
-                                        <p className="user-email">{user.email}</p>
-                                        {user.company_name && (
-                                            <p className="user-company">{user.company_name}</p>
-                                        )}
-                                    </div>
+                                <div className="user-menu">
+                                    <Link to="/profil" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
+                                        <span className="profile-icon">👤</span>
+                                        Mon Profil
+                                    </Link>
                                     <button 
-                                        className={`user-menu-item ${isSigningOut ? 'signing-out' : ''}`}
+                                        className={`user-menu-item logout-item ${isSigningOut ? 'signing-out' : ''}`}
                                         onClick={handleSignOut}
                                         disabled={isSigningOut}
                                     >

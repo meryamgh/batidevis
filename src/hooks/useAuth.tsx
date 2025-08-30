@@ -7,7 +7,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (data: SignUpData) => Promise<{ success: boolean; user?: AuthUser; error?: string }>;
   signIn: (data: SignInData) => Promise<{ success: boolean; error?: string }>;
-
+  updateProfile: (profileData: Partial<AuthUser>) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -97,6 +97,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
 
   
+  const updateProfile = async (profileData: Partial<AuthUser>): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!user) {
+        return { success: false, error: 'Utilisateur non connecté' };
+      }
+      
+      const { user: updatedUser, error } = await AuthService.updateProfile(user.id, profileData);
+      if (error) {
+        return { success: false, error };
+      }
+      if (updatedUser) {
+        setUser(updatedUser);
+        return { success: true };
+      }
+      return { success: false, error: 'Erreur lors de la mise à jour' };
+    } catch (error) {
+      return { success: false, error: 'Erreur lors de la mise à jour du profil' };
+    }
+  };
+
   const signOut = async (): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await AuthService.signOut();
@@ -115,6 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     signUp,
     signIn,
+    updateProfile,
     signOut,
   };
 

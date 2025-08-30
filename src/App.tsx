@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Tarifs from './pages/Tarifs';
 import Connexion from './pages/Connexion'
 import MesDevisFactures from './pages/MesDevisFactures'
+import Profil from './pages/Profil';
 import AuthCallback from './pages/AuthCallback';
 import { AuthProvider } from './hooks/useAuth';
 
@@ -18,6 +19,7 @@ function App() {
                 <Route path="/tarifs" element={<Tarifs />} />
                 <Route path="/connexion" element={<Connexion />} />
                 <Route path="/mes-devis-factures" element={<MesDevisFactures />} />
+                <Route path="/profil" element={<Profil />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
             </Routes>
         </AuthProvider>

@@ -113,48 +113,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
             </button>
             {isOpen && (
                 <div className="object-selector-dropdown">
-                    <button
-                        onClick={() => setShowObjectUpload(true)}
-                        className="bouton"
-                        style={{
-                            ...buttonStyle,
-                            marginLeft: '10px',
-                            marginTop: '10px'
-                        }}
-                    >
-                        upload 3D object
-                    </button>
-                    <button 
-                        onClick={() => setShowAIGeneration(true)}
-                        className="bouton ai-button"
-                        title="Générer un objet 3D avec l'IA"
-                        style={{
-                            ...buttonStyle,
-                            marginLeft: '10px',
-                            marginTop: '10px',
-                            background: 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            border: 'none',
-                            boxShadow: '0 4px 15px rgba(106, 17, 203, 0.3)',
-                            fontSize: '13px',
-                            padding: '8px 16px',
-                            borderRadius: '6px',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}
-                    >
-                        ✨ Générer votre objet 3D avec l'IA ✨
-                    </button>
-
-                    {showAIGeneration && (
-                        <AIGenerationPanel 
-                            onClose={() => setShowAIGeneration(false)} 
-                            onObjectGenerated={handleObjectGenerated}
-                        />
-                    )}
+                    
 
                     {showObjectUpload && <ObjectUpload onClose={() => setShowObjectUpload(false)} />}
 
