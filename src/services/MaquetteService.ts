@@ -61,16 +61,7 @@ export class MaquetteService {
       throw error;
     }
   }
-
-  // Obtenir les en-têtes d'autorisation
-  private static async getAuthHeaders() {
-    const { data: { session } } = await supabase.auth.getSession();
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session?.access_token}`,
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-    };
-  }
+ 
 
   // Sauvegarder une nouvelle maquette
   static async saveMaquette(name: string, data: MaquetteData, description?: string, userId?: string): Promise<Maquette> {

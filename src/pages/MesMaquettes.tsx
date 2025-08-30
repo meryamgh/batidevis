@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { MaquetteService, Maquette } from '../services/MaquetteService';
-import { useAuth } from '../hooks/useAuth';
+import { MaquetteService, Maquette } from '../services/MaquetteService'; 
 import '../styles/MesMaquettes.css';
 
 const MesMaquettes: React.FC = () => {
     const [maquettes, setMaquettes] = useState<Maquette[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const { user } = useAuth();
+    const [error, setError] = useState<string | null>(null); 
     const navigate = useNavigate();
 
     useEffect(() => {

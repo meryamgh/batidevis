@@ -1,7 +1,6 @@
 import ObjectSelector from './ObjectSelectorPanel';
 import {  ObjectData } from '../../types/ObjectData';
 import '../../styles/AIGenerationPanel.css';
-import { BACKEND_URL } from '../../config/env';
 import DecorativeObjectSelector from './DecorativeObjectSelector';
 import AIGenerationPanel from './AIGenerationPanel';
 import { RotateIcon } from '../icons/ControlIcons';
