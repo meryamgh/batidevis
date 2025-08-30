@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../../styles/Controls.css'; 
 import ObjectUpload from './ObjectUploadPanel';
-import AIGenerationPanel from './AIGenerationPanel';
 import { BACKEND_URL } from '../../config/env';
 
 interface ObjectFile {
@@ -13,13 +12,11 @@ interface ObjectFile {
 interface ObjectSelectorProps {
     showObjectUpload: boolean;
     setShowObjectUpload: (show: boolean) => void;
-    handleObjectGenerated: (objectUrl: string) => void;
 }
 
-const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setShowObjectUpload, handleObjectGenerated }) => {
+const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setShowObjectUpload }) => {
     const [objects, setObjects] = useState<ObjectFile[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [showAIGeneration, setShowAIGeneration] = useState(false);
 
     useEffect(() => {
         const fetchFiles = async () => {

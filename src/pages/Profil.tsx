@@ -120,13 +120,7 @@ const Profil: React.FC = () => {
         }
     };
 
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
+    
 
     return (
         <div className="profil-container">
