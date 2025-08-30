@@ -9,12 +9,17 @@ import { useParametricDataService } from '../services/ParametricDataService';
 const FLOOR_PRICE_PER_SQUARE_METER = 80; // Prix au m² pour les dalles/planchers
 const WALL_PRICE_PER_SQUARE_METER = 120; // Prix au m² pour les murs
 
+// Type pour les objets de quote avec propriétés de devis
+type QuoteObjectDataWithDevis = Omit<ObjectData, 'gltf'> & {
+    quantity?: number;
+    unit?: string;
+};
 
 interface UseObjectsProps {
   objects: ObjectData[]; 
-  quote: ObjectData[]; 
+  quote: QuoteObjectDataWithDevis[]; 
   setObjects: React.Dispatch<React.SetStateAction<ObjectData[]>>;
-  setQuote: React.Dispatch<React.SetStateAction<ObjectData[]>>;
+  setQuote: React.Dispatch<React.SetStateAction<QuoteObjectDataWithDevis[]>>;
   setIsMoving: React.Dispatch<React.SetStateAction<string | null>>;
   
   setShowDimensions: React.Dispatch<React.SetStateAction<{ [key: string]: boolean }>>;
@@ -274,9 +279,49 @@ export const useObjects = ({
       return obj;
     };
 
+    const updateQuoteObject = (obj: QuoteObjectDataWithDevis) => {
+      if (obj.id === id) {
+        // Si l'objet a des faces spécifiques et est de type mur ou sol
+        if ((obj.type === 'wall' || obj.type === 'floor') && obj.faces) {
+          const updatedFaces = { ...obj.faces };
+          // Pour les sols, on met à jour uniquement la face supérieure
+          if (obj.type === 'floor') {
+            updatedFaces.top = {
+              ...updatedFaces.top,
+              texture: newTexture
+            };
+          }
+          // Pour les murs, on met à jour la face sélectionnée (si définie)
+          else if (obj.type === 'wall') {
+            // Si aucune face n'est sélectionnée, on applique à toutes les faces
+            const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'] as const;
+            faces.forEach(face => {
+              if (updatedFaces[face]) {
+                updatedFaces[face] = {
+                  ...updatedFaces[face],
+                  texture: newTexture
+                };
+              } else {
+                updatedFaces[face] = {
+                  texture: newTexture
+                };
+              }
+            });
+          }
+          return {
+            ...obj,
+            faces: updatedFaces
+          };
+        }
+        // Pour les autres objets, on garde le comportement par défaut
+        return { ...obj, texture: newTexture };
+      }
+      return obj;
+    };
+
     // Mettre à jour les deux listes
     setObjects((prevObjects) => prevObjects.map(updateObject));
-    setQuote((prevQuote) => prevQuote.map(updateObject));
+    setQuote((prevQuote) => prevQuote.map(updateQuoteObject));
   };
 
   const handleUpdateColor = useCallback((id: string, newColor: string) => {
@@ -503,6 +548,16 @@ export const useObjects = ({
   const handleUpdateFaces = useCallback((id: string, faces: FacesData) => {
     console.log('handleUpdateFaces called with:', { id, faces });
     
+    // Créer un nouvel objet faces en ne conservant que les propriétés définies
+    const cleanedFaces = Object.entries(faces).reduce((acc, [faceName, faceData]) => {
+      // Assertion de type pour faceName
+      const face = faceName as keyof FacesData;
+      acc[face] = {};
+      if (faceData.texture !== undefined) acc[face].texture = faceData.texture;
+      if (faceData.color !== undefined && faceData.color !== null) acc[face].color = faceData.color;
+      return acc;
+    }, {} as FacesData);
+    
     const updateObject = (obj: ObjectData) => {
       if (obj.id === id) {
         console.log('Updating object faces:', {
@@ -510,17 +565,17 @@ export const useObjects = ({
           oldFaces: obj.faces,
           newFaces: faces
         });
-        
-        // Créer un nouvel objet faces en ne conservant que les propriétés définies
-        const cleanedFaces = Object.entries(faces).reduce((acc, [faceName, faceData]) => {
-          // Assertion de type pour faceName
-          const face = faceName as keyof FacesData;
-          acc[face] = {};
-          if (faceData.texture !== undefined) acc[face].texture = faceData.texture;
-          if (faceData.color !== undefined && faceData.color !== null) acc[face].color = faceData.color;
-          return acc;
-        }, {} as FacesData);
 
+        return {
+          ...obj,
+          faces: cleanedFaces
+        };
+      }
+      return obj;
+    };
+
+    const updateQuoteObject = (obj: QuoteObjectDataWithDevis) => {
+      if (obj.id === id) {
         return {
           ...obj,
           faces: cleanedFaces
@@ -531,7 +586,7 @@ export const useObjects = ({
 
     // Mettre à jour les deux listes
     setObjects((prevObjects) => prevObjects.map(updateObject));
-    setQuote((prevQuote) => prevQuote.map(updateObject));
+    setQuote((prevQuote) => prevQuote.map(updateQuoteObject));
   }, [setObjects, setQuote]);
 
 

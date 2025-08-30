@@ -27,7 +27,7 @@ import { useAuth } from '../hooks/useAuth';
 import { MaquetteService } from '../services/MaquetteService';
 import { useLocation } from 'react-router-dom';
 const MaquettePage: React.FC = () => {
-    const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
+    const { objects, quote, setObjects, setQuote, removeObject, loadDevisData } = useMaquetteStore();
     const { user } = useAuth();
     const location = useLocation();
     const raycaster = useRef(new THREE.Raycaster()); 
@@ -193,9 +193,33 @@ const MaquettePage: React.FC = () => {
     // Charger automatiquement une maquette si elle est passée en paramètre de navigation
     useEffect(() => {
         if (location.state?.maquetteData) {
-            loadMaquetteData(location.state.maquetteData);
-            if (location.state.maquetteName) {
-                alert(`Maquette "${location.state.maquetteName}" chargée avec succès !`);
+            // Si des données de devis sont également présentes, utiliser loadDevisData
+            if (location.state.devisData) {
+                console.log('📋 Chargement d\'un devis existant avec maquette et lignes de devis');
+                console.log('📊 Données du devis:', location.state.devisData);
+                
+                // Charger d'abord la maquette
+                loadMaquetteData(location.state.maquetteData).then(() => {
+                    // Ensuite charger les lignes de devis
+                    const devisLines = location.state.devisData.lines || [];
+                    console.log('📋 Lignes de devis à charger:', devisLines);
+                    
+                    // Utiliser loadDevisData pour ajouter les lignes de devis au quote
+                    loadDevisData(objects, devisLines);
+                    
+                    if (location.state.maquetteName) {
+                        alert(`Devis "${location.state.maquetteName}" chargé avec succès !`);
+                    }
+                }).catch(error => {
+                    console.error('Erreur lors du chargement du devis:', error);
+                    alert('Erreur lors du chargement du devis');
+                });
+            } else {
+                // Chargement normal d'une maquette sans devis
+                loadMaquetteData(location.state.maquetteData);
+                if (location.state.maquetteName) {
+                    alert(`Maquette "${location.state.maquetteName}" chargée avec succès !`);
+                }
             }
             
             // Recentrer la caméra après le chargement de la maquette
