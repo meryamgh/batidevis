@@ -24,9 +24,12 @@ import ObjectsPanel from '../components/panels/ObjectsPanel';
 import ObjectControls from '../components/panels/ObjectControlsPanel';
 import MultiSelectionPanel from '../components/panels/MultiSelectionPanel';
 import { useAuth } from '../hooks/useAuth';
+import { MaquetteService } from '../services/MaquetteService';
+import { useLocation } from 'react-router-dom';
 const MaquettePage: React.FC = () => {
     const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
     const { user } = useAuth();
+    const location = useLocation();
     const raycaster = useRef(new THREE.Raycaster()); 
     const [showUpload, setShowUpload] = useState(false);
     const [showObjectUpload, setShowObjectUpload] = useState(false);
@@ -94,6 +97,86 @@ const MaquettePage: React.FC = () => {
         setShowDimensions,
         setFocusedObjectId,
     });
+
+    // Fonction utilitaire pour charger les données d'une maquette
+    const loadMaquetteData = async (data: any) => {
+        if (!data.objects || !Array.isArray(data.objects)) {
+            throw new Error('Format de données invalide');
+        }
+        
+        // Vider la scène actuelle
+        setObjects([]);
+        setQuote([]);
+        
+        // Reconstruire avec les données
+        const newObjects: ObjectData[] = [];
+        
+        for (const rawObjData of data.objects) {
+            const objData = cleanObjectData(rawObjData);
+            
+            const adjustedPosition: [number, number, number] = [
+                objData.position[0] / 2,
+                objData.position[1] / 2,
+                objData.position[2] / 2
+            ];
+
+            if (objData.url) {
+                try {
+                    const loader = new GLTFLoader();
+                    const gltf = await loader.loadAsync(objData.url);
+                    
+                    const newObject: ObjectData = {
+                        ...objData,
+                        position: adjustedPosition,
+                        gltf: gltf,
+                        isBatiChiffrageObject: objData.isBatiChiffrageObject || false
+                    };
+                    
+                    newObjects.push(newObject);
+                } catch (error) {
+                    console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
+                }
+            } else {
+                const geometry = objData.type === 'floor' 
+                    ? new THREE.PlaneGeometry(1, 1)
+                    : new THREE.BoxGeometry(1, 1, 1);
+                
+                const material = new THREE.MeshStandardMaterial();
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                const newObject: ObjectData = {
+                    ...objData,
+                    position: adjustedPosition,
+                    gltf: mesh
+                };
+                
+                newObjects.push(newObject);
+            }
+        }
+        
+        setObjects(newObjects);
+        setQuote(newObjects);
+        
+        // Appliquer les textures et faces
+        for (const obj of newObjects) {
+            if (obj.texture) {
+                objectsUtils.handleUpdateTexture(obj.id, obj.texture);
+            }
+            if (obj.faces) {
+                objectsUtils.handleUpdateFaces(obj.id, obj.faces);
+            }
+        }
+    };
+
+    // Charger automatiquement une maquette si elle est passée en paramètre de navigation
+    useEffect(() => {
+        if (location.state?.maquetteData) {
+            loadMaquetteData(location.state.maquetteData);
+            if (location.state.maquetteName) {
+                alert(`Maquette "${location.state.maquetteName}" chargée avec succès !`);
+            }
+        }
+    }, [location.state]);
 
     // Vérifier que l'élément floating-panel existe au chargement
     useEffect(() => {
@@ -877,11 +960,15 @@ const MaquettePage: React.FC = () => {
 
     const reconstructMaquette = async () => {
         try {
-            // Charger les données depuis le backend
-            const response = await fetch(`${BACKEND_URL}/load-maquette`);
-            if (!response.ok) throw new Error('Erreur lors du chargement');
+            // Charger la dernière maquette depuis Supabase
+            const lastMaquette = await MaquetteService.getLastMaquette();
             
-            const data = await response.json();
+            if (!lastMaquette) {
+                alert('Aucune maquette sauvegardée trouvée. Veuillez d\'abord sauvegarder une maquette.');
+                return;
+            }
+            
+            const data = lastMaquette.data;
             
             // Nettoyer et valider les données
             if (!data.objects || !Array.isArray(data.objects)) {
@@ -969,93 +1056,43 @@ const MaquettePage: React.FC = () => {
     // Fonction pour récupérer une maquette de sauvegarde
     const handleLoadBackupMaquette = async () => {
         try {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) {
-                    try {
-                        const text = await file.text();
-                        const data = JSON.parse(text);
-                        
-                        if (!data.objects || !Array.isArray(data.objects)) {
-                            throw new Error('Format de fichier invalide');
-                        }
-                        
-                        // Vider la scène actuelle
-                        setObjects([]);
-                        setQuote([]);
-                        
-                        // Reconstruire avec les données du fichier
-                        const newObjects: ObjectData[] = [];
-                        
-                        for (const rawObjData of data.objects) {
-                            const objData = cleanObjectData(rawObjData);
-                            
-                            const adjustedPosition: [number, number, number] = [
-                                objData.position[0] / 2,
-                                objData.position[1] / 2,
-                                objData.position[2] / 2
-                            ];
-
-                            if (objData.url) {
-                                try {
-                                    const loader = new GLTFLoader();
-                                    const gltf = await loader.loadAsync(objData.url);
-                                    
-                                    const newObject: ObjectData = {
-                                        ...objData,
-                                        position: adjustedPosition,
-                                        gltf: gltf,
-                                        isBatiChiffrageObject: objData.isBatiChiffrageObject || false
-                                    };
-                                    
-                                    newObjects.push(newObject);
-                                } catch (error) {
-                                    console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
-                                }
-                            } else {
-                                const geometry = objData.type === 'floor' 
-                                    ? new THREE.PlaneGeometry(1, 1)
-                                    : new THREE.BoxGeometry(1, 1, 1);
-                                
-                                const material = new THREE.MeshStandardMaterial();
-                                const mesh = new THREE.Mesh(geometry, material);
-                                
-                                const newObject: ObjectData = {
-                                    ...objData,
-                                    position: adjustedPosition,
-                                    gltf: mesh
-                                };
-                                
-                                newObjects.push(newObject);
-                            }
-                        }
-                        
-                        setObjects(newObjects);
-                        setQuote(newObjects);
-                        
-                        // Appliquer les textures et faces
-                        for (const obj of newObjects) {
-                            if (obj.texture) {
-                                objectsUtils.handleUpdateTexture(obj.id, obj.texture);
-                            }
-                            if (obj.faces) {
-                                objectsUtils.handleUpdateFaces(obj.id, obj.faces);
-                            }
-                        }
-                        
-                        alert('Maquette chargée avec succès !');
-                    } catch (error) {
-                        console.error('Erreur lors du chargement du fichier:', error);
-                        alert('Erreur lors du chargement du fichier. Veuillez vérifier que le fichier est valide.');
-                    }
-                }
-            };
-            input.click();
+            // Récupérer toutes les maquettes de l'utilisateur
+            const userMaquettes = await MaquetteService.getUserMaquettes();
+            
+            if (userMaquettes.length === 0) {
+                alert('Aucune maquette sauvegardée trouvée. Veuillez d\'abord sauvegarder une maquette.');
+                return;
+            }
+            
+            // Si une seule maquette, la charger directement
+            if (userMaquettes.length === 1) {
+                await loadMaquetteData(userMaquettes[0].data);
+                alert(`Maquette "${userMaquettes[0].name}" chargée avec succès !`);
+                return;
+            }
+            
+            // Si plusieurs maquettes, demander à l'utilisateur de choisir
+            const maquetteNames = userMaquettes.map(m => m.name);
+            const selectedName = prompt(
+                `Choisissez une maquette à charger:\n${maquetteNames.map((name, index) => `${index + 1}. ${name}`).join('\n')}\n\nEntrez le numéro de la maquette (1-${userMaquettes.length}):`,
+                '1'
+            );
+            
+            if (!selectedName) return;
+            
+            const selectedIndex = parseInt(selectedName) - 1;
+            if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= userMaquettes.length) {
+                alert('Numéro invalide. Veuillez réessayer.');
+                return;
+            }
+            
+            const selectedMaquette = userMaquettes[selectedIndex];
+            await loadMaquetteData(selectedMaquette.data);
+            alert(`Maquette "${selectedMaquette.name}" chargée avec succès !`);
+            
         } catch (error) {
-            console.error('Erreur lors de l\'ouverture du sélecteur de fichier:', error);
+            console.error('Erreur lors du chargement des maquettes:', error);
+            alert('Erreur lors du chargement des maquettes. Veuillez réessayer.');
         }
     };
 

@@ -1,0 +1,341 @@
+.conteneur-page {
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.contenu-principal {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.entete-page {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.entete-page h1 {
+    color: #2D3C54;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.bouton-creer {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.bouton-creer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.bouton-creer .icone {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #f5c6cb;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    color: #2D3C54;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.grille-maquettes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.carte-maquette {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.carte-maquette:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.entete-carte {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.entete-carte h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.date-creation {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.corps-carte {
+    padding: 1.5rem;
+}
+
+.description {
+    color: #6c757d;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.stat {
+    color: #2D3C54;
+    font-size: 0.9rem;
+}
+
+.stat strong {
+    color: #667eea;
+}
+
+.actions-carte {
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 1rem;
+}
+
+.bouton-action {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.bouton-action.charger {
+    background-color: #28a745;
+    color: white;
+}
+
+.bouton-action.charger:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.bouton-action.supprimer {
+    background-color: #dc3545;
+    color: white;
+}
+
+.bouton-action.supprimer:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .contenu-principal {
+        padding: 1rem;
+    }
+    
+    .entete-page {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .entete-page h1 {
+        font-size: 2rem;
+    }
+    
+    .grille-maquettes {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stats {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .actions-carte {
+        flex-direction: column;
+    }
+}
+
+/* Footer styles (réutilisés depuis MesDevisFactures.css) */
+.footer {
+    background: linear-gradient(135deg, #2D3C54 0%, #1a252f 100%);
+    color: white;
+    padding: 3rem 0 1rem;
+    margin-top: 4rem;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.footer-main {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 3rem;
+    margin-bottom: 2rem;
+}
+
+.footer-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.footer-logo {
+    height: 60px;
+    width: auto;
+}
+
+.footer-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.footer-column h4 {
+    margin-bottom: 1rem;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.footer-column a,
+.footer-column p {
+    color: #b8c2cc;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+    display: block;
+    transition: color 0.3s ease;
+}
+
+.footer-column a:hover {
+    color: #667eea;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.social-link {
+    width: 40px;
+    height: 40px;
+    background: #667eea;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.social-link:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+}
+
+.footer-bottom {
+    border-top: 1px solid #4a5568;
+    padding-top: 1rem;
+    text-align: center;
+    color: #b8c2cc;
+}
+
+@media (max-width: 768px) {
+    .footer-main {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .footer-links {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}

@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Tarifs from './pages/Tarifs';
 import Connexion from './pages/Connexion'
 import MesDevisFactures from './pages/MesDevisFactures'
+import MesMaquettes from './pages/MesMaquettes'
 import Profil from './pages/Profil';
 import AuthCallback from './pages/AuthCallback';
 import { AuthProvider } from './hooks/useAuth';
@@ -22,6 +23,11 @@ function App() {
                 <Route path="/mes-devis-factures" element={
                     <ProtectedRoute>
                         <MesDevisFactures />
+                    </ProtectedRoute>
+                } />
+                <Route path="/mes-maquettes" element={
+                    <ProtectedRoute>
+                        <MesMaquettes />
                     </ProtectedRoute>
                 } />
                 <Route path="/profil" element={<Profil />} />

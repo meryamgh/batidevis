@@ -6,6 +6,7 @@ import DecorativeObjectSelector from './DecorativeObjectSelector';
 import AIGenerationPanel from './AIGenerationPanel';
 import { RotateIcon } from '../icons/ControlIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { MaquetteService, SavedObjectData } from '../../services/MaquetteService';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
@@ -74,8 +75,20 @@ const Toolbar: React.FC<ToolbarProps> = ({
       return;
     }
 
+    // Debug: Vérifier l'état de l'authentification
+    console.log('🔍 Debug avant sauvegarde:', {
+      user: user ? { id: user.id, email: user.email } : null,
+      isAuthenticated: !!user
+    });
+
+    // Demander le nom de la maquette
+    const maquetteName = prompt('Nom de la maquette:', 'Maquette sans nom');
+    if (!maquetteName) {
+      return; // L'utilisateur a annulé
+    }
+
     // Fonction pour nettoyer les données avant export
-    const cleanDataForExport = (obj: any) => {
+    const cleanDataForExport = (obj: any): SavedObjectData => {
         const cleanParametricData = obj.parametricData && typeof obj.parametricData === 'object' 
             ? JSON.parse(JSON.stringify(obj.parametricData)) // Deep clone pour éviter les références circulaires
             : {};
@@ -89,9 +102,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 obj.position[0] * 2,
                 obj.position[1] * 2,
                 obj.position[2] * 2
-            ],
-            scale: Array.isArray(obj.scale) ? obj.scale : [1, 1, 1],
-            rotation: Array.isArray(obj.rotation) ? obj.rotation : [0, 0, 0],
+            ] as [number, number, number],
+            scale: Array.isArray(obj.scale) ? obj.scale as [number, number, number] : [1, 1, 1],
+            rotation: Array.isArray(obj.rotation) ? obj.rotation as [number, number, number] : [0, 0, 0],
             texture: obj.texture || '',
             color: obj.color || '',
             startPoint: obj.startPoint,
@@ -109,30 +122,25 @@ const Toolbar: React.FC<ToolbarProps> = ({
         objects: objects.map(cleanDataForExport)
     };
 
-    // Envoyer au backend
+    // Sauvegarder dans Supabase
     try {
-        console.log('🔄 Exportation de la maquette en cours...');
-          const response = await fetch(`${BACKEND_URL}/save-maquette`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(exportData)
-        });
+        console.log('🔄 Sauvegarde de la maquette en cours...');
         
-        if (!response.ok) throw new Error('Erreur lors de la sauvegarde');
+        // Debug: Vérifier l'authentification via le service
+        await MaquetteService.debugAuth();
         
-        const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'maquette.json';
-        link.click();
-        console.log('✅ Maquette exportée avec succès !');
-        alert('Maquette exportée avec succès !');
+        const savedMaquette = await MaquetteService.saveMaquetteWithUserId(
+            maquetteName,
+            exportData,
+            user.id,
+            `Maquette créée le ${new Date().toLocaleDateString('fr-FR')}`
+        );
+        
+        console.log('✅ Maquette sauvegardée avec succès !', savedMaquette);
+        alert(`Maquette "${maquetteName}" sauvegardée avec succès !`);
     } catch (error) {
-        console.error('❌ Erreur lors de l\'export:', error);
-        alert('Erreur lors de l\'exportation de la maquette. Veuillez réessayer.');
+        console.error('❌ Erreur lors de la sauvegarde:', error);
+        alert('Erreur lors de la sauvegarde de la maquette. Veuillez réessayer.');
     }
   };
 
