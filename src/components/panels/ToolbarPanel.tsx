@@ -323,7 +323,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         )}
         <ObjectSelector showObjectUpload={showObjectUpload} 
         setShowObjectUpload={setShowObjectUpload} 
-        handleObjectGenerated={handleObjectGenerated} />
+       />
         <DecorativeObjectSelector showObjectUpload={showObjectUpload} 
         setShowObjectUpload={setShowObjectUpload}  />
 
