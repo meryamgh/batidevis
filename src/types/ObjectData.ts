@@ -31,7 +31,7 @@ export type ObjectData = {
     price: number;
     details: string;
     position: [number, number, number];
-    gltf : Mesh | GLTF;
+    gltf? : Mesh | GLTF;
     texture ?: string;  // Texture globale (appliquée si pas de faces spécifiques)
     scale : [number, number, number];
     rotation?: [number, number, number];
