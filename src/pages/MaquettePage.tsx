@@ -119,10 +119,26 @@ const MaquettePage: React.FC = () => {
             
             const objData = cleanObjectData(rawObjData);
             
+            // Compensation des positions pour les murs créés avec useFloors
+            let adjustedPosition = objData.position;
+                // Les murs créés avec useFloors ont des positions divisées par 4.08
+                // Nous devons les multiplier par 4.08 pour retrouver les vraies positions
+                adjustedPosition = [
+                    objData.position[0] /2,
+                    objData.position[1] /2,
+                    objData.position[2] /2
+                ];
+                console.log('🔧 Compensation de position pour le mur:', {
+                    original: objData.position,
+                    adjusted: adjustedPosition
+                });
+            
+            
             console.log('🧹 Données nettoyées de l\'objet:', {
                 id: objData.id,
                 type: objData.type,
                 position: objData.position,
+                adjustedPosition: adjustedPosition,
                 scale: objData.scale,
                 rotation: objData.rotation,
                 url: objData.url
@@ -135,7 +151,7 @@ const MaquettePage: React.FC = () => {
                     
                     const newObject: ObjectData = {
                         ...objData,
-                        position: objData.position, // Utiliser la position originale
+                        position: adjustedPosition, // Utiliser la position compensée
                         gltf: gltf,
                         isBatiChiffrageObject: objData.isBatiChiffrageObject || false
                     };
@@ -155,7 +171,7 @@ const MaquettePage: React.FC = () => {
                 
                 const newObject: ObjectData = {
                     ...objData,
-                    position: objData.position, // Utiliser la position originale
+                    position: adjustedPosition, // Utiliser la position compensée
                     gltf: mesh
                 };
                 
@@ -194,10 +210,7 @@ const MaquettePage: React.FC = () => {
     useEffect(() => {
         if (location.state?.maquetteData) {
             loadMaquetteData(location.state.maquetteData);
-            if (location.state.maquetteName) {
-                alert(`Maquette "${location.state.maquetteName}" chargée avec succès !`);
-            }
-            
+         
             // Recentrer la caméra après le chargement de la maquette
             setTimeout(() => {
                 if (orbitControlsRef.current) {
@@ -1047,6 +1060,21 @@ const MaquettePage: React.FC = () => {
                 // Nettoyer et valider les données de l'objet
                 const objData = cleanObjectData(rawObjData);
                 
+                // Compensation des positions pour les murs créés avec useFloors
+                let adjustedPosition = objData.position;
+                    // Les murs créés avec useFloors ont des positions divisées par 4.08
+                    // Nous devons les multiplier par 4.08 pour retrouver les vraies positions
+                    adjustedPosition = [
+                        objData.position[0] /2,
+                        objData.position[1] /2,
+                        objData.position[2] /2
+                    ];
+                    console.log('🔧 Compensation de position pour le mur (reconstruct):', {
+                        original: objData.position,
+                        adjusted: adjustedPosition
+                    });
+                
+                
                 if (objData.url) {
                     // Pour les objets GLTF
                     try {
@@ -1056,7 +1084,7 @@ const MaquettePage: React.FC = () => {
                         // Créer le nouvel objet avec toutes les propriétés
                         const newObject: ObjectData = {
                             ...objData,
-                            position: objData.position, // Utiliser la position originale
+                            position: adjustedPosition, // Utiliser la position compensée
                             gltf: gltf,
                             isBatiChiffrageObject: objData.isBatiChiffrageObject || false
                         };
@@ -1076,7 +1104,7 @@ const MaquettePage: React.FC = () => {
                     
                     const newObject: ObjectData = {
                         ...objData,
-                        position: objData.position, // Utiliser la position originale
+                        position: adjustedPosition, // Utiliser la position compensée
                         gltf: mesh
                     };
                     
@@ -1117,8 +1145,7 @@ const MaquettePage: React.FC = () => {
             
             // Si une seule maquette, la charger directement
             if (userMaquettes.length === 1) {
-                await loadMaquetteData(userMaquettes[0].data);
-                alert(`Maquette "${userMaquettes[0].name}" chargée avec succès !`);
+                await loadMaquetteData(userMaquettes[0].data); 
                 return;
             }
             
@@ -1138,8 +1165,7 @@ const MaquettePage: React.FC = () => {
             }
             
             const selectedMaquette = userMaquettes[selectedIndex];
-            await loadMaquetteData(selectedMaquette.data);
-            alert(`Maquette "${selectedMaquette.name}" chargée avec succès !`);
+            await loadMaquetteData(selectedMaquette.data); 
             
         } catch (error) {
             console.error('Erreur lors du chargement des maquettes:', error);
