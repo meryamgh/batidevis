@@ -1142,9 +1142,9 @@ const FullQuote: React.FC = () => {
             return;
         }
 
-        // Validation des frais obligatoires - vérifier seulement que les 2 premières lignes existent
-        if (aggregatedQuote.length < 2) {
-            alert('⚠️ OBLIGATOIRE : Le devis doit contenir au moins 2 lignes');
+        // Validation des frais obligatoires - vérifier seulement qu'il y a au moins une ligne
+        if (aggregatedQuote.length < 1) {
+            alert('⚠️ OBLIGATOIRE : Le devis doit contenir au moins une ligne');
             return;
         }
 
@@ -1520,9 +1520,9 @@ const FullQuote: React.FC = () => {
             return;
         }
 
-        // Validation des frais obligatoires - vérifier seulement que les 2 premières lignes existent
-        if (aggregatedQuote.length < 2) {
-            alert('⚠️ OBLIGATOIRE : Le devis doit contenir au moins 2 lignes');
+        // Validation des frais obligatoires - vérifier seulement qu'il y a au moins une ligne
+        if (aggregatedQuote.length < 1) {
+            alert('⚠️ OBLIGATOIRE : Le devis doit contenir au moins une ligne');
             return;
         }
 
@@ -2058,18 +2058,16 @@ const FullQuote: React.FC = () => {
                          <td>
                            <button 
                              onClick={() => handleDeleteRow(index)}
-                             disabled={index < 2}
                              style={{
-                               backgroundColor: index < 2 ? '#6c757d' : '#dc3545',
+                               backgroundColor: '#dc3545',
                                color: 'white',
                                border: 'none',
                                borderRadius: '4px',
                                padding: '4px 8px',
-                               cursor: index < 2 ? 'not-allowed' : 'pointer',
-                               fontSize: '12px',
-                               opacity: index < 2 ? 0.6 : 1
+                               cursor: 'pointer',
+                               fontSize: '12px'
                              }}
-                             title={index < 2 ? 'Les 2 premières lignes sont obligatoires' : 'Supprimer cette ligne'}
+                             title="Supprimer cette ligne"
                            >
                              Supprimer
                            </button>
