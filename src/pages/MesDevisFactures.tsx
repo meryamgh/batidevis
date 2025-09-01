@@ -105,24 +105,14 @@ const MesDevisFactures: React.FC = () => {
                 return;
             }
             
-            // Récupérer le devis complet avec ses données
-            const devisWithMaquette = await DevisService.getDevisWithMaquette(doc.id);
-            const { devis, maquette } = devisWithMaquette;
-            
-            console.log('🔍 Devis récupéré:', devis);
-            console.log('🔍 Maquette récupérée:', maquette);
-            
-            if (!maquette) {
-                alert('Maquette associée introuvable');
-                return;
-            }
+            const maquette = await MaquetteService.getMaquetteById(doc.maquette_id);
+            console.log('🔍 Maquette récupérée de la base de données:', maquette);
+            console.log('🔍 Données de la maquette:', JSON.stringify(maquette.data, null, 2));
             
             navigate('/maquette', { 
                 state: { 
                     maquetteData: maquette.data,
-                    maquetteName: maquette.name,
-                    devisData: devis.data, // Passer les données du devis
-                    devisId: devis.id // Passer l'ID du devis pour la mise à jour
+                    maquetteName: maquette.name 
                 } 
             });
         } catch (error) {
