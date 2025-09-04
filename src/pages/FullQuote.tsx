@@ -610,9 +610,7 @@ const FullQuote: React.FC = () => {
     const [fraisDivers, setFraisDivers] = useState<FraisDivers[]>([]);
     const [selectedFraisDivers, setSelectedFraisDivers] = useState<number[]>([]);
 
-    // État pour les frais obligatoires
-    const [selectedFraisDeplacement, setSelectedFraisDeplacement] = useState<number>(0);
-    const [selectedFraisHeure, setSelectedFraisHeure] = useState<number>(0);
+    // État pour les frais obligatoires 
     
          // État pour les frais de devis
      const [isDevisGratuit, setIsDevisGratuit] = useState<boolean>(true);
