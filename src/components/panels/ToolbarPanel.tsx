@@ -84,36 +84,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       return; // L'utilisateur a annulé
     }
 
-    // Fonction pour nettoyer les données avant export
-    const cleanDataForExport = (obj: any): SavedObjectData => {
-        const cleanParametricData = obj.parametricData && typeof obj.parametricData === 'object' 
-            ? JSON.parse(JSON.stringify(obj.parametricData)) // Deep clone pour éviter les références circulaires
-            : {};
-            
-        return {
-            id: obj.id,
-            url: obj.url,
-            price: typeof obj.price === 'number' ? obj.price : 100,
-            details: obj.details || 'Objet',
-            position: [
-                obj.position[0] * 2,
-                obj.position[1] * 2,
-                obj.position[2] * 2
-            ] as [number, number, number],
-            scale: Array.isArray(obj.scale) ? obj.scale as [number, number, number] : [1, 1, 1],
-            rotation: Array.isArray(obj.rotation) ? obj.rotation as [number, number, number] : [0, 0, 0],
-            texture: obj.texture || '',
-            color: obj.color || '',
-            startPoint: obj.startPoint,
-            endPoint: obj.endPoint,
-            parentScale: obj.parentScale,
-            boundingBox: obj.boundingBox,
-            faces: obj.faces,
-            type: obj.type || 'object',
-            parametricData: cleanParametricData,
-            isBatiChiffrageObject: Boolean(obj.isBatiChiffrageObject)
-        };
-    };
+    
 
    
 
