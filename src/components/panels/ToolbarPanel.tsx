@@ -5,7 +5,7 @@ import DecorativeObjectSelector from './DecorativeObjectSelector';
 import AIGenerationPanel from './AIGenerationPanel';
 import { RotateIcon } from '../icons/ControlIcons';
 import { useAuth } from '../../hooks/useAuth';
-import { MaquetteService, SavedObjectData } from '../../services/MaquetteService';
+import { MaquetteService } from '../../services/MaquetteService';
 import { useNavigate } from 'react-router-dom';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
