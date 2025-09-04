@@ -2092,7 +2092,10 @@ const FullQuote: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
+                {/* Commenté pour masquer les 2 premières lignes de devis */}
                 {aggregatedQuote.map((item, index) => {
+                  // Masquer les 2 premières lignes
+                  if (index < 2) return null;
                   const isEditingDetails = editingCell?.rowIndex === index && editingCell?.field === 'details';
                   const isEditingQuantity = editingCell?.rowIndex === index && editingCell?.field === 'quantity';
                   const isEditingPrice = editingCell?.rowIndex === index && editingCell?.field === 'price';
