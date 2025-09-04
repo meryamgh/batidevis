@@ -30,10 +30,7 @@ export interface DevisInfo {
   valableJusquau: string;
   debutTravaux: string;
   dureeTravaux: string;
-  
-  // Informations complémentaires
-  fraisDeplacement: string;
-  tauxHoraire: string;
+   
   isDevisGratuit: boolean;
   
   // Logo (URL ou base64)

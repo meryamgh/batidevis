@@ -23,9 +23,7 @@ export const testDevisService = async () => {
         enDateDu: "05/10/2024",
         valableJusquau: "04/12/2024",
         debutTravaux: "05/10/2024",
-        dureeTravaux: "1 jour",
-        fraisDeplacement: "",
-        tauxHoraire: "",
+        dureeTravaux: "1 jour", 
         isDevisGratuit: true,
         logo: ""
       },

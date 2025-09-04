@@ -592,8 +592,7 @@ const FullQuote: React.FC = () => {
     const [enDateDu, setEnDateDu] = useState<string>('05/10/2024');
     
     // Informations complémentaires
-    const [fraisDeplacement, setFraisDeplacement] = useState<string>('');
-    const [tauxHoraire, setTauxHoraire] = useState<string>('');
+   
     const [valableJusquau, setValableJusquau] = useState<string>('04/12/2024');
     const [debutTravaux, setDebutTravaux] = useState<string>('05/10/2024');
     const [dureeTravaux, setDureeTravaux] = useState<string>('1 jour');
@@ -606,22 +605,13 @@ const FullQuote: React.FC = () => {
         unite: string;
     }
 
-    // Interface pour les frais de déplacement et horaires
-    interface FraisObligatoire {
-        id: number;
-        libtech: string;
-        prix: number;
-        unite: string;
-    }
-
+   
     // État pour les frais divers
     const [fraisDivers, setFraisDivers] = useState<FraisDivers[]>([]);
     const [selectedFraisDivers, setSelectedFraisDivers] = useState<number[]>([]);
 
     // État pour les frais obligatoires
-    const [fraisDeplacementOptions, setFraisDeplacementOptions] = useState<FraisObligatoire[]>([]);
     const [selectedFraisDeplacement, setSelectedFraisDeplacement] = useState<number>(0);
-    const [fraisHeureOptions, setFraisHeureOptions] = useState<FraisObligatoire[]>([]);
     const [selectedFraisHeure, setSelectedFraisHeure] = useState<number>(0);
     
          // État pour les frais de devis
@@ -642,43 +632,14 @@ const FullQuote: React.FC = () => {
         }
     };
 
-    // Fonction pour récupérer les frais de déplacement depuis l'API
-    const fetchFraisDeplacement = async () => { 
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/frais/deplacement`);
-            if (response.ok) {
-                const data = await response.json();
-                setFraisDeplacementOptions(data);
-            } else {
-                console.error('Erreur lors de la récupération des frais de déplacement');
-            }
-        } catch (error) {
-            console.error('Erreur lors de la récupération des frais de déplacement:', error);
-        }
-    };
+    
 
-    // Fonction pour récupérer les frais horaires depuis l'API
-    const fetchFraisHeure = async () => {
-        try {
-            const response = await fetch(`${BACKEND_URL}/api/frais/heure`);
-            if (response.ok) {
-                const data = await response.json();
-                setFraisHeureOptions(data);
-            } else {
-                console.error('Erreur lors de la récupération des frais horaires');
-            }
-        } catch (error) {
-            console.error('Erreur lors de la récupération des frais horaires:', error);
-        }
-    };
 
     
 
          // Appel de la fonction au chargement du composant
      useEffect(() => {
          fetchFraisDivers();
-         fetchFraisDeplacement();
-         fetchFraisHeure();
      }, []);
 
     // Charger les données du devis depuis le localStorage si elles existent
@@ -706,8 +667,6 @@ const FullQuote: React.FC = () => {
                     setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
                     setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                     setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
-                    setFraisDeplacement(devisData.info.fraisDeplacement || '');
-                    setTauxHoraire(devisData.info.tauxHoraire || '');
                     setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
                 }
                 
@@ -754,8 +713,6 @@ const FullQuote: React.FC = () => {
                         setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
                         setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                         setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
-                        setFraisDeplacement(devisData.info.fraisDeplacement || '');
-                        setTauxHoraire(devisData.info.tauxHoraire || '');
                         setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
                     }
                     
@@ -804,8 +761,6 @@ const FullQuote: React.FC = () => {
                     if (valableJusquau === '04/12/2024') setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
                     if (debutTravaux === '05/10/2024') setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                     if (dureeTravaux === '1 jour') setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
-                    if (fraisDeplacement === '') setFraisDeplacement(devisData.info.fraisDeplacement || '');
-                    if (tauxHoraire === '') setTauxHoraire(devisData.info.tauxHoraire || '');
                     if (isDevisGratuit === true) setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
                 }
                 
@@ -824,7 +779,7 @@ const FullQuote: React.FC = () => {
                 console.error('❌ Erreur lors du rechargement des données auto-sauvegardées:', error);
             }
         }
-    }, [devoTitle, devoName, devoAddress, devoCity, devoSiren, societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail, devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux, fraisDeplacement, tauxHoraire, isDevisGratuit, aggregatedQuote.length, acompteRate]);
+    }, [devoTitle, devoName, devoAddress, devoCity, devoSiren, societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail, devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux, isDevisGratuit, aggregatedQuote.length, acompteRate]);
 
     // Fonction pour sauvegarder automatiquement les données du devis
     const saveDevisDataToLocalStorage = () => {
@@ -845,8 +800,6 @@ const FullQuote: React.FC = () => {
                 valableJusquau,
                 debutTravaux,
                 dureeTravaux,
-                fraisDeplacement,
-                tauxHoraire,
                 isDevisGratuit,
                 logo: leftLogoSrc
             },
@@ -872,73 +825,10 @@ const FullQuote: React.FC = () => {
         devoTitle, devoName, devoAddress, devoCity, devoSiren,
         societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail,
         devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux,
-        fraisDeplacement, tauxHoraire, isDevisGratuit, leftLogoSrc,
+         isDevisGratuit, leftLogoSrc,
         aggregatedQuote, acompteRate
     ]);
 
-
-
-    // Ajouter les frais obligatoires par défaut au devis
-    useEffect(() => {
-        if (fraisDeplacementOptions.length > 0 && selectedFraisDeplacement === 0) {
-            // Sélectionner le premier frais de déplacement par défaut
-            const defaultFrais = fraisDeplacementOptions[0];
-            setSelectedFraisDeplacement(defaultFrais.id);
-            
-            // Vérifier si le frais de déplacement n'existe pas déjà dans le devis
-            const existingFraisDeplacement = aggregatedQuote.find(item => 
-                item.details.includes('Frais de déplacement')
-            );
-            
-            if (!existingFraisDeplacement) {
-                const newItem: AggregatedQuoteItem = {
-                    details: `Frais de déplacement - ${defaultFrais.libtech} (${formatNumber(defaultFrais.prix)}€/${defaultFrais.unite})`,
-                    price: defaultFrais.prix,
-                    quantity: 1,
-                    unit: defaultFrais.unite,
-                    isNew: false
-                };
-                // Ajouter en première position
-                setAggregatedQuote(prev => [newItem, ...prev]);
-            }
-        }
-    }, [fraisDeplacementOptions, selectedFraisDeplacement]);
-
-    useEffect(() => {
-        if (fraisHeureOptions.length > 0 && selectedFraisHeure === 0) {
-            // Sélectionner le premier frais horaire par défaut
-            const defaultFrais = fraisHeureOptions[0];
-            setSelectedFraisHeure(defaultFrais.id);
-            
-            // Vérifier si le frais horaire n'existe pas déjà dans le devis
-            const existingFraisHeure = aggregatedQuote.find(item => 
-                item.details.includes('Taux horaire')
-            );
-            
-            if (!existingFraisHeure) {
-                const newItem: AggregatedQuoteItem = {
-                    details: `Taux horaire - ${defaultFrais.libtech} (${formatNumber(defaultFrais.prix)}€/${defaultFrais.unite})`,
-                    price: defaultFrais.prix,
-                    quantity: 1,
-                    unit: defaultFrais.unite,
-                    isNew: false
-                };
-                // Ajouter en deuxième position (après le frais de déplacement)
-                setAggregatedQuote(prev => {
-                    const fraisDeplacementIndex = prev.findIndex(item => 
-                        item.details.includes('Frais de déplacement')
-                    );
-                    if (fraisDeplacementIndex >= 0) {
-                        const newArray = [...prev];
-                        newArray.splice(fraisDeplacementIndex + 1, 0, newItem);
-                        return newArray;
-                    } else {
-                        return [newItem, ...prev];
-                    }
-                });
-            }
-        }
-    }, [fraisHeureOptions, selectedFraisHeure]);
 
     // Fonction pour gérer la sélection des frais divers
     const handleFraisDiversChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -969,65 +859,8 @@ const FullQuote: React.FC = () => {
         });
     };
 
-    // Fonction pour gérer la sélection des frais de déplacement
-    const handleFraisDeplacementChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedId = parseInt(event.target.value);
-        setSelectedFraisDeplacement(selectedId);
-        
-        // Mettre à jour le devis avec le frais de déplacement sélectionné
-        if (selectedId > 0) {
-            const frais = fraisDeplacementOptions.find(f => f.id === selectedId);
-            if (frais) {
-                // Supprimer l'ancien frais de déplacement s'il existe
-                const newQuote = aggregatedQuote.filter(item => !item.details.includes('Frais de déplacement'));
-                
-                const newItem: AggregatedQuoteItem = {
-                    details: `Frais de déplacement - ${frais.libtech} (${formatNumber(frais.prix)}€/${frais.unite})`,
-                    price: frais.prix,
-                    quantity: 1,
-                    unit: frais.unite,
-                    isNew: false
-                };
-                // Toujours en première position
-                setAggregatedQuote([newItem, ...newQuote]);
-            }
-        }
-    };
+    
 
-    // Fonction pour gérer la sélection des frais horaires
-    const handleFraisHeureChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedId = parseInt(event.target.value);
-        setSelectedFraisHeure(selectedId);
-        
-        // Mettre à jour le devis avec le frais horaire sélectionné
-        if (selectedId > 0) {
-            const frais = fraisHeureOptions.find(f => f.id === selectedId);
-            if (frais) {
-                // Supprimer l'ancien frais horaire s'il existe
-                const newQuote = aggregatedQuote.filter(item => !item.details.includes('Taux horaire'));
-                
-                const newItem: AggregatedQuoteItem = {
-                    details: `Taux horaire - ${frais.libtech} (${formatNumber(frais.prix)}€/${frais.unite})`,
-                    price: frais.prix,
-                    quantity: 1,
-                    unit: frais.unite,
-                    isNew: false
-                };
-                // Toujours en deuxième position (après le frais de déplacement)
-                const fraisDeplacementIndex = newQuote.findIndex(item => 
-                    item.details.includes('Frais de déplacement')
-                );
-                if (fraisDeplacementIndex >= 0) {
-                    const newArray = [...newQuote];
-                    newArray.splice(fraisDeplacementIndex + 1, 0, newItem);
-                    setAggregatedQuote(newArray);
-                } else {
-                    // Si pas de frais de déplacement, mettre en première position
-                    setAggregatedQuote([newItem, ...newQuote]);
-                }
-            }
-        }
-    };
 
     
 
@@ -1104,12 +937,6 @@ const FullQuote: React.FC = () => {
                 break;
             case 'dureeTravaux':
                 setDureeTravaux(newValue);
-                break;
-            case 'fraisDeplacement':
-                setFraisDeplacement(newValue);
-                break;
-            case 'tauxHoraire':
-                setTauxHoraire(newValue);
                 break;
             default:
                 break;
@@ -1630,9 +1457,7 @@ const FullQuote: React.FC = () => {
                 enDateDu,
                 valableJusquau,
                 debutTravaux,
-                dureeTravaux,
-                fraisDeplacement,
-                tauxHoraire,
+                dureeTravaux, 
                 isDevisGratuit,
                 logo: leftLogoSrc
             },
@@ -2094,8 +1919,7 @@ const FullQuote: React.FC = () => {
               <tbody>
                 {/* Commenté pour masquer les 2 premières lignes de devis */}
                 {aggregatedQuote.map((item, index) => {
-                  // Masquer les 2 premières lignes
-                  if (index < 2) return null;
+                  
                   const isEditingDetails = editingCell?.rowIndex === index && editingCell?.field === 'details';
                   const isEditingQuantity = editingCell?.rowIndex === index && editingCell?.field === 'quantity';
                   const isEditingPrice = editingCell?.rowIndex === index && editingCell?.field === 'price';
@@ -2183,60 +2007,8 @@ const FullQuote: React.FC = () => {
                                </div>
                              )}
                            </>
-                                                   ) : item.details.includes('Frais de déplacement') ? (
-                                                                                      isEditMode ? (
-                                                             <select
-                                 value={selectedFraisDeplacement}
-                                 onChange={handleFraisDeplacementChange}
-                                 style={{
-                                   border: '1px solid #ddd',
-                                   borderRadius: '4px',
-                                   padding: '6px 8px',
-                                   fontSize: '12px',
-                                   backgroundColor: '#fff',
-                                   width: '100%',
-                                   maxWidth: '350px',
-                                   lineHeight: '1.4',
-                                   minHeight: '35px'
-                                 }}
-                               >
-                                 <option value={0}>Sélectionner un frais de déplacement</option>
-                                 {fraisDeplacementOptions.map((frais) => (
-                                   <option key={frais.id} value={frais.id}>
-                                     {frais.libtech} | Prix: {formatNumber(frais.prix)}€/{frais.unite}
-                                   </option>
-                                 ))}
-                               </select>
-                            ) : (
-                              <span>{item.details}</span>
-                            )
-                          ) : item.details.includes('Taux horaire') ? (
-                                                        isEditMode ? (
-                                                             <select
-                                 value={selectedFraisHeure}
-                                 onChange={handleFraisHeureChange}
-                                 style={{
-                                   border: '1px solid #ddd',
-                                   borderRadius: '4px',
-                                   padding: '6px 8px',
-                                   fontSize: '12px',
-                                   backgroundColor: '#fff',
-                                   width: '100%',
-                                   maxWidth: '350px',
-                                   lineHeight: '1.4',
-                                   minHeight: '35px'
-                                 }}
-                               >
-                                 <option value={0}>Sélectionner un taux horaire</option>
-                                 {fraisHeureOptions.map((frais) => (
-                                   <option key={frais.id} value={frais.id}>
-                                     {frais.libtech} | Prix: {formatNumber(frais.prix)}€/{frais.unite}
-                                   </option>
-                                 ))}
-                               </select>
-                            ) : (
-                              <span>{item.details}</span>
-                            )
+                                   
+                           
                          ) : (
                            <span onClick={() => isEditMode && handleCellClick(index, 'details')}>
                              {item.details}
