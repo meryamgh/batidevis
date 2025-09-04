@@ -241,6 +241,9 @@ const FullQuote: React.FC = () => {
     const resteAPayer = totalTTC - acompte;
 
     const handleBack = () => {
+        // Sauvegarder les données du devis avant de partir
+        saveDevisDataToLocalStorage();
+        console.log('💾 Données du devis sauvegardées avant navigation vers maquette');
         navigate('/maquette'); 
     };
 
@@ -642,6 +645,162 @@ const FullQuote: React.FC = () => {
          fetchFraisDeplacement();
          fetchFraisHeure();
      }, []);
+
+    // Charger les données du devis depuis le localStorage si elles existent
+    useEffect(() => {
+        const devisDataToLoad = localStorage.getItem('devisDataToLoad');
+        if (devisDataToLoad) {
+            try {
+                const devisData = JSON.parse(devisDataToLoad);
+                console.log('📋 Chargement des données du devis depuis le localStorage:', devisData);
+                
+                // Charger les informations du devis
+                if (devisData.info) {
+                    setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
+                    setDevoName(devisData.info.devoName || 'Chen Emma');
+                    setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
+                    setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
+                    setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+                    setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
+                    setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
+                    setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
+                    setClientTel(devisData.info.clientTel || '0678891223');
+                    setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+                    setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
+                    setEnDateDu(devisData.info.enDateDu || '05/10/2024');
+                    setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
+                    setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
+                    setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
+                    setFraisDeplacement(devisData.info.fraisDeplacement || '');
+                    setTauxHoraire(devisData.info.tauxHoraire || '');
+                    setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                }
+                
+                // Charger les lignes du devis
+                if (devisData.lines && Array.isArray(devisData.lines)) {
+                    console.log('📋 Chargement des lignes du devis:', devisData.lines);
+                    setAggregatedQuote(devisData.lines);
+                }
+                
+                // Charger les totaux
+                if (devisData.totals) {
+                    if (devisData.totals.acompteRate !== undefined) {
+                        setAcompteRate(devisData.totals.acompteRate);
+                    }
+                }
+                
+                // Nettoyer le localStorage après chargement
+                localStorage.removeItem('devisDataToLoad');
+                console.log('✅ Données du devis chargées avec succès');
+                
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des données du devis:', error);
+                localStorage.removeItem('devisDataToLoad');
+            }
+        } else {
+            // Si pas de données à charger, essayer de charger les données auto-sauvegardées
+            const autoSavedData = localStorage.getItem('devisDataAutoSave');
+            if (autoSavedData) {
+                try {
+                    const devisData = JSON.parse(autoSavedData);
+                    console.log('📋 Chargement des données auto-sauvegardées:', devisData);
+                    
+                    // Charger les informations du devis
+                    if (devisData.info) {
+                        setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
+                        setDevoName(devisData.info.devoName || 'Chen Emma');
+                        setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
+                        setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
+                        setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+                        setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
+                        setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
+                        setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
+                        setClientTel(devisData.info.clientTel || '0678891223');
+                        setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+                        setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
+                        setEnDateDu(devisData.info.enDateDu || '05/10/2024');
+                        setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
+                        setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
+                        setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
+                        setFraisDeplacement(devisData.info.fraisDeplacement || '');
+                        setTauxHoraire(devisData.info.tauxHoraire || '');
+                        setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                    }
+                    
+                    // Charger les lignes du devis
+                    if (devisData.lines && Array.isArray(devisData.lines)) {
+                        console.log('📋 Chargement des lignes auto-sauvegardées:', devisData.lines);
+                        setAggregatedQuote(devisData.lines);
+                    }
+                    
+                    // Charger les totaux
+                    if (devisData.totals) {
+                        if (devisData.totals.acompteRate !== undefined) {
+                            setAcompteRate(devisData.totals.acompteRate);
+                        }
+                    }
+                    
+                    console.log('✅ Données auto-sauvegardées chargées avec succès');
+                    
+                } catch (error) {
+                    console.error('❌ Erreur lors du chargement des données auto-sauvegardées:', error);
+                }
+            }
+        }
+    }, []);
+
+    // Fonction pour sauvegarder automatiquement les données du devis
+    const saveDevisDataToLocalStorage = () => {
+        const devisData = {
+            info: {
+                devoTitle,
+                devoName,
+                devoAddress,
+                devoCity,
+                devoSiren,
+                societeBatiment,
+                clientAdresse,
+                clientCodePostal,
+                clientTel,
+                clientEmail,
+                devisNumero,
+                enDateDu,
+                valableJusquau,
+                debutTravaux,
+                dureeTravaux,
+                fraisDeplacement,
+                tauxHoraire,
+                isDevisGratuit,
+                logo: leftLogoSrc
+            },
+            lines: aggregatedQuote,
+            totals: {
+                totalHT,
+                totalTVA,
+                totalTTC,
+                acompte,
+                resteAPayer,
+                tvaRate,
+                acompteRate
+            }
+        };
+        
+        localStorage.setItem('devisDataAutoSave', JSON.stringify(devisData));
+        console.log('💾 Données du devis sauvegardées automatiquement');
+    };
+
+    // Sauvegarder automatiquement les données du devis à chaque changement
+    useEffect(() => {
+        saveDevisDataToLocalStorage();
+    }, [
+        devoTitle, devoName, devoAddress, devoCity, devoSiren,
+        societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail,
+        devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux,
+        fraisDeplacement, tauxHoraire, isDevisGratuit, leftLogoSrc,
+        aggregatedQuote, acompteRate
+    ]);
+
+
 
     // Ajouter les frais obligatoires par défaut au devis
     useEffect(() => {

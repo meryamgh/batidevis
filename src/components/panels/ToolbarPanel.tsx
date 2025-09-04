@@ -6,6 +6,7 @@ import AIGenerationPanel from './AIGenerationPanel';
 import { RotateIcon } from '../icons/ControlIcons';
 import { useAuth } from '../../hooks/useAuth';
 import { MaquetteService, SavedObjectData } from '../../services/MaquetteService';
+import { useNavigate } from 'react-router-dom';
 interface ToolbarProps {
   viewMode: '3D' | '2D' | 'ObjectOnly';
   setViewMode: React.Dispatch<React.SetStateAction<'3D' | '2D' | 'ObjectOnly'>>;
@@ -66,11 +67,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
   handleLoadBackupMaquette
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleExport = async () => {
     // Vérifier si l'utilisateur est connecté
     if (!user) {
-      alert('Vous devez être connecté pour sauvegarder une maquette. Veuillez vous connecter.');
+      navigate('/connexion');
       return;
     }
 
@@ -141,6 +143,17 @@ const Toolbar: React.FC<ToolbarProps> = ({
         console.error('❌ Erreur lors de la sauvegarde:', error);
         alert('Erreur lors de la sauvegarde de la maquette. Veuillez réessayer.');
     }
+  };
+
+  const handleReconstructMaquette = async () => {
+    // Vérifier si l'utilisateur est connecté
+    if (!user) {
+      navigate('/connexion');
+      return;
+    }
+    
+    // Appeler la fonction originale
+    await reconstructMaquette();
   };
 
   const handleObjectGenerated = async (objectUrl: string) => {
@@ -383,7 +396,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </button>
 
         <button 
-          onClick={reconstructMaquette}
+          onClick={handleReconstructMaquette}
           className="toolbar-button icon-button"
           title="Récupérer la dernière sauvegarde"
           style={{

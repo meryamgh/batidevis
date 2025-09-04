@@ -220,6 +220,13 @@ const MaquettePage: React.FC = () => {
                 }
             }, 1000);
         }
+        
+        // Si des données de devis sont présentes, les stocker pour les passer à FullQuote
+        if (location.state?.devisData) {
+            console.log('📋 Données de devis reçues:', location.state.devisData);
+            // Stocker les données du devis dans le localStorage pour les récupérer dans FullQuote
+            localStorage.setItem('devisDataToLoad', JSON.stringify(location.state.devisData));
+        }
     }, [location.state]);
 
     // Vérifier que l'élément floating-panel existe au chargement

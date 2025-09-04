@@ -105,19 +105,21 @@ const MesDevisFactures: React.FC = () => {
                 return;
             }
             
-            const maquette = await MaquetteService.getMaquetteById(doc.maquette_id);
-            console.log('🔍 Maquette récupérée de la base de données:', maquette);
-            console.log('🔍 Données de la maquette:', JSON.stringify(maquette.data, null, 2));
+            // Récupérer à la fois le devis ET la maquette
+            const { devis, maquette } = await DevisService.getDevisWithMaquette(doc.id);
+            console.log('🔍 Devis récupéré:', devis);
+            console.log('🔍 Maquette récupérée:', maquette);
             
             navigate('/maquette', { 
                 state: { 
                     maquetteData: maquette.data,
-                    maquetteName: maquette.name 
+                    maquetteName: maquette.name,
+                    devisData: devis.data // Ajouter les données du devis
                 } 
             });
         } catch (error) {
-            console.error('Erreur lors de la récupération de la maquette:', error);
-            alert('Erreur lors de la récupération de la maquette');
+            console.error('Erreur lors de la récupération du devis et de la maquette:', error);
+            alert('Erreur lors de la récupération du devis et de la maquette');
         }
     };
 
