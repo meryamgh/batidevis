@@ -347,6 +347,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         // Remplacer les underscores par les variantes sélectionnées
         Object.entries(selectedVariantsState).forEach(([position, variant]) => {
             description = description.replace('_', variant); 
+            console.log(position)
         });
         
         return description;

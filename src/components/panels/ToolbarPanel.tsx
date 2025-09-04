@@ -115,9 +115,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         };
     };
 
-    const exportData = {
-        objects: objects.map(cleanDataForExport)
-    };
+   
 
     // Sauvegarder dans Supabase
     try { 
