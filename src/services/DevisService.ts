@@ -82,12 +82,7 @@ export class DevisService {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: { session } } = await supabase.auth.getSession();
-      
-      console.log('🔍 Debug Auth Devis:', {
-        user: user ? { id: user.id, email: user.email } : null,
-        session: session ? { access_token: session.access_token ? 'Present' : 'Missing' } : null,
-        isAuthenticated: !!user
-      });
+       
       
       return { user, session };
     } catch (error) {
@@ -125,8 +120,7 @@ export class DevisService {
 
       if (error) {
         console.error('Erreur avec l\'API Supabase standard:', error);
-        // Si ça échoue, essayer avec l'API REST directe
-        console.log('Tentative avec l\'API REST directe...');
+        // Si ça échoue, essayer avec l'API REST directe 
         return await this.saveDevisViaREST(name, data, description, user_id);
       }
 
@@ -345,8 +339,7 @@ export class DevisService {
       if (error) {
         console.error('Erreur lors du refresh de la session:', error);
         throw error;
-      }
-      console.log('✅ Session rafraîchie avec succès');
+      } 
       return data;
     } catch (error) {
       console.error('❌ Erreur lors du refresh de la session:', error);
@@ -356,8 +349,7 @@ export class DevisService {
 
   // Méthode alternative de sauvegarde qui utilise directement l'ID utilisateur
   static async saveDevisWithUserId(name: string, data: DevisData, userId: string, description?: string): Promise<Devis> {
-    try {
-      console.log('🔄 Sauvegarde devis avec userId:', userId);
+    try { 
       
       // Utiliser directement la méthode de sauvegarde avec l'ID utilisateur
       return await this.saveDevis(name, data, description, userId);
@@ -375,9 +367,7 @@ export class DevisService {
     description?: string, 
     userId?: string
   ): Promise<{ devis: Devis; maquette: any }> {
-    try {
-      console.log('🔄 Sauvegarde devis avec maquette associée');
-      
+    try { 
       let user_id = userId;
       
       // Si userId n'est pas fourni, essayer de le récupérer via Supabase

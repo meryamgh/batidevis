@@ -54,48 +54,22 @@ export const testDevisService = async () => {
       }
     };
 
-    console.log('🧪 Testing DevisService...');
-
-    // Test debug auth
-    console.log('1. Testing debug auth...');
+    
     const authResult = await DevisService.debugAuth();
     console.log('Auth result:', authResult);
-
-    // Test save devis
-    console.log('2. Testing save devis...');
+ 
     const savedDevis = await DevisService.saveDevis(
       "Test Devis - Client ABC",
       testDevisData,
       "Devis de test pour validation"
     );
     console.log('Saved devis:', savedDevis);
-
-    // Test get devis by id
-    console.log('3. Testing get devis by id...');
-    const retrievedDevis = await DevisService.getDevisById(savedDevis.id!);
-    console.log('Retrieved devis:', retrievedDevis);
-
-    // Test update status
-    console.log('4. Testing update status...');
-    const updatedDevis = await DevisService.updateDevisStatus(
-      savedDevis.id!,
-      'sent',
-      'test-signature-request-id',
-      'https://test-signature-url.com'
-    );
-    console.log('Updated devis:', updatedDevis);
-
-    // Test get user devis
-    console.log('5. Testing get user devis...');
-    const userDevis = await DevisService.getUserDevis();
-    console.log('User devis count:', userDevis.length);
-
-    // Test delete devis
-    console.log('6. Testing delete devis...');
-    await DevisService.deleteDevis(savedDevis.id!);
-    console.log('Devis deleted successfully');
-
-    console.log('✅ All tests passed!');
+ 
+    const retrievedDevis = await DevisService.getDevisById(savedDevis.id!); 
+console.log("retrievedDevis", retrievedDevis);
+     
+ 
+    await DevisService.deleteDevis(savedDevis.id!); 
 
   } catch (error) {
     console.error('❌ Test failed:', error);

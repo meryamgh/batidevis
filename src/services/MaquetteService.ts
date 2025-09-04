@@ -49,11 +49,6 @@ export class MaquetteService {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: { session } } = await supabase.auth.getSession();
       
-      console.log('🔍 Debug Auth:', {
-        user: user ? { id: user.id, email: user.email } : null,
-        session: session ? { access_token: session.access_token ? 'Present' : 'Missing' } : null,
-        isAuthenticated: !!user
-      });
       
       return { user, session };
     } catch (error) {
@@ -91,8 +86,7 @@ export class MaquetteService {
 
       if (error) {
         console.error('Erreur avec l\'API Supabase standard:', error);
-        // Si ça échoue, essayer avec l'API REST directe
-        console.log('Tentative avec l\'API REST directe...');
+        // Si ça échoue, essayer avec l'API REST directe 
         return await this.saveMaquetteViaREST(name, data, description, user_id);
       }
 
@@ -269,8 +263,7 @@ export class MaquetteService {
       if (error) {
         console.error('Erreur lors du refresh de la session:', error);
         throw error;
-      }
-      console.log('✅ Session rafraîchie avec succès');
+      } 
       return data;
     } catch (error) {
       console.error('❌ Erreur lors du refresh de la session:', error);
@@ -280,8 +273,7 @@ export class MaquetteService {
 
   // Méthode alternative de sauvegarde qui utilise directement l'ID utilisateur
   static async saveMaquetteWithUserId(name: string, data: MaquetteData, userId: string, description?: string): Promise<Maquette> {
-    try {
-      console.log('🔄 Sauvegarde avec userId:', userId);
+    try { 
       
       // Utiliser directement la méthode de sauvegarde avec l'ID utilisateur
       return await this.saveMaquette(name, data, description, userId);

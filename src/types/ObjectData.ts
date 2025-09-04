@@ -32,10 +32,10 @@ export type ObjectData = {
     details: string;
     position: [number, number, number];
     gltf? : Mesh | GLTF;
-    texture ?: string;  // Texture globale (appliquée si pas de faces spécifiques)
+    texture ?: string;  
     scale : [number, number, number];
     rotation?: [number, number, number];
-    color?: string;     // Couleur globale (appliquée si pas de faces spécifiques)
+    color?: string;     
     startPoint?: [number, number];
     endPoint?: [number, number];
     parentScale?: [number, number, number];
@@ -45,8 +45,8 @@ export type ObjectData = {
         size: [number, number, number];
         center: [number, number, number];
     };
-    faces?: FacesData;  // Définition des faces pour les murs et sols
-    type?: 'wall' | 'floor' | 'object' | 'ceiling';  // Type d'objet pour différencier le comportement
-    parametricData?: any; // Données paramétriques récupérées depuis l'API
+    faces?: FacesData;  
+    type?: 'wall' | 'floor' | 'object' | 'ceiling' | 'devis-item';  
+    parametricData?: any; 
     isBatiChiffrageObject : boolean;
 };

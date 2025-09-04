@@ -32,8 +32,7 @@ const CameraProvider: React.FC<{
         target?: THREE.Vector3;
     } | null>(null);
 
-    useEffect(() => {
-        console.log("CameraProvider useEffect 1")
+    useEffect(() => { 
         let newCamera: THREE.Camera;
 
         // Si on a un état précédent et qu'on veut le préserver
@@ -131,8 +130,7 @@ const CameraProvider: React.FC<{
     }, [set, is2DView, firstPersonView, firstPersonPosition, firstPersonRotation, zoom2D, isObjectOnlyView, focusedObject, preserveCameraOnModeChange, setCamera]);
 
     // Gérer le redimensionnement de la fenêtre
-    useEffect(() => {
-        console.log("CameraProvider useEffect 2")
+    useEffect(() => { 
         const handleResize = () => {
             if (camera instanceof THREE.OrthographicCamera && is2DView) {
                 const aspect = window.innerWidth / window.innerHeight;

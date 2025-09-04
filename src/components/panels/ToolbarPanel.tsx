@@ -76,11 +76,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       return;
     }
 
-    // Debug: Vérifier l'état de l'authentification
-    console.log('🔍 Debug avant sauvegarde:', {
-      user: user ? { id: user.id, email: user.email } : null,
-      isAuthenticated: !!user
-    });
+   
 
     // Demander le nom de la maquette
     const maquetteName = prompt('Nom de la maquette:', 'Maquette sans nom');
@@ -124,8 +120,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
     };
 
     // Sauvegarder dans Supabase
-    try {
-        console.log('🔄 Sauvegarde de la maquette en cours...');
+    try { 
         
         // Debug: Vérifier l'authentification via le service
         await MaquetteService.debugAuth();
@@ -136,8 +131,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             user.id,
             `Maquette créée le ${new Date().toLocaleDateString('fr-FR')}`
         );
-        
-        console.log('✅ Maquette sauvegardée avec succès !', savedMaquette);
+         
         alert(`Maquette "${maquetteName}" sauvegardée avec succès !`);
     } catch (error) {
         console.error('❌ Erreur lors de la sauvegarde:', error);

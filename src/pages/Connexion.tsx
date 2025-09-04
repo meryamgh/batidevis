@@ -50,28 +50,23 @@ const Connexion: React.FC = () => {
 
     // Fonctions de gestion des formulaires
     const handleLoginSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('handleLoginSubmit appelé');
+        e.preventDefault(); 
         setLoading(true);
         setError(null);
         setSuccess(null);
 
-        try {
-            console.log('Appel de signIn...');
+        try { 
             const result = await signIn({
                 email: loginForm.email,
                 password: loginForm.password
-            });
-            console.log('Résultat signIn reçu:', result);
+            }); 
 
-            if (result.success) {
-                console.log('Connexion réussie, redirection...');
+            if (result.success) { 
                 setSuccess('Connexion réussie !');
                 setLoading(false);
                 // Redirection immédiate sans délai
                 navigate('/');
-            } else {
-                console.log('Erreur de connexion:', result.error);
+            } else { 
                 setError(result.error || 'Erreur lors de la connexion');
                 setLoading(false);
             }
@@ -115,8 +110,7 @@ const Connexion: React.FC = () => {
                 last_name: signupForm.lastName,
                 company_name: signupForm.companyName
             });
-
-            console.log('Connexion.tsx - Résultat inscription:', result);
+ 
 
             if (result.success && result.user) {
                 // Inscription réussie

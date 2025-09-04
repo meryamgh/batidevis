@@ -33,7 +33,7 @@ type GLTFObjectProps = {
     color?: string;
     isSelected?: boolean;
     faces?: FacesData;
-    type?: 'wall' | 'floor' | 'object' | 'ceiling';
+    type?: 'wall' | 'floor' | 'object' | 'ceiling' | 'devis-item';
     onUpdateFaces: (id: string, faces: FacesData) => void;
     // Nouvelles props pour la sélection multiple
     isMultiSelected?: boolean;
@@ -74,18 +74,15 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
     // Fonction pour gérer les clics avec support de la sélection multiple
     const handleClick = (event: any) => {
-        console.log('🎯 GLTFObject handleClick called for object:', id);
+        
         event.stopPropagation();
         
         // Vérifier si Ctrl (ou Cmd sur Mac) est pressé
-        const isCtrlPressed = event.ctrlKey || event.metaKey;
-        console.log('🔍 Ctrl pressed:', isCtrlPressed);
+        const isCtrlPressed = event.ctrlKey || event.metaKey; 
         
-        if (onMultiSelect && isCtrlPressed) {
-            console.log('🔍 Calling onMultiSelect (Ctrl pressed)');
+        if (onMultiSelect && isCtrlPressed) { 
             onMultiSelect(id, isCtrlPressed);
-        } else {
-            console.log('🔍 Calling onClick (no Ctrl pressed)');
+        } else { 
             onClick();
         }
     };
@@ -193,27 +190,15 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
         }
     }, [rotation]);
 
-    useEffect(() => {
-        console.log('=== Début de l\'effet texture/faces ===');
-        console.log('Props reçues:', {
-            type,
-            texture,
-            faces,
-            color,
-            scale,
-            id
-        });
+    useEffect(() => { 
 
-        if (scene && (texture || faces)) {
-            console.log('Scene et texture/faces présentes, début du traitement');
+        if (scene && (texture || faces)) { 
             
-            const loadTexture = async (textureUrl: string) => {
-                console.log('Chargement de la texture:', textureUrl);
+            const loadTexture = async (textureUrl: string) => { 
                 return new Promise<THREE.Texture>((resolve, reject) => {
                     new THREE.TextureLoader().load(
                         textureUrl,
-                        (loadedTexture) => {
-                            console.log('Texture chargée avec succès:', textureUrl);
+                        (loadedTexture) => { 
                             loadedTexture.anisotropy = 30;
                             loadedTexture.wrapS = loadedTexture.wrapT = THREE.MirroredRepeatWrapping ;
 
@@ -241,15 +226,9 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             };
             
             scene.traverse(async (child: any) => {
-                if (child.isMesh && child.material) {
-                    console.log('Traitement du mesh:', {
-                        geometry: child.geometry.type,
-                        type: type,
-                        materialType: Array.isArray(child.material) ? 'Array' : 'Single'
-                    });
+                if (child.isMesh && child.material) { 
 
-                    if (child.geometry instanceof THREE.BoxGeometry && type === 'wall') {
-                        console.log('Configuration des matériaux du mur avec faces:', faces);
+                    if (child.geometry instanceof THREE.BoxGeometry && type === 'wall') { 
                         const materials = Array(6).fill(null).map((_, index) => 
                             new THREE.MeshStandardMaterial({
                                 side: THREE.DoubleSide,
@@ -263,19 +242,14 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         if (faces) {
                             for (const [faceName, faceData] of Object.entries(faces)) {
                                 const faceIndex = faceIndexMapping[faceName as keyof typeof faceIndexMapping];
-                                console.log('Application de la face:', {
-                                    faceName,
-                                    faceIndex,
-                                    faceData
-                                });
+                                 
                                 
                                 if (faceData && faceIndex !== undefined) {
                                     if (faceData.texture) {
                                         try {
                                             const faceTexture = await loadTexture(faceData.texture);
                                             materials[faceIndex].map = faceTexture;
-                                            materials[faceIndex].needsUpdate = true;
-                                            console.log(`Texture appliquée à la face ${faceName}`);
+                                            materials[faceIndex].needsUpdate = true; 
                                         } catch (error) {
                                             console.error(`Erreur lors de l'application de la texture à la face ${faceName}:`, error);
                                         }
@@ -290,10 +264,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         
                         child.material = materials;
                         child.material.needsUpdate = true;
-                    } else if (child.geometry instanceof THREE.PlaneGeometry && type === 'floor') {
-                        console.log('Traitement d\'un sol');
-                        if (faces?.top) {
-                            console.log('Configuration de la face supérieure du sol:', faces.top);
+                    } else if (child.geometry instanceof THREE.PlaneGeometry && type === 'floor') { 
+                        if (faces?.top) { 
                             const material = new THREE.MeshStandardMaterial({
                                 color: faces.top.color ? new THREE.Color(faces.top.color) : (color ? new THREE.Color(color) : 0x808080),
                                 transparent: true,
@@ -303,12 +275,10 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                                 toneMapped: true
                             });
 
-                            if (faces.top.texture) {
-                                console.log('Application de la texture au sol:', faces.top.texture);
+                            if (faces.top.texture) { 
                                 try {
                                     const floorTexture = await loadTexture(faces.top.texture);
-                                    material.map = floorTexture;
-                                    console.log('Texture du sol appliquée avec succès');
+                                    material.map = floorTexture; 
                                 } catch (error) {
                                     console.error('Erreur lors du chargement de la texture du sol:', error);
                                 }
@@ -316,8 +286,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
                             child.material = material;
                         }
-                    } else if (texture) {
-                        console.log('Application de la texture globale:', texture);
+                    } else if (texture) { 
                         try {
                             const globalTexture = await loadTexture(texture);
                             child.material = new THREE.MeshStandardMaterial({
@@ -328,21 +297,16 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         roughness: 1,
                         dithering: true,
                         toneMapped: true
-                    });
-                            console.log('Texture globale appliquée avec succès');
+                    }); 
                         } catch (error) {
                             console.error('Erreur lors du chargement de la texture globale:', error);
                         }
                     }
                     
-                    child.material.needsUpdate = true;
-                    console.log('Matériau mis à jour');
+                    child.material.needsUpdate = true; 
                 }
             });
-        } else {
-            console.log('Pas de scene ou pas de texture/faces à appliquer');
-        } 
-        console.log('=== Fin de l\'effet texture/faces ===');
+        }  
     }, [scene, texture, scale, color, faces, type, id, selectedFaceIndex]);
 
     // useEffect(() => {
@@ -358,74 +322,40 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
     //     }
     // }, [scene, color, texture, type]);
 
-
-    // Effet pour tracker quand meshRef est défini
-    useEffect(() => {
-        if (meshRef.current) {
-            console.log('🎯 GLTFObject: meshRef défini pour objet', id, 'avec position:', position);
-            console.log('🎯 GLTFObject: Position actuelle du mesh:', {
-                x: meshRef.current.position.x,
-                y: meshRef.current.position.y,
-                z: meshRef.current.position.z
-            });
-        }
-    }, [meshRef.current, id, position]);
-
-    // Effet pour mettre à jour la position
+ 
+    
     useEffect(() => {
         if (meshRef.current && position) {
-            console.log('🎯 GLTFObject: Application de la position', position, 'à l\'objet', id);
-            console.log('🎯 GLTFObject: Position avant application:', {
-                x: meshRef.current.position.x,
-                y: meshRef.current.position.y,
-                z: meshRef.current.position.z
-            });
+           
             
             meshRef.current.position.set(position[0], position[1], position[2]);
             meshRef.current.updateMatrixWorld(true);
             
-            console.log('🎯 GLTFObject: Position après application:', {
-                x: meshRef.current.position.x,
-                y: meshRef.current.position.y,
-                z: meshRef.current.position.z
-            });
+            
         }
     }, [position, id]);
 
     // Nouvel effet simplifié pour la mise à jour des textures des faces
     useEffect(() => {
-        console.log('=== Début de l\'effet de mise à jour des textures des faces ===');
-        console.log('État actuel:', {
-            meshRef: meshRef.current ? 'Existe' : 'Null',
-            faces,
-            type,
-            id
-        });
+        
 
         if (!meshRef.current || !faces || !type) {
-            console.log('Conditions non remplies pour la mise à jour:', {
-                hasMesh: !!meshRef.current,
-                hasFaces: !!faces,
-                hasType: !!type
-            });
+             
             return;
         }
 
         const mesh = meshRef.current;
         if (!(mesh instanceof THREE.Mesh)) {
-            console.log('meshRef.current n\'est pas une instance de THREE.Mesh');
+            
             return;
         }
-
-        console.log('Mise à jour texture face:', { type, faces });
+ 
 
         const textureLoader = new THREE.TextureLoader();
 
-        if (type === 'wall') {
-            console.log('Traitement d\'un mur');
+        if (type === 'wall') { 
             // Créer un tableau de matériaux si ce n'est pas déjà fait
-            if (!Array.isArray(mesh.material)) {
-                console.log('Création du tableau de matériaux pour le mur');
+            if (!Array.isArray(mesh.material)) { 
                 mesh.material = Array(6).fill(null).map(() => (
                     new THREE.MeshStandardMaterial({
                         transparent: true,
@@ -441,23 +371,16 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             // Mettre à jour les matériaux pour chaque face
             Object.entries(faces).forEach(([faceName, faceData]) => {
                 const faceIndex = faceIndexMapping[faceName as keyof typeof faceIndexMapping];
-                console.log('Traitement de la face:', {
-                    faceName,
-                    faceIndex,
-                    faceData
-                });
+                 
 
-                if (faceIndex === undefined || !faceData) {
-                    console.log('Face invalide ou données manquantes');
+                if (faceIndex === undefined || !faceData) { 
                     return;
                 }
 
                 const material = materials[faceIndex] as THREE.MeshStandardMaterial;
                 
-                if (faceData.texture) {
-                    console.log('Chargement de la texture pour la face:', faceName);
-                    textureLoader.load(faceData.texture, (texture) => {
-                        console.log('Texture chargée avec succès pour la face:', faceName);
+                if (faceData.texture) { 
+                    textureLoader.load(faceData.texture, (texture) => { 
                         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
                         texture.repeat.set(1, 1);
                         material.map = texture;
@@ -467,8 +390,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                     });
                 }
 
-                if (faceData.color) {
-                    console.log('Application de la couleur pour la face:', faceName);
+                if (faceData.color) { 
                     material.color = new THREE.Color(faceData.color);
                 } else {
                     material.color = new THREE.Color(0x808080); // Gris par défaut
@@ -476,11 +398,9 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 material.needsUpdate = true;
             });
 
-        } else if (type === 'floor') {
-            console.log('Traitement d\'un sol');
+        } else if (type === 'floor') { 
             // Pour les sols, créer un seul matériau
-            if (!mesh.material || Array.isArray(mesh.material)) {
-                console.log('Création du matériau pour le sol');
+            if (!mesh.material || Array.isArray(mesh.material)) { 
                 mesh.material = new THREE.MeshStandardMaterial({
                     transparent: true,
                     opacity: 0.8,
@@ -490,10 +410,8 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
 
             const material = mesh.material as THREE.MeshStandardMaterial;
 
-            if (faces.top?.texture) {
-                console.log('Chargement de la texture pour le sol');
-                textureLoader.load(faces.top.texture, (texture) => {
-                    console.log('Texture du sol chargée avec succès');
+            if (faces.top?.texture) { 
+                textureLoader.load(faces.top.texture, (texture) => { 
                     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
                     texture.repeat.set(1, 1);
                     material.map = texture;
@@ -503,16 +421,14 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 });
             }
 
-            if (faces.top?.color) {
-                console.log('Application de la couleur pour le sol');
+            if (faces.top?.color) { 
                 material.color = new THREE.Color(faces.top.color);
             } else {
                 material.color = new THREE.Color(0x808080); // Gris par défaut
             }
             material.needsUpdate = true;
         }
-
-        console.log('=== Fin de l\'effet de mise à jour des textures des faces ===');
+ 
     }, [faces, type, id]);
 
     useEffect(() => {
@@ -640,8 +556,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                 }
             });
 
-            setMeshesWithOutlines(newMeshesWithOutlines);
-            console.log('Meshes avec outlines:', meshesWithOutlines);
+            setMeshesWithOutlines(newMeshesWithOutlines); 
             // Nettoyage lors du démontage
             return () => {
                 newMeshesWithOutlines.forEach(({ mesh, helper }) => {
@@ -759,8 +674,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                             meshRef.current.position.x,
                             meshRef.current.position.y,
                             meshRef.current.position.z,
-                        ];
-                        console.log("Updating position to:", newPos);
+                        ]; 
                         onUpdatePosition(id, newPos);
                     }
                 }}
@@ -776,24 +690,10 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
                         if (event.faceIndex !== undefined && event.object.geometry instanceof THREE.BoxGeometry) {
                             // Convertir l'index de face (0-11 pour un cube) en index de matériau (0-5)
                             const materialIndex = Math.floor(event.faceIndex / 2);
-                            setSelectedFaceIndex(materialIndex);
-                            console.log('Face cliquée:', materialIndex);
+                            setSelectedFaceIndex(materialIndex); 
                         }
 
-                        console.log('Objet cliqué:', {
-                            id: id,
-                            type: url ? 'Modèle 3D' : 'Mur',
-                            details: {
-                                position: position,
-                                scale: scale,
-                                rotation: rotation || [0, 0, 0],
-                                mesh: event.object,
-                                material: event.object.material,
-                                geometry: event.object.geometry,
-                                color: color,
-                                faceIndex: event.faceIndex
-                            }
-                        });
+                        
                     }}
                 />
             </TransformControls>

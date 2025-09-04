@@ -46,8 +46,7 @@ const MoveControls: React.FC<MoveControlsProps> = ({
     
     // Gestionnaire pour les contrôles de la télécommande virtuelle
     useEffect(() => {
-        const handleCameraControl = (event: Event) => {
-            console.log('handleCameraControl appelé dans MoveControls');
+        const handleCameraControl = (event: Event) => { 
             const customEvent = event as CustomEvent;
             const { direction, mode } = customEvent.detail;
             
@@ -246,8 +245,7 @@ const MoveControls: React.FC<MoveControlsProps> = ({
                 orbitControlsRef.current.update();
             }
         };
-        
-        console.log("Ajout de l'écouteur d'événements cameraControl dans MoveControls");
+         
          
         // Supprimer d'abord tout écouteur existant pour éviter les doublons
         window.removeEventListener('cameraControl', handleCameraControl);
@@ -256,8 +254,7 @@ const MoveControls: React.FC<MoveControlsProps> = ({
         window.addEventListener('cameraControl', handleCameraControl);
         
         // Nettoyer l'écouteur d'événements
-        return () => {
-            console.log("Suppression de l'écouteur d'événements cameraControl dans MoveControls");
+        return () => { 
             window.removeEventListener('cameraControl', handleCameraControl);
         };
     }, [camera, orbitControlsRef, cameraPositionRef]);

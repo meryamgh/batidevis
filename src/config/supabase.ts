@@ -10,16 +10,8 @@ if (!validateEnv()) {
 }
 
 // Créer une seule instance du client Supabase
-if (!supabaseInstance) {
-  console.log('Configuration Supabase:', {
-    url: config.supabase.url,
-    hasAnonKey: !!config.supabase.anonKey,
-    anonKeyLength: config.supabase.anonKey?.length
-  });
-  
-  console.log('Création du client Supabase...');
-  supabaseInstance = createClient(config.supabase.url!, config.supabase.anonKey!);
-  console.log('Client Supabase créé avec succès');
+if (!supabaseInstance) {  
+  supabaseInstance = createClient(config.supabase.url!, config.supabase.anonKey!); 
 }
 
 export const supabase = supabaseInstance!;

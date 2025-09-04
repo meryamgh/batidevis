@@ -96,9 +96,7 @@ const MesDevisFactures: React.FC = () => {
 
     // Fonction pour modifier un devis (rediriger vers la maquette)
     const handleModifierDevis = async (doc: any) => {
-        try {
-            console.log('🔍 handleModifierDevis appelé avec doc:', doc);
-            console.log('🔍 maquette_id:', doc.maquette_id);
+        try { 
             
             if (!doc.maquette_id) {
                 alert('Aucune maquette associée à ce devis');
@@ -106,9 +104,7 @@ const MesDevisFactures: React.FC = () => {
             }
             
             // Récupérer à la fois le devis ET la maquette
-            const { devis, maquette } = await DevisService.getDevisWithMaquette(doc.id);
-            console.log('🔍 Devis récupéré:', devis);
-            console.log('🔍 Maquette récupérée:', maquette);
+            const { devis, maquette } = await DevisService.getDevisWithMaquette(doc.id); 
             
             navigate('/maquette', { 
                 state: { 

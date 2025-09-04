@@ -19,10 +19,8 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        const fetchFiles = async () => {
-            console.log("Début de fetchFiles");
-            try {
-                console.log("Récupération des données depuis le serveur");
+        const fetchFiles = async () => { 
+            try { 
                 const response = await fetch(`${BACKEND_URL}/list_files`);
                 const data = await response.json();
                 if (response.ok) {
@@ -38,8 +36,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                         objects: newObjects,
                         timestamp: Date.now()
                     };
-                    localStorage.setItem('objectList', JSON.stringify(cacheData));
-                    console.log("Nouvelles données mises en cache");
+                    localStorage.setItem('objectList', JSON.stringify(cacheData)); 
                 } else {
                     console.error("Error fetching files:", data.error);
                 }
@@ -121,8 +118,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ showObjectUpload, setSh
                             <div className="object-category">
                                 <h3>OBJETS BATICHIFFRAGE</h3>
                                 {(() => {
-                                    const batichiffrageObjects = objects.filter(obj => obj.isBatiChiffrageObject);
-                                    console.log("Batichiffrage objects:", batichiffrageObjects);
+                                    const batichiffrageObjects = objects.filter(obj => obj.isBatiChiffrageObject); 
                                     return renderObjectGrid(batichiffrageObjects);
                                 })()}
                             </div>

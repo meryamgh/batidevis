@@ -30,8 +30,7 @@ const ObjectUpload = ({ onClose }: { onClose?: () => void }) => {
       
       // For 3D models, we can't generate a preview easily
       // We'll just show the file name
-      setPreviewUrl(null);
-      console.log("previewUrl", previewUrl)
+      setPreviewUrl(null); 
     }
   };
 

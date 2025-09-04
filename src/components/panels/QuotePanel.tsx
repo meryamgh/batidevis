@@ -27,18 +27,17 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
 
   const navigateToFullQuote = () => {
     const serializableQuote = getSerializableQuote();
+    console.log(serializableQuote)
     navigate('/full-quote', { state: { quote: serializableQuote } });
   };
 
   // Fonction pour supprimer uniquement du devis
-  const handleQuoteRemoval = (itemId: string) => {
-    console.log('handleQuoteRemoval appelé avec id:', itemId);
+  const handleQuoteRemoval = (itemId: string) => { 
     setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
   };
 
   // Fonction pour supprimer du devis ET de la maquette
-  const handleCompleteRemoval = (itemId: string) => {
-    console.log('handleCompleteRemoval appelé avec id:', itemId);
+  const handleCompleteRemoval = (itemId: string) => { 
     setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
     handleRemoveObject(itemId);
   };

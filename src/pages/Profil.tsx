@@ -76,8 +76,7 @@ const Profil: React.FC = () => {
             
             if (result.success) {
                 setIsEditing(false);
-                // Optionnel : afficher un message de succès
-                console.log('Profil mis à jour avec succès');
+               
             } else {
                 console.error('Erreur lors de la mise à jour:', result.error);
                 // Optionnel : afficher un message d'erreur
@@ -108,9 +107,7 @@ const Profil: React.FC = () => {
                 company_name: user.company_name || ''
             });
             
-            if (result.success) {
-                console.log('Profil rafraîchi avec succès');
-                // Recharger la page pour voir les changements
+            if (result.success) { 
                 window.location.reload();
             } else {
                 console.error('Erreur lors du rafraîchissement:', result.error);

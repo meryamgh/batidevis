@@ -103,8 +103,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         if (selectedObject) {
             setCurrentRotation(selectedObject.rotation || [0, 0, 0]);
             setPosition(selectedObject.position);
-            setLastExtendedObject(selectedObject);
-            console.log('selectedObject', lastExtendedObject);
+            setLastExtendedObject(selectedObject); 
             setWidth(selectedObject.scale[0] || 0);
             setHeight(selectedObject.scale[1] || 0);
             setDepth(selectedObject.scale[2] || 0);
@@ -165,8 +164,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         onUpdatePosition(selectedObject.id, newPosition);
     };
 
-    const handleUpdateScale = (newWidth: number, newHeight: number, newDepth: number) => {
-        console.log('updateScale');
+    const handleUpdateScale = (newWidth: number, newHeight: number, newDepth: number) => { 
         setWidth(newWidth);
         setHeight(newHeight);
         setDepth(newDepth);
@@ -174,7 +172,15 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
             onUpdateScale(selectedObject.id, [newWidth, newHeight, newDepth]);
         }
 
-        setRecalculateYPosition(true);
+        // Ne recalculer automatiquement la position Y que pour les murs et uniquement si la position Y actuelle est proche de la position minimale
+        if (selectedObject?.type === 'wall') {
+            const minY = getMinYAxis(selectedObject);
+            const currentY = position[1];
+            // Seulement recalculer si la position actuelle est très proche de la position minimale (tolerance de 0.1)
+            if (Math.abs(currentY - minY) < 0.1) {
+                setRecalculateYPosition(true);
+            }
+        }
     };
 
     const getMinYAxis = (object: ObjectData) => {
@@ -188,19 +194,20 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         return 0;
     }
 
-    // Logique pour recalculer la position Y quand l'échelle change
+    // Logique pour recalculer la position Y quand l'échelle change (uniquement pour les murs et dans des cas spécifiques)
     useEffect(() => {
-        if (selectedObject && recalculateYPosition) {
+        if (selectedObject && recalculateYPosition && selectedObject.type === 'wall') {
             const minY = getMinYAxis(selectedObject);
-            if (minY !== position[1]) {
-                console.log('minY', minY, 'current Y', position[1]);
-                const newPosition: [number, number, number] = [position[0], minY, position[2]];
-                onUpdatePosition(selectedObject.id, newPosition);
-                setPosition(newPosition);
-            }
+            // Recalculer seulement si nécessaire pour éviter d'écraser les positions définies manuellement
+            const newPosition: [number, number, number] = [position[0], minY, position[2]];
+            onUpdatePosition(selectedObject.id, newPosition);
+            setPosition(newPosition);
+            setRecalculateYPosition(false);
+        } else if (recalculateYPosition) {
+            // Pour les autres types d'objets, simplement réinitialiser le flag sans modifier la position
             setRecalculateYPosition(false);
         }
-    }, [recalculateYPosition, height]); // Ajouter height pour que ça se déclenche quand la hauteur change
+    }, [recalculateYPosition, height, selectedObject?.type, position]); // Ajouter les dépendances nécessaires
 
     const handleRangeMouseDown = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -332,7 +339,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                             const newWidth = parseFloat(e.target.value) || 0;
                             handleUpdateScale(newWidth, height, depth);
                         }}
-                        style={{ width: '40px', height: '20px', fontSize: '11px' }}
+                        style={{ width: '80px', height: '24px', fontSize: '12px' }}
                     />
                     <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>H:</label>
                     <input
@@ -343,7 +350,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                             const newHeight = parseFloat(e.target.value) || 0;
                             handleUpdateScale(width, newHeight, depth);
                         }}
-                        style={{ width: '40px', height: '20px', fontSize: '11px' }}
+                        style={{ width: '80px', height: '24px', fontSize: '12px' }}
                     />
                     <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>P:</label>
                     <input
@@ -354,7 +361,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                             const newDepth = parseFloat(e.target.value) || 0;
                             handleUpdateScale(width, height, newDepth);
                         }}
-                        style={{ width: '40px', height: '20px', fontSize: '11px' }}
+                        style={{ width: '80px', height: '24px', fontSize: '12px' }}
                     />
                 </div>
             </div>
@@ -406,6 +413,42 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                     <span className="position-value" style={{ fontSize: '11px', minWidth: '32px', textAlign: 'right' }}>
                         {position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(1)}
                     </span>
+                </div>
+                {/* Champs de saisie manuelle pour la position */}
+                <div className="position-inputs" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', width: '100%' }}>
+                    <label style={{ fontSize: '11px', marginRight: '2px', width: '15px' }}>X:</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={position[0].toFixed(2)}
+                        onChange={(e) => {
+                            const newX = parseFloat(e.target.value) || 0;
+                            handleUpdatePosition('x', newX);
+                        }}
+                        style={{ width: '80px', height: '24px', fontSize: '12px' }}
+                    />
+                    <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>Y:</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={position[1].toFixed(2)}
+                        onChange={(e) => {
+                            const newY = parseFloat(e.target.value) || 0;
+                            handleUpdatePosition('y', newY);
+                        }}
+                        style={{ width: '80px', height: '24px', fontSize: '12px' }}
+                    />
+                    <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>Z:</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={position[2].toFixed(2)}
+                        onChange={(e) => {
+                            const newZ = parseFloat(e.target.value) || 0;
+                            handleUpdatePosition('z', newZ);
+                        }}
+                        style={{ width: '80px', height: '24px', fontSize: '12px' }}
+                    />
                 </div>
             </div>
 
@@ -555,7 +598,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                                             <img 
                                                 src={url} 
                                                 alt={name}
-                                                style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '2px' }}
+                                                style={{ width: '100px', height: '40px', objectFit: 'cover', borderRadius: '2px' }}
                                                 onError={handleImageError}
                                             />
                                             <span style={{ fontSize: '8px', marginTop: '2px', textAlign: 'center' }}>

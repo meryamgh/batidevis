@@ -50,19 +50,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     const extractSelectedVariants = () => {
         if (!parametricData || !parametricData.template_bis || !parametricData.item_details?.libtech) {
             return {};
-        }
-        console.log("disabledOptions", disabledOptions)
-        console.log("lastExtendedObject", lastExtendedObject)
-        console.log("roomWidth", roomWidth)
-        console.log("roomLength", roomLength)
-        console.log("roomHeight", roomHeight)
-        console.log("height", height)
-        console.log("width", width)
-        console.log("depth", depth)
-        console.log("texture", texture)
-        console.log("color", color)
-        console.log("rotation", rotation)
-        console.log("isRotating", isRotating)
+        } 
         
         const template = parametricData.template_bis;
         const libtech = parametricData.item_details.libtech;
@@ -108,8 +96,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             const position = variantIndex.toString();
             selectedVariants[position] = currentLibtech.trim();
         }
-        
-        console.log("Extracted variants:", selectedVariants);
+         
         return selectedVariants;
     };
     
@@ -118,8 +105,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     
     // Initialiser l'état des variantes sélectionnées
     useEffect(() => {
-        if (Object.keys(selectedVariants).length > 0) {
-            console.log("Setting selectedVariantsState from extracted variants:", selectedVariants);
+        if (Object.keys(selectedVariants).length > 0) { 
             setSelectedVariantsState(selectedVariants);
         }
     }, [selectedVariants]);
@@ -128,8 +114,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     useEffect(() => {
         if (parametricData && parametricData.item_details?.libtech && Object.keys(selectedVariantsState).length === 0) {
             const extracted = extractSelectedVariants();
-            if (Object.keys(extracted).length > 0) {
-                console.log("Initial sync of variants:", extracted);
+            if (Object.keys(extracted).length > 0) { 
                 setSelectedVariantsState(extracted);
             }
         }
@@ -361,8 +346,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         
         // Remplacer les underscores par les variantes sélectionnées
         Object.entries(selectedVariantsState).forEach(([position, variant]) => {
-            description = description.replace('_', variant);
-            console.log("position", position, "variant", variant)
+            description = description.replace('_', variant); 
         });
         
         return description;
@@ -527,8 +511,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         Object.entries(allVariants).forEach(([position, variantsSet]) => {
             result[position] = Array.from(variantsSet).sort();
         });
-        
-        console.log("Extracted all possible variants:", result);
+         
         return result;
     };
 
@@ -576,8 +559,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
     
 
     useEffect(() => {
-        if (object) {
-            console.log('Updating dimensions:', object.scale);
+        if (object) { 
             setWidth(object.scale[0]);
             setHeight(object.scale[1]);
             setDepth(object.scale[2]);
@@ -638,11 +620,9 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
         }
     }, [recalculateYPosition]);
 
-    const updateYPosition = () => { 
-        console.log("new height", height)
+    const updateYPosition = () => {  
         const minY = getMinYAxis(object);
-        if (minY !== position[1]) {
-            console.log('minY', minY);
+        if (minY !== position[1]) { 
             const newPosition: [number, number, number] = [position[0], minY, position[2]];
             onUpdatePosition(object.id, newPosition);
             setPosition(newPosition);
@@ -788,11 +768,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                 const currentVariant = selectedVariantsState[position] || 
                                     (Array.isArray(options) && options.length > 0 ? options[0] : null);
                                 
-                                console.log(`Position ${position}:`, {
-                                    currentVariant,
-                                    availableOptions: options,
-                                    selectedVariantsState: selectedVariantsState[position]
-                                });
+                                
                                 
                                 return (
                                 <div key={position} className="variable-position">
@@ -806,8 +782,7 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
                                         })) : []}
                                         value={currentVariant ? { value: currentVariant, label: currentVariant } : null}
                                         onChange={(selectedOption: SingleValue<{value: string, label: string}>) => {
-                                            console.log(`Changed position ${position} to:`, selectedOption);
-                                            if (selectedOption) {
+                                             if (selectedOption) {
                                                 updateDescriptionWithNewVariant(position, selectedOption.value);
                                                 updateDisabledOptions(position, selectedOption.value);
                                             }

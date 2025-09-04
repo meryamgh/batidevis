@@ -5,11 +5,7 @@ export class AuthService {
   // Inscription d'un nouvel utilisateur
   static async signUp(data: SignUpData): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      console.log('AuthService.signUp - Tentative d\'inscription pour:', data.email);
-      console.log('AuthService.signUp - Données reçues:', data);
       
-      // Utiliser directement l'API REST pour l'inscription
-      console.log('AuthService.signUp - Utilisation de l\'API REST directe...');
       
       try {
         const response = await fetch(`${config.supabase.url}/auth/v1/signup`, {
@@ -29,12 +25,10 @@ export class AuthService {
           }),
         });
         
-        const responseData = await response.json();
-        console.log('AuthService.signUp - Réponse API REST:', responseData);
+        const responseData = await response.json(); 
         
         if (response.ok && responseData.user) {
-          console.log('AuthService.signUp - Utilisateur créé via API REST:', responseData.user.id);
-          
+         
           // Créer un cookie de session avec les vraies données
           const expires = new Date();
           expires.setMonth(expires.getMonth() + 1);
@@ -53,7 +47,6 @@ export class AuthService {
             expires_at: responseData.expires_at
           })}; expires=${expires.toUTCString()}; path=/; SameSite=Strict; Secure`;
           
-          console.log('AuthService.signUp - Cookie de session créé avec succès');
           
           return {
             user: {
@@ -84,8 +77,7 @@ export class AuthService {
       } catch (apiError) {
         console.error('AuthService.signUp - Erreur API REST:', apiError);
         
-        // Fallback vers le client Supabase
-        console.log('AuthService.signUp - Fallback vers le client Supabase...');
+      
         
         const { data: authData, error } = await supabase.auth.signUp({
           email: data.email,
@@ -117,7 +109,6 @@ export class AuthService {
         }
 
         if (authData.user) {
-          console.log('AuthService.signUp - Utilisateur créé via client:', authData.user.id);
           
           return {
             user: {
@@ -143,13 +134,7 @@ export class AuthService {
   // Connexion d'un utilisateur
   static async signIn(data: SignInData): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      console.log('AuthService.signIn - Début de la fonction');
-      console.log('Tentative de connexion pour:', data.email);
       
-      console.log('AuthService.signIn - Appel à supabase.auth.signInWithPassword...');
-      
-            // Utiliser directement l'API REST puisque le client se bloque
-      console.log('AuthService.signIn - Utilisation de l\'API REST directe...');
       
       try {
         const response = await fetch(`${config.supabase.url}/auth/v1/token?grant_type=password`, {
@@ -165,8 +150,7 @@ export class AuthService {
         });
         
         const responseData = await response.json();
-        console.log('AuthService.signIn - Réponse API REST:', responseData);
-        
+       
         if (response.ok && responseData.user) {
           // Récupérer les données du profil depuis la base de données
           const { data: profile, error: profileError } = await supabase
@@ -175,8 +159,7 @@ export class AuthService {
             .eq('id', responseData.user.id)
             .single();
 
-          console.log('AuthService.signIn - Profil récupéré:', profile);
-          console.log('AuthService.signIn - Erreur profil:', profileError);
+           console.log('AuthService.signIn - Erreur profil:', profileError);
 
           const userData = {
             id: responseData.user.id,
@@ -199,8 +182,7 @@ export class AuthService {
             expires_at: responseData.expires_at
           })}; expires=${expires.toUTCString()}; path=/; SameSite=Strict; Secure`;
           
-          console.log('AuthService.signIn - Utilisateur connecté via API REST:', userData);
-          console.log('AuthService.signIn - Cookie de session créé pour 1 mois');
+         
           return { user: userData, error: null };
         } else {
           console.error('AuthService.signIn - Erreur API REST:', responseData);
@@ -223,7 +205,7 @@ export class AuthService {
     try {
       // Supprimer le cookie de session
       document.cookie = 'supabase_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      console.log('signOut - Cookie de session supprimé');
+      
       return { error: null };
     } catch (error) {
       console.error('Erreur signOut:', error);
@@ -239,24 +221,21 @@ export class AuthService {
         .split('; ')
         .find(row => row.startsWith('supabase_session='));
       
-      if (!sessionCookie) {
-        console.log('getCurrentUser - Aucune session trouvée dans les cookies');
+      if (!sessionCookie) { 
         return { user: null, error: null };
       }
       
       const sessionData = JSON.parse(decodeURIComponent(sessionCookie.split('=')[1]));
-      console.log('getCurrentUser - Session récupérée depuis le cookie:', sessionData);
-      
+     
       // Vérifier si le token n'est pas expiré
-      if (sessionData.expires_at && sessionData.expires_at * 1000 < Date.now()) {
-        console.log('getCurrentUser - Token expiré, suppression du cookie');
+      if (sessionData.expires_at && sessionData.expires_at * 1000 < Date.now()) { 
         document.cookie = 'supabase_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         return { user: null, error: null };
       }
 
       // Si les données du profil sont manquantes, les récupérer depuis la base de données
       if (!sessionData.user.first_name && !sessionData.user.last_name) {
-        console.log('getCurrentUser - Données de profil manquantes, récupération depuis la DB');
+        
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -294,10 +273,7 @@ export class AuthService {
   // Mettre à jour le profil utilisateur
   static async updateProfile(userId: string, profileData: Partial<AuthUser>): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      console.log('AuthService.updateProfile - Mise à jour du profil pour:', userId);
-      console.log('AuthService.updateProfile - Données:', profileData);
-
-      // Récupérer la session actuelle
+     
       const sessionCookie = document.cookie
         .split('; ')
         .find(row => row.startsWith('supabase_session='));
@@ -329,9 +305,7 @@ export class AuthService {
         console.error('AuthService.updateProfile - Erreur DB:', dbError);
         return { user: null, error: 'Erreur lors de la mise à jour en base de données' };
       }
-
-      console.log('AuthService.updateProfile - Profil mis à jour en DB:', updatedProfile);
-      
+ 
       // Mettre à jour les données utilisateur dans la session
       const updatedUser = {
         ...sessionData.user,
@@ -348,8 +322,7 @@ export class AuthService {
         ...sessionData,
         user: updatedUser
       })}; expires=${expires.toUTCString()}; path=/; SameSite=Strict; Secure`;
-
-      console.log('AuthService.updateProfile - Profil mis à jour avec succès');
+ 
       return { user: updatedUser, error: null };
     } catch (error) {
       console.error('AuthService.updateProfile - Erreur:', error);

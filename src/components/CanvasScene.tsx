@@ -229,17 +229,9 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
 
             if (!is2DView || !showAllDimensions) return;
 
-            objects.forEach(obj => {
-                console.log('Checking object for dimensions:', {
-                    id: obj.id,
-                    details: obj.details,
-                    type: obj.type,
-                    scale: obj.scale,
-                    position: obj.position
-                });
+            objects.forEach(obj => { 
                 
-                if (obj.details.includes('mur') || obj.details.includes('Mur') || obj.type === 'wall') {
-                    console.log('Creating wall dimensions for:', obj.details);
+                if (obj.details.includes('mur') || obj.details.includes('Mur') || obj.type === 'wall') { 
                     // Affichage des dimensions pour les murs
                     const rotation = obj.rotation || [0, 0, 0];
                     const length = obj.scale[0];
@@ -267,9 +259,7 @@ const CanvasScene: React.FC<CanvasSceneProps> = ({
 
                     // Créer la ligne de dimension avec la même logique que RaycasterHandler
                     createDimensionLineForObject(scene, wallStart, wallEnd, length, 'L');
-                } else {
-                    console.log('Object not handled for dimensions:', obj.details, obj.type);
-                }
+                }  
             });
         }, [scene, objects, is2DView, showAllDimensions]);
 

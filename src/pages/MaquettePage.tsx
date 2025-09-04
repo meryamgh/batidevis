@@ -104,102 +104,94 @@ const MaquettePage: React.FC = () => {
             throw new Error('Format de données invalide');
         }
         
-        console.log('🔄 Chargement de la maquette avec', data.objects.length, 'objets');
-        console.log('📊 Données brutes reçues:', JSON.stringify(data, null, 2));
+        console.log('🔍 Chargement de la maquette avec', data.objects.length, 'objets');
         
-        // Vider la scène actuelle
+        // Nettoyer l'état actuel
         setObjects([]);
         setQuote([]);
         
         // Reconstruire avec les données
         const newObjects: ObjectData[] = [];
+        const newQuote: ObjectData[] = [];
         
-        for (const rawObjData of data.objects) {
-            console.log('🔍 Données brutes de l\'objet:', JSON.stringify(rawObjData, null, 2));
-            
+        for (const rawObjData of data.objects) { 
             const objData = cleanObjectData(rawObjData);
             
-            // Compensation des positions pour les murs créés avec useFloors
-            let adjustedPosition = objData.position;
-                // Les murs créés avec useFloors ont des positions divisées par 4.08
-                // Nous devons les multiplier par 4.08 pour retrouver les vraies positions
-                adjustedPosition = [
-                    objData.position[0] /2,
-                    objData.position[1] /2,
-                    objData.position[2] /2
-                ];
-                console.log('🔧 Compensation de position pour le mur:', {
-                    original: objData.position,
-                    adjusted: adjustedPosition
-                });
+            console.log('📦 Objet:', objData.id, 'Type:', objData.type, 'URL:', objData.url, 'Position:', objData.position);
             
+            // Distinguer les vrais objets 3D des lignes de devis pures
+            // Un objet 3D valide doit avoir une position 3D et une géométrie
+            const hasValid3DGeometry = objData.position && 
+                                     Array.isArray(objData.position) && 
+                                     objData.position.length === 3 &&
+                                     (objData.url || objData.type === 'floor' || objData.type === 'wall' || objData.type === 'ceiling' || objData.type === 'object');
             
-            console.log('🧹 Données nettoyées de l\'objet:', {
-                id: objData.id,
-                type: objData.type,
-                position: objData.position,
-                adjustedPosition: adjustedPosition,
-                scale: objData.scale,
-                rotation: objData.rotation,
-                url: objData.url
-            });
-
-            if (objData.url) {
-                try {
-                    const loader = new GLTFLoader();
-                    const gltf = await loader.loadAsync(objData.url);
+            if (hasValid3DGeometry) {
+                console.log('✅ Vrai objet 3D détecté, ajouté à la maquette');
+                // Les vrais objets 3D (murs, sols, etc.) vont dans la maquette
+                // Utiliser les positions originales sans compensation
+                const originalPosition = objData.position;
+                
+                if (objData.url) {
+                    try {
+                        const loader = new GLTFLoader();
+                        const gltf = await loader.loadAsync(objData.url);
+                        
+                        const newObject: ObjectData = {
+                            ...objData,
+                            position: originalPosition, // Utiliser la position originale
+                            gltf: gltf,
+                            isBatiChiffrageObject: objData.isBatiChiffrageObject || false
+                        };
+                        
+                        newObjects.push(newObject); 
+                        console.log('✅ Objet 3D chargé avec URL:', objData.url);
+                    } catch (error) {
+                        console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
+                    }
+                } else {
+                    const geometry = objData.type === 'floor' 
+                        ? new THREE.PlaneGeometry(1, 1)
+                        : new THREE.BoxGeometry(1, 1, 1);
+                    
+                    const material = new THREE.MeshStandardMaterial();
+                    const mesh = new THREE.Mesh(geometry, material);
                     
                     const newObject: ObjectData = {
                         ...objData,
-                        position: adjustedPosition, // Utiliser la position compensée
-                        gltf: gltf,
-                        isBatiChiffrageObject: objData.isBatiChiffrageObject || false
+                        position: originalPosition, // Utiliser la position originale
+                        gltf: mesh
                     };
                     
-                    newObjects.push(newObject);
-                    console.log('✅ Objet GLTF chargé:', newObject.id, 'à la position:', newObject.position);
-                } catch (error) {
-                    console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
+                    newObjects.push(newObject); 
+                    console.log('✅ Objet 3D chargé avec géométrie par défaut');
                 }
             } else {
-                const geometry = objData.type === 'floor' 
-                    ? new THREE.PlaneGeometry(1, 1)
-                    : new THREE.BoxGeometry(1, 1, 1);
-                
-                const material = new THREE.MeshStandardMaterial();
-                const mesh = new THREE.Mesh(geometry, material);
-                
-                const newObject: ObjectData = {
-                    ...objData,
-                    position: adjustedPosition, // Utiliser la position compensée
-                    gltf: mesh
-                };
-                
-                newObjects.push(newObject);
-                console.log('✅ Objet géométrique chargé:', newObject.id, 'à la position:', newObject.position);
+                console.log('🚫 Ligne de devis pure détectée, ajoutée au quote uniquement');
             }
+            
+            // TOUS les objets vont dans le quote (pour la cohérence)
+            newQuote.push({
+                ...objData,
+                gltf: undefined // Pas de représentation 3D dans le quote
+            });
         }
+         
+        console.log('📊 Résultat du chargement:');
+        console.log('  - Objets 3D chargés:', newObjects.length);
+        console.log('  - Éléments de devis chargés:', newQuote.length);
         
-        console.log('🎯 Mise à jour de la scène avec', newObjects.length, 'objets');
-        console.log('📋 Liste finale des objets avec positions:', newObjects.map(obj => ({
-            id: obj.id,
-            position: obj.position,
-            scale: obj.scale
-        })));
-        
-        setObjects(newObjects);
-        setQuote(newObjects);
+        // Mettre à jour les états séparément
+        setObjects(newObjects); // Seulement les vrais objets 3D
+        setQuote(newQuote); // Tous les éléments (pour la cohérence)
         
         // Appliquer les textures et faces après un délai pour s'assurer que les objets sont bien chargés
         setTimeout(() => {
-            console.log('🎨 Application des textures et faces pour', newObjects.length, 'objets');
             for (const obj of newObjects) {
-                if (obj.texture) {
-                    console.log('🎨 Application de la texture pour:', obj.id);
+                if (obj.texture) { 
                     objectsUtils.handleUpdateTexture(obj.id, obj.texture);
                 }
-                if (obj.faces) {
-                    console.log('🔲 Application des faces pour:', obj.id);
+                if (obj.faces) { 
                     objectsUtils.handleUpdateFaces(obj.id, obj.faces);
                 }
             }
@@ -213,8 +205,7 @@ const MaquettePage: React.FC = () => {
          
             // Recentrer la caméra après le chargement de la maquette
             setTimeout(() => {
-                if (orbitControlsRef.current) {
-                    console.log('🎥 Recentrage de la caméra après chargement de la maquette');
+                if (orbitControlsRef.current) { 
                     orbitControlsRef.current.reset();
                     orbitControlsRef.current.update();
                 }
@@ -222,31 +213,18 @@ const MaquettePage: React.FC = () => {
         }
         
         // Si des données de devis sont présentes, les stocker pour les passer à FullQuote
-        if (location.state?.devisData) {
-            console.log('📋 Données de devis reçues:', location.state.devisData);
+        if (location.state?.devisData) { 
             // Stocker les données du devis dans le localStorage pour les récupérer dans FullQuote
             localStorage.setItem('devisDataToLoad', JSON.stringify(location.state.devisData));
         }
     }, [location.state]);
 
-    // Vérifier que l'élément floating-panel existe au chargement
-    useEffect(() => {
-        const panel = document.getElementById('floating-panel');
-        console.log('🔍 Page loaded - floating-panel element exists:', !!panel);
-        if (panel) {
-            console.log('🔍 Panel initial display style:', panel.style.display);
-            console.log('🔍 Panel computed display style:', window.getComputedStyle(panel).display);
-        }
-    }, []);
+    
  
 
     // Fonction pour étendre un objet
     const handleExtendObject = useCallback((sourceObject: ObjectData, direction: 'left' | 'right' | 'front' | 'back' | 'up' | 'down') => {
-        console.log('handleExtendObject appelé avec:', {
-            sourceId: sourceObject.id,
-            sourcePosition: sourceObject.position,
-            direction
-        });
+      
 
         // Calculer la nouvelle position en fonction de la direction
         const getNewPosition = () => {
@@ -271,8 +249,7 @@ const MaquettePage: React.FC = () => {
             }
         };
 
-        const newPosition = getNewPosition();
-        console.log('Nouvelle position calculée:', newPosition);
+        const newPosition = getNewPosition(); 
 
         // Créer une copie exacte de l'objet source avec la nouvelle position
         const newObject: ObjectData = {
@@ -334,8 +311,7 @@ const MaquettePage: React.FC = () => {
     }, [selectedObjectId, closePanel]);
 
     const handleCopyObjects = useCallback((objectGroup: ObjectGroup) => {
-        setClipboard(objectGroup);
-        console.log('Objects copied to clipboard:', objectGroup);
+        setClipboard(objectGroup); 
     }, []);
 
     const handlePasteObjects = useCallback((objectGroup: ObjectGroup, targetPosition: [number, number, number]) => {
@@ -350,8 +326,7 @@ const MaquettePage: React.FC = () => {
     }, [closePanel]);
 
     // Nouvelle fonction pour désélectionner les objets quand on clique sur l'espace vide
-    const handleDeselect = useCallback(() => {
-        console.log('🎯 Deselecting objects - clicked on empty space');
+    const handleDeselect = useCallback(() => { 
         setSelectedObjectIds([]);
         setSelectedObjectId(null);
         setShowMultiSelectionPanel(false);
@@ -783,20 +758,15 @@ const MaquettePage: React.FC = () => {
 
     // Wrapper pour handleObjectClick qui utilise la fonction du hook
     const onObjectClick = useCallback((id: string, point?: THREE.Vector3) => { 
-        console.log('🎯 Object clicked:', id, point);
-        console.log('🔍 Current viewMode:', viewMode);
-        console.log('🔍 isCreatingSurface:', isCreatingSurface);
-        console.log('🔍 isMovingMultiple:', isMovingMultiple);
+
         
         // Arrêter le déplacement multiple si actif
-        if (isMovingMultiple) {
-            console.log('🛑 Stopping multiple movement');
+        if (isMovingMultiple) { 
             handleStopMovingMultiple();
             return;
         }
 
-        if (isCreatingSurface && point) {
-            console.log('🏗️ Creating surface mode');
+        if (isCreatingSurface && point) { 
             if (!surfaceStartPoint) {
                 // Premier clic : définir le point de départ
                 setSurfaceStartPoint(point);
@@ -817,14 +787,11 @@ const MaquettePage: React.FC = () => {
             }
         } else {
             // Gestion de la sélection multiple
-            const isCtrlPressed = false; // Cette valeur sera gérée par GLTFObject
-            console.log('🎯 Handling object selection, isCtrlPressed:', isCtrlPressed);
+            const isCtrlPressed = false; // Cette valeur sera gérée par GLTFObject 
             handleMultiSelect(id, isCtrlPressed);
             
             // Si c'est une sélection simple, afficher le panneau d'objet
-            if (!isCtrlPressed) {
-                console.log('📋 Calling handleObjectClick for single selection');
-                console.log('🔍 Available objects:', objects.map(obj => ({ id: obj.id, details: obj.details })));
+            if (!isCtrlPressed) { 
                 objectsUtils.handleObjectClick(id, viewMode, renderObjectPanel);
             }
         }
@@ -1075,11 +1042,7 @@ const MaquettePage: React.FC = () => {
                         objData.position[0] /2,
                         objData.position[1] /2,
                         objData.position[2] /2
-                    ];
-                    console.log('🔧 Compensation de position pour le mur (reconstruct):', {
-                        original: objData.position,
-                        adjusted: adjustedPosition
-                    });
+                    ]; 
                 
                 
                 if (objData.url) {
@@ -1270,8 +1233,7 @@ const MaquettePage: React.FC = () => {
 
     // Fonction pour gérer la sélection d'une texture
     const handleTextureSelect = (textureUrl: string) => {
-        setSelectedTexture(textureUrl);
-        console.log('Texture sélectionnée:', textureUrl);
+        setSelectedTexture(textureUrl); 
         
         // Si un objet est sélectionné, appliquer la texture à cet objet
         if (selectedObjectId) {

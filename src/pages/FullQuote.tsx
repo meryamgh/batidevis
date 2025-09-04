@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf';
 import { BACKEND_URL } from '../config/env';
 import { useAuth } from '../hooks/useAuth';
 import { DevisService, DevisData } from '../services/DevisService';
+import { generateUniqueId } from '../utils/generateUniqueId';
 // YouSign API client
 class YouSignClient {
   private BASE_URL = 'https://api-sandbox.yousign.app/v3';
@@ -225,10 +226,7 @@ const FullQuote: React.FC = () => {
         setAggregatedQuote(newQuote);
     };
 
-    // Monitor suggestions changes
-    useEffect(() => {
-        console.log("Suggestions state updated:", suggestions);
-    }, [suggestions]);
+    
 
     // Paramètres de TVA, Acompte
     const tvaRate = 0.20; 
@@ -242,9 +240,58 @@ const FullQuote: React.FC = () => {
 
     const handleBack = () => {
         // Sauvegarder les données du devis avant de partir
-        saveDevisDataToLocalStorage();
-        console.log('💾 Données du devis sauvegardées avant navigation vers maquette');
+        saveDevisDataToLocalStorage(); 
+        
+        // Synchroniser les données du devis avec le store maquetteStore
+        // Convertir aggregatedQuote en format compatible avec ObjectData
+        const updatedQuote = aggregatedQuote.map((item, index) => {
+            // Vérifier si c'est un élément existant de la maquette
+            // Utiliser une correspondance plus robuste basée sur l'ID si disponible
+            const existingItem = quote.find(q => 
+                q.id && q.id.startsWith('devis-item-') && 
+                q.details === item.details && 
+                q.price === item.price
+            );
+            
+            if (existingItem) {
+                // Garder les propriétés originales de l'élément existant
+                return {
+                    ...existingItem,
+                    price: item.price,
+                    details: item.details
+                };
+            } else {
+                // Créer un nouvel élément de devis
+                return {
+                    id: generateUniqueId(`devis-item-${index}`),
+                    url: '', // Pas d'URL pour les éléments de devis
+                    price: item.price,
+                    details: item.details,
+                    position: [0, 0, 0] as [number, number, number], // Position par défaut
+                    scale: [1, 1, 1] as [number, number, number], // Échelle par défaut
+                    texture: null,
+                    rotation: [0, 0, 0] as [number, number, number], // Rotation par défaut
+                    color: '#ffffff',
+                    startPoint: null,
+                    endPoint: null,
+                    parentScale: [1, 1, 1] as [number, number, number],
+                    boundingBox: null,
+                    faces: null,
+                    type: 'devis-item' as const,
+                    parametricData: null,
+                    isBatiChiffrageObject: false
+                };
+            }
+        });
+        
+        // Mettre à jour le store avec les nouvelles données du devis
+        // Passer aussi l'ordre exact des éléments
+        syncObjectsAndQuote(updatedQuote);
+        
+        // Attendre un court instant pour s'assurer que la sauvegarde est terminée
+        setTimeout(() => {
         navigate('/maquette'); 
+        }, 100);
     };
 
     // Function to add a new empty row to the quote
@@ -255,19 +302,14 @@ const FullQuote: React.FC = () => {
             quantity: 1,
             isNew: true
         };
-        // Ajouter après les frais obligatoires (en position 2 ou plus)
-        const fraisObligatoiresCount = aggregatedQuote.filter(item => 
-            item.details.includes('Frais de déplacement') || item.details.includes('Taux horaire')
-        ).length;
         
         setAggregatedQuote(prev => {
-            const newArray = [...prev];
-            newArray.splice(fraisObligatoiresCount, 0, newItem);
+            const newArray = [...prev, newItem];
             return newArray;
         });
         
         // Automatically start editing the new row
-        const newIndex = fraisObligatoiresCount;
+        const newIndex = aggregatedQuote.length;
         setEditingCell({rowIndex: newIndex, field: 'details'});
         setEditValue("Nouveau produit");
     };
@@ -284,11 +326,8 @@ const FullQuote: React.FC = () => {
             setCurrentSuggestionData(null);
             return;
         }
-
-        console.log("Fetching suggestions for:", query);
-        console.log("fetchSuggestions", fetchSuggestions)
-        setIsFetchingSuggestions(true);
-        console.log("isFetchingSuggestions", isFetchingSuggestions)
+ 
+        setIsFetchingSuggestions(true); 
         try {
               const response = await fetch(`${BACKEND_URL}/api/search`, {
                 method: 'POST',
@@ -299,12 +338,10 @@ const FullQuote: React.FC = () => {
                 mode: 'cors',
                 body: JSON.stringify({ query }),
             });
-
-            console.log("API response status:", response.status);
+ 
             
             if (response.ok) {
-                const data: ApiSuggestionResponse = await response.json();
-                console.log("API response data:", data);
+                const data: ApiSuggestionResponse = await response.json(); 
                 
                 if (data.matches && data.matches.length > 0) {
                     // Stocker les données complètes de toutes les suggestions
@@ -315,13 +352,11 @@ const FullQuote: React.FC = () => {
                     
                     setSuggestions(formattedSuggestions.map(s => s.display));
                     setCurrentSuggestionData(formattedSuggestions.map(s => s.data));
-                } else {
-                    console.log("No matches found in response");
+                } else { 
                     setSuggestions([]);
                     setCurrentSuggestionData(null);
                 }
-            } else {
-                console.log('No suggestions found - response not OK');
+            } else { 
                 setSuggestions([]);
                 setCurrentSuggestionData(null);
             }
@@ -606,9 +641,7 @@ const FullQuote: React.FC = () => {
     };
 
     // Fonction pour récupérer les frais de déplacement depuis l'API
-    const fetchFraisDeplacement = async () => {
-      console.log(fraisDeplacement);
-      console.log(tauxHoraire);
+    const fetchFraisDeplacement = async () => { 
         try {
             const response = await fetch(`${BACKEND_URL}/api/frais/deplacement`);
             if (response.ok) {
@@ -648,11 +681,11 @@ const FullQuote: React.FC = () => {
 
     // Charger les données du devis depuis le localStorage si elles existent
     useEffect(() => {
+        // Vérifier d'abord s'il y a des données à charger depuis la navigation
         const devisDataToLoad = localStorage.getItem('devisDataToLoad');
         if (devisDataToLoad) {
             try {
-                const devisData = JSON.parse(devisDataToLoad);
-                console.log('📋 Chargement des données du devis depuis le localStorage:', devisData);
+                const devisData = JSON.parse(devisDataToLoad); 
                 
                 // Charger les informations du devis
                 if (devisData.info) {
@@ -677,8 +710,7 @@ const FullQuote: React.FC = () => {
                 }
                 
                 // Charger les lignes du devis
-                if (devisData.lines && Array.isArray(devisData.lines)) {
-                    console.log('📋 Chargement des lignes du devis:', devisData.lines);
+                if (devisData.lines && Array.isArray(devisData.lines)) { 
                     setAggregatedQuote(devisData.lines);
                 }
                 
@@ -690,8 +722,7 @@ const FullQuote: React.FC = () => {
                 }
                 
                 // Nettoyer le localStorage après chargement
-                localStorage.removeItem('devisDataToLoad');
-                console.log('✅ Données du devis chargées avec succès');
+                localStorage.removeItem('devisDataToLoad'); 
                 
             } catch (error) {
                 console.error('❌ Erreur lors du chargement des données du devis:', error);
@@ -702,8 +733,7 @@ const FullQuote: React.FC = () => {
             const autoSavedData = localStorage.getItem('devisDataAutoSave');
             if (autoSavedData) {
                 try {
-                    const devisData = JSON.parse(autoSavedData);
-                    console.log('📋 Chargement des données auto-sauvegardées:', devisData);
+                    const devisData = JSON.parse(autoSavedData); 
                     
                     // Charger les informations du devis
                     if (devisData.info) {
@@ -728,8 +758,7 @@ const FullQuote: React.FC = () => {
                     }
                     
                     // Charger les lignes du devis
-                    if (devisData.lines && Array.isArray(devisData.lines)) {
-                        console.log('📋 Chargement des lignes auto-sauvegardées:', devisData.lines);
+                    if (devisData.lines && Array.isArray(devisData.lines)) { 
                         setAggregatedQuote(devisData.lines);
                     }
                     
@@ -739,8 +768,7 @@ const FullQuote: React.FC = () => {
                             setAcompteRate(devisData.totals.acompteRate);
                         }
                     }
-                    
-                    console.log('✅ Données auto-sauvegardées chargées avec succès');
+                     
                     
                 } catch (error) {
                     console.error('❌ Erreur lors du chargement des données auto-sauvegardées:', error);
@@ -748,6 +776,53 @@ const FullQuote: React.FC = () => {
             }
         }
     }, []);
+
+    // Ajouter un useEffect pour recharger les données quand le composant est monté
+    useEffect(() => {
+        // Vérifier s'il y a des données auto-sauvegardées récentes
+        const autoSavedData = localStorage.getItem('devisDataAutoSave');
+        if (autoSavedData) {
+            try {
+                const devisData = JSON.parse(autoSavedData); 
+                
+                // Mettre à jour les informations du devis seulement si elles ne sont pas déjà définies
+                if (devisData.info) {
+                    if (devoTitle === 'BatiDevis') setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
+                    if (devoName === 'Chen Emma') setDevoName(devisData.info.devoName || 'Chen Emma');
+                    if (devoAddress === '73 Rue Rateau') setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
+                    if (devoCity === '93120 La Courneuve, France') setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
+                    if (devoSiren === 'SIREN : 000.000.000.000') setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+                    if (societeBatiment === 'Société Bâtiment') setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
+                    if (clientAdresse === '20 rue le blanc') setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
+                    if (clientCodePostal === '75013 Paris') setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
+                    if (clientTel === '0678891223') setClientTel(devisData.info.clientTel || '0678891223');
+                    if (clientEmail === 'sociétébatiment@gmail.com') setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+                    if (devisNumero === generateUniqueDevisNumber()) setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
+                    if (enDateDu === '05/10/2024') setEnDateDu(devisData.info.enDateDu || '05/10/2024');
+                    if (valableJusquau === '04/12/2024') setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
+                    if (debutTravaux === '05/10/2024') setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
+                    if (dureeTravaux === '1 jour') setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
+                    if (fraisDeplacement === '') setFraisDeplacement(devisData.info.fraisDeplacement || '');
+                    if (tauxHoraire === '') setTauxHoraire(devisData.info.tauxHoraire || '');
+                    if (isDevisGratuit === true) setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                }
+                
+                // Mettre à jour les lignes du devis seulement si elles ne sont pas déjà définies
+                if (devisData.lines && Array.isArray(devisData.lines) && aggregatedQuote.length === 0) { 
+                    setAggregatedQuote(devisData.lines);
+                }
+                
+                // Mettre à jour le taux d'acompte seulement s'il n'est pas déjà défini
+                if (devisData.totals && devisData.totals.acompteRate !== undefined && acompteRate === 0.30) {
+                    setAcompteRate(devisData.totals.acompteRate);
+                }
+                 
+                
+            } catch (error) {
+                console.error('❌ Erreur lors du rechargement des données auto-sauvegardées:', error);
+            }
+        }
+    }, [devoTitle, devoName, devoAddress, devoCity, devoSiren, societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail, devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux, fraisDeplacement, tauxHoraire, isDevisGratuit, aggregatedQuote.length, acompteRate]);
 
     // Fonction pour sauvegarder automatiquement les données du devis
     const saveDevisDataToLocalStorage = () => {
@@ -785,8 +860,7 @@ const FullQuote: React.FC = () => {
             }
         };
         
-        localStorage.setItem('devisDataAutoSave', JSON.stringify(devisData));
-        console.log('💾 Données du devis sauvegardées automatiquement');
+        localStorage.setItem('devisDataAutoSave', JSON.stringify(devisData)); 
     };
 
     // Sauvegarder automatiquement les données du devis à chaque changement
@@ -1177,8 +1251,7 @@ const FullQuote: React.FC = () => {
               // Stocker les données dans l'état des catégories
               setCategoriesData(prev => ({ ...prev, [category_id]: data }));
               // Afficher les données
-              setData(data);
-              console.log(data);
+              setData(data); 
           } else {
               console.error('Erreur lors de la récupération des données de la catégorie');
           }
@@ -1320,8 +1393,7 @@ const FullQuote: React.FC = () => {
             
             // 2. Initiate the signature request
             const signatureRequest = await youSignClient.initiateSignatureRequest(`Devis n° ${devisNumero} - ${societeBatiment}`);
-            setSignatureRequestId(signatureRequest.id);
-            console.log("signatureRequest", signatureRequestId)
+            setSignatureRequestId(signatureRequest.id); 
             // 3. Upload the document
             const documentResponse = await youSignClient.uploadDocument(signatureRequest.id, file);
 
@@ -1359,8 +1431,7 @@ const FullQuote: React.FC = () => {
                         signatureRequest.id,
                         signerResponse.signature_link
                     );
-                    
-                    console.log('Devis sauvegardé et statut mis à jour:', savedDevis);
+                     
               }
                 
            
@@ -1517,8 +1588,7 @@ const FullQuote: React.FC = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const result = await response.text();
-        console.log("Email sent successfully:", result);
+        const result = await response.text(); 
         alert("La facture a été envoyée avec succès par email!");
         setShowInvoiceEmailModal(false);
       } catch (error) {
@@ -1593,26 +1663,14 @@ const FullQuote: React.FC = () => {
         }
 
         setIsSavingDevis(true);
-        try {
-            // Synchroniser les objets et le quote avant la sauvegarde
-            console.log('🔄 Synchronisation des objets et du quote avant sauvegarde');
+        try { 
             syncObjectsAndQuote();
             
             const devisData = prepareDevisData();
-            
-            // Préparer les données de la maquette
-            console.log('💾 Préparation des données de maquette pour sauvegarde:', quote.length, 'objets');
-            
+             
             const maquetteData = {
                 objects: quote.map((obj: any) => {
-                    console.log('📦 Objet à sauvegarder:', {
-                        id: obj.id,
-                        details: obj.details,
-                        position: obj.position,
-                        scale: obj.scale,
-                        rotation: obj.rotation,
-                        type: obj.type
-                    });
+                  
                     
                     return {
                         id: obj.id,

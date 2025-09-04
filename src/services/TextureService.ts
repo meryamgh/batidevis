@@ -29,8 +29,7 @@ const formatTextureName = (filename: string): string => {
 
 // Fonction pour récupérer les textures depuis l'API
 export const fetchTextures = async (): Promise<TextureItem[]> => {
-  try {
-    console.log("Fetching textures from API...");
+  try { 
         const response = await fetch(`${BACKEND_URL}/api/textures`, {
       method: "GET", 
       headers: {
@@ -38,9 +37,7 @@ export const fetchTextures = async (): Promise<TextureItem[]> => {
       }
     });
     const data = await response.json();
-    
-    // Afficher la structure complète de la réponse pour le débogage
-    console.log("Structure complète de la réponse API:", JSON.stringify(data, null, 2));
+     
     
     if (response.ok) {
       // Format spécifique basé sur la réponse partagée par l'utilisateur

@@ -22,8 +22,7 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        const fetchFiles = async () => {
-            console.log("Début de fetchFiles pour objets décoratifs");
+        const fetchFiles = async () => { 
             try {
                 const response = await fetch(`${BACKEND_URL}/list_files`);
                 const data = await response.json();
@@ -35,8 +34,7 @@ const DecorativeObjectSelector: React.FC<DecorativeObjectSelectorProps> = ({
                     }));
                     // Ne garder que les objets décoratifs
                     const decorativeObjects = newObjects.filter((obj: ObjectFile) => !obj.isBatiChiffrageObject);
-                    setObjects(decorativeObjects);
-                    console.log("Objets décoratifs chargés:", decorativeObjects);
+                    setObjects(decorativeObjects); 
                 } else {
                     console.error("Error fetching files:", data.error);
                 }

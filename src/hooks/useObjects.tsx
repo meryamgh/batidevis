@@ -152,14 +152,12 @@ export const useObjects = ({
             newObject.parametricData = parametricData;
             const prix = parametricData.item_details.prix;
             newObject.price = prix;
-            newObject.isBatiChiffrageObject = true;
-            console.log("newObject", newObject.isBatiChiffrageObject);
+            newObject.isBatiChiffrageObject = true; 
           }
         } catch (error) {
           console.error('Error fetching parametric data:', error);
         }
-      }
-      console.log("New object:", newObject);
+      } 
       
       // Ajouter d'abord au devis
       setQuote(prevQuote => [...prevQuote, newObject]);
@@ -178,8 +176,7 @@ export const useObjects = ({
       // Use an immediately invoked async function to handle the async operation
       (async () => {
         try {
-          const parametricData = await fetchParametricData(object.details);
-          console.log("Parametric data:", parametricData);
+          const parametricData = await fetchParametricData(object.details); 
           if (parametricData) {
             // Update the object with parametric data
             setObjects(prevObjects => prevObjects.map(obj => 
@@ -208,14 +205,12 @@ export const useObjects = ({
     setIsMoving(null);
   }, [ setQuote, setIsMoving]);
 
-  const handleUpdatePosition = (id: string, position: [number, number, number]) => {
-    console.log("Updating position in useObjects:", id, position);
+  const handleUpdatePosition = (id: string, position: [number, number, number]) => { 
     
     // Mettre à jour les deux listes (objects et quote) pour maintenir la synchronisation
     setObjects((prev) =>
       prev.map((obj) => {
-        if (obj.id === id) {
-          console.log("Found object to update in objects:", obj.id, "new position:", position);
+        if (obj.id === id) { 
           return { ...obj, position };
         }
         return obj;
@@ -224,8 +219,7 @@ export const useObjects = ({
     
     setQuote((prev) =>
       prev.map((obj) => {
-        if (obj.id === id) {
-          console.log("Found object to update in quote:", obj.id, "new position:", position);
+        if (obj.id === id) { 
           return { ...obj, position };
         }
         return obj;
@@ -327,8 +321,7 @@ export const useObjects = ({
   const handleUpdateScale = (id: string, newScale: [number, number, number]) => {
     setObjects((prevObjects) => {
       return prevObjects.map((obj) => {
-        if (obj.id === id) {
-          console.log("Found object to update scale:", obj.id);
+        if (obj.id === id) { 
           // Vérifier si l'objet a une boundingBox et une échelle existante
           if (obj.boundingBox && obj.scale) {
             // Arrondir les nouvelles valeurs d'échelle au millimètre près
@@ -423,8 +416,7 @@ export const useObjects = ({
         }
         return item;
       });
-    });
-    console.log("Objects after update:", objects);
+    }); 
   };
 
   
@@ -481,35 +473,24 @@ export const useObjects = ({
     viewMode: '3D' | '2D' | 'ObjectOnly',
     renderObjectPanel: (selectedObject: ObjectData) => void
   ) => {
-    console.log('🔍 handleObjectClick called with:', { id, viewMode });
-    console.log('🔍 Available objects:', objects.map(obj => ({ id: obj.id, details: obj.details })));
     
-    if (viewMode === 'ObjectOnly') {
-      console.log('🎯 Setting focused object ID:', id);
+    if (viewMode === 'ObjectOnly') { 
       setFocusedObjectId(id);
     }
 
-    const selectedObject = objects.find((obj) => obj.id === id);
-    console.log('🔍 Selected object found:', !!selectedObject);
+    const selectedObject = objects.find((obj) => obj.id === id);  
     
-    if (selectedObject) {
-      console.log('🎨 Calling renderObjectPanel with:', selectedObject.details);
+    if (selectedObject) { 
       renderObjectPanel(selectedObject);
     } else {
       console.warn('⚠️ No object found with ID:', id);
     }
   }, [objects, setFocusedObjectId]);
 
-  const handleUpdateFaces = useCallback((id: string, faces: FacesData) => {
-    console.log('handleUpdateFaces called with:', { id, faces });
+  const handleUpdateFaces = useCallback((id: string, faces: FacesData) => { 
     
     const updateObject = (obj: ObjectData) => {
-      if (obj.id === id) {
-        console.log('Updating object faces:', {
-          objectId: obj.id,
-          oldFaces: obj.faces,
-          newFaces: faces
-        });
+      if (obj.id === id) { 
         
         // Créer un nouvel objet faces en ne conservant que les propriétés définies
         const cleanedFaces = Object.entries(faces).reduce((acc, [faceName, faceData]) => {
@@ -549,8 +530,7 @@ export const useObjects = ({
         item.id === id ? { ...item, price : price, parametricData : object } : item
       )
     );
-    
-    console.log("Objects after update:", object);
+     
   }
 
   // Nouvelles fonctions pour la sélection multiple et le copier-coller

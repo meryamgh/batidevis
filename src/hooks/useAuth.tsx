@@ -70,10 +70,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signIn = async (data: SignInData): Promise<{ success: boolean; error?: string }> => {
-    try {
-      console.log('useAuth signIn appelé avec:', data);
-      const { user: authUser, error } = await AuthService.signIn(data);
-      console.log('useAuth signIn résultat:', { authUser, error });
+    try { 
+      const { user: authUser, error } = await AuthService.signIn(data); 
       
       if (error) {
         console.error('useAuth signIn erreur:', error);
@@ -81,7 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       if (authUser) {
-        console.log('useAuth signIn utilisateur défini:', authUser);
+        
         setUser(authUser);
         return { success: true };
       } else {
