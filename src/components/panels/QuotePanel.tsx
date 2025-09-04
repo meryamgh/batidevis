@@ -204,9 +204,9 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
         </div>
       )}
 
-{quote.length > 0 && (
+      {quote.length > 0 && (
         <div style={totalStyle}>
-          Total: {formatNumber(quote.reduce((sum, item) => sum + item.price, 0))} €
+          Total: {formatNumber(quote.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0))} €
         </div>
       )}
       
@@ -235,7 +235,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                     color: '#6c757d',
                     marginTop: '4px'
                   }}>
-                {formatNumber(item.price)} €
+                {item.quantity && item.quantity > 1 ? `${item.quantity} x ` : ''}{formatNumber(item.price)} € {item.quantity && item.quantity > 1 ? `= ${formatNumber(item.price * item.quantity)} €` : ''}
                   </div>
                 </div>
                 <div style={buttonsContainerStyle}>
@@ -283,7 +283,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
       
       {quote.length > 0 && (
         <div style={totalStyle}>
-          Total: {formatNumber(quote.reduce((sum, item) => sum + item.price, 0))} €
+          Total: {formatNumber(quote.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0))} €
         </div>
       )}
       

@@ -49,4 +49,5 @@ export type ObjectData = {
     type?: 'wall' | 'floor' | 'object' | 'ceiling' | 'devis-item';  
     parametricData?: any; 
     isBatiChiffrageObject : boolean;
+    quantity?: number; // Ajout du champ quantity pour les devis
 };

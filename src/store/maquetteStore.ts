@@ -64,7 +64,8 @@ export const useMaquetteStore = create<MaquetteState>((set) => ({
                 type: 'devis-item' as const,
                 parametricData: undefined, // Utiliser undefined au lieu de null
                 isBatiChiffrageObject: false,
-                gltf: undefined // Exclure gltf de quote car il ne peut pas être sérialisé
+                gltf: undefined, // Exclure gltf de quote car il ne peut pas être sérialisé
+                quantity: item.quantity || 1 // Préserver la quantité
             }));
             
             // Mettre à jour UNIQUEMENT le quote, pas les objects
@@ -76,7 +77,8 @@ export const useMaquetteStore = create<MaquetteState>((set) => ({
             // Sinon, synchroniser quote avec objects comme avant
             const syncedQuote = state.objects.map(obj => ({
                 ...obj,
-                gltf: undefined // Exclure gltf de quote car il ne peut pas être sérialisé
+                gltf: undefined, // Exclure gltf de quote car il ne peut pas être sérialisé
+                quantity: obj.quantity || 1 // Préserver la quantité si elle existe
             }));
             return { quote: syncedQuote };
         }

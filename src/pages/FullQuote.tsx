@@ -208,9 +208,16 @@ const FullQuote: React.FC = () => {
           (i) => i.details === details && i.price === item.price
       );
       if (existingItem) {
-          existingItem.quantity += 1; 
+          // Si l'élément existe déjà, ajouter la quantité existante ou 1
+          existingItem.quantity += item.quantity || 1; 
       } else {
-          acc.push({ details: details, price: item.price, quantity: 1, unit: unit }); 
+          // Utiliser la quantité existante de l'item ou 1 par défaut
+          acc.push({ 
+              details: details, 
+              price: item.price, 
+              quantity: item.quantity || 1, 
+              unit: unit 
+          }); 
       }
       return acc;
     }, [] as AggregatedQuoteItem[]);
@@ -255,14 +262,15 @@ const FullQuote: React.FC = () => {
             );
             
             if (existingItem) {
-                // Garder les propriétés originales de l'élément existant
+                // Garder les propriétés originales de l'élément existant et ajouter la quantité
                 return {
                     ...existingItem,
                     price: item.price,
-                    details: item.details
+                    details: item.details,
+                    quantity: item.quantity // Préserver la quantité
                 };
             } else {
-                // Créer un nouvel élément de devis
+                // Créer un nouvel élément de devis avec la quantité
                 return {
                     id: generateUniqueId(`devis-item-${index}`),
                     url: '', // Pas d'URL pour les éléments de devis
@@ -280,7 +288,8 @@ const FullQuote: React.FC = () => {
                     faces: null,
                     type: 'devis-item' as const,
                     parametricData: null,
-                    isBatiChiffrageObject: false
+                    isBatiChiffrageObject: false,
+                    quantity: item.quantity // Ajouter la quantité
                 };
             }
         });
