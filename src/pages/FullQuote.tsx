@@ -557,8 +557,15 @@ const FullQuote: React.FC = () => {
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const newLogo = e.target.files[0];
-            const objectUrl = URL.createObjectURL(newLogo);
-            setLeftLogoSrc(objectUrl);
+            
+            // Convertir l'image en base64 pour une persistance fiable
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target?.result) {
+                    setLeftLogoSrc(event.target.result as string);
+                }
+            };
+            reader.readAsDataURL(newLogo);
         }
         // Réinitialiser l'input pour permettre le même fichier
         if (fileInputRef.current) {
@@ -675,6 +682,10 @@ const FullQuote: React.FC = () => {
                     setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                     setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
                     setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                    // Restaurer le logo s'il existe
+                    if (devisData.info.logo) {
+                        setLeftLogoSrc(devisData.info.logo);
+                    }
                 }
                 
                 // Charger les lignes du devis
@@ -721,6 +732,10 @@ const FullQuote: React.FC = () => {
                         setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                         setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
                         setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                        // Restaurer le logo s'il existe
+                        if (devisData.info.logo) {
+                            setLeftLogoSrc(devisData.info.logo);
+                        }
                     }
                     
                     // Charger les lignes du devis
@@ -768,7 +783,12 @@ const FullQuote: React.FC = () => {
                     if (valableJusquau === '04/12/2024') setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
                     if (debutTravaux === '05/10/2024') setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                     if (dureeTravaux === '1 jour') setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
-                    if (isDevisGratuit === true) setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                    // Restaurer le logo seulement s'il n'y en a pas déjà un
+                    if (leftLogoSrc === '' && devisData.info.logo) {
+                        setLeftLogoSrc(devisData.info.logo);
+                    }
+                    // Ne pas écraser isDevisGratuit depuis ce useEffect pour éviter les conflits
+                    // Cette logique est gérée par le useEffect principal au montage du composant
                 }
                 
                 // Mettre à jour les lignes du devis seulement si elles ne sont pas déjà définies
@@ -786,7 +806,7 @@ const FullQuote: React.FC = () => {
                 console.error('❌ Erreur lors du rechargement des données auto-sauvegardées:', error);
             }
         }
-    }, [devoTitle, devoName, devoAddress, devoCity, devoSiren, societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail, devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux, isDevisGratuit, aggregatedQuote.length, acompteRate]);
+    }, [devoTitle, devoName, devoAddress, devoCity, devoSiren, societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail, devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux, aggregatedQuote.length, acompteRate]);
 
     // Fonction pour sauvegarder automatiquement les données du devis
     const saveDevisDataToLocalStorage = () => {
