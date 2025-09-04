@@ -224,6 +224,7 @@ const FullQuote: React.FC = () => {
         const newQuote = [...aggregatedQuote];
         newQuote.splice(index, 1);
         setAggregatedQuote(newQuote);
+    
     };
 
     
@@ -328,6 +329,7 @@ const FullQuote: React.FC = () => {
         }
  
         setIsFetchingSuggestions(true); 
+        console.log(isFetchingSuggestions)
         try {
               const response = await fetch(`${BACKEND_URL}/api/search`, {
                 method: 'POST',
@@ -1394,6 +1396,7 @@ const FullQuote: React.FC = () => {
             // 2. Initiate the signature request
             const signatureRequest = await youSignClient.initiateSignatureRequest(`Devis n° ${devisNumero} - ${societeBatiment}`);
             setSignatureRequestId(signatureRequest.id); 
+            console.log(signatureRequestId)
             // 3. Upload the document
             const documentResponse = await youSignClient.uploadDocument(signatureRequest.id, file);
 
@@ -1589,6 +1592,7 @@ const FullQuote: React.FC = () => {
         }
         
         const result = await response.text(); 
+        console.log(result)
         alert("La facture a été envoyée avec succès par email!");
         setShowInvoiceEmailModal(false);
       } catch (error) {

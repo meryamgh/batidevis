@@ -557,6 +557,7 @@ const GLTFObject: React.FC<GLTFObjectProps> = ({
             });
 
             setMeshesWithOutlines(newMeshesWithOutlines); 
+            console.log(meshesWithOutlines);
             // Nettoyage lors du démontage
             return () => {
                 newMeshesWithOutlines.forEach(({ mesh, helper }) => {

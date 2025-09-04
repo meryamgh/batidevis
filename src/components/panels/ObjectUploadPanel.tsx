@@ -14,6 +14,7 @@ const ObjectUpload = ({ onClose }: { onClose?: () => void }) => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && onClose) {
         onClose();
+        console.log(previewUrl)
       }
     };
 

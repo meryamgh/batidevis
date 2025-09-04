@@ -234,6 +234,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
             }
 
             setLastExtendedObject(newObject);
+            console.log(lastExtendedObject);
             setExtendedObjects(prev => [...prev, newObject]);
         } catch (error) {
             console.error("Erreur lors de l'extension de l'objet:", error);

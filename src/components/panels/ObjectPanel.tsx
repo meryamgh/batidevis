@@ -565,11 +565,21 @@ const ObjectPanel: React.FC<ObjectPanelProps> = ({
             setDepth(object.scale[2]);
             setRotation(object.rotation || [0, 0, 0]);
             setPosition(object.position);
-            
+            console.log(width)
+            console.log(height)
+            console.log(depth)
+            console.log(texture)
+            console.log(color)
+            console.log(roomHeight)
+            console.log(lastExtendedObject)
+            console.log(disabledOptions)
+            console.log(position)
             if (isFloor) {
                 setRoomWidth(object.scale[0]);
                 setRoomLength(object.scale[2]);
                 setRoomHeight(3);
+                console.log(roomLength)
+                console.log(roomWidth)
             }
         }
     }, [object, isFloor]);

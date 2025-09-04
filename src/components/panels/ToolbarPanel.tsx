@@ -125,12 +125,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         // Debug: Vérifier l'authentification via le service
         await MaquetteService.debugAuth();
         
-        const savedMaquette = await MaquetteService.saveMaquetteWithUserId(
-            maquetteName,
-            exportData,
-            user.id,
-            `Maquette créée le ${new Date().toLocaleDateString('fr-FR')}`
-        );
+        
          
         alert(`Maquette "${maquetteName}" sauvegardée avec succès !`);
     } catch (error) {
