@@ -27,9 +27,10 @@ import { useAuth } from '../hooks/useAuth';
 import { MaquetteService } from '../services/MaquetteService';
 import { useLocation } from 'react-router-dom';
 const MaquettePage: React.FC = () => {
-    const { objects, quote, setObjects, setQuote, removeObject } = useMaquetteStore();
+    const { objects, quote, setObjects, setQuote } = useMaquetteStore();
     const { user } = useAuth();
     const location = useLocation();
+    const removeObject = useMaquetteStore(state => state.removeObject);
     const raycaster = useRef(new THREE.Raycaster()); 
     const [showUpload, setShowUpload] = useState(false);
     const [showObjectUpload, setShowObjectUpload] = useState(false);
@@ -275,30 +276,36 @@ const MaquettePage: React.FC = () => {
             }
         }
         
-        // Combiner les objets de la maquette (sans les lignes de devis) avec les lignes de devis préservées
-        // Éviter les doublons en filtrant les éléments avec des détails et prix identiques
-        const combinedQuote = [...maquetteQuoteItems];
+        // Combiner intelligemment les objets de la maquette avec les lignes de devis préservées
+        const combinedQuote: ObjectData[] = [];
         
-        // Ajouter les lignes de devis uniquement si elles ne correspondent pas à un objet 3D existant
+        // 1. D'abord, ajouter toutes les lignes de devis (y compris celles qui correspondent à des objets 3D)
         for (const devisLine of devisLines) {
-            // Vérifier si un objet 3D avec le même nom existe déjà
-            const correspondingObject = combinedQuote.find(item => 
-                item.details === devisLine.details || 
-                (item.url && item.url.includes(devisLine.details))
+            // Vérifier si cette ligne de devis correspond à un objet 3D existant
+            const correspondingObject = maquetteQuoteItems.find(item => 
+                item.id === devisLine.id || 
+                (item.details === devisLine.details && item.type === devisLine.type)
             );
             
             if (correspondingObject) {
-                // Fusionner les données : garder l'objet 3D mais avec les infos prix du devis
-                console.log('🔄 Fusion objet 3D + ligne devis pour:', devisLine.details);
-                correspondingObject.price = devisLine.price;
-                correspondingObject.quantity = devisLine.quantity;
-                correspondingObject.unit = devisLine.unit || correspondingObject.unit;
+                // Fusionner : utiliser l'objet 3D mais avec les données de prix du devis
+                const mergedItem = {
+                    ...correspondingObject,
+                    price: devisLine.price,
+                    quantity: devisLine.quantity,
+                    unit: devisLine.unit
+                };
+                combinedQuote.push(mergedItem);
+                console.log('🔄 Objet 3D + données devis fusionnés:', devisLine.details);
             } else {
-                // Ajouter la ligne de devis car aucun objet 3D correspondant
+                // Ligne de devis pure (sans objet 3D correspondant)
                 combinedQuote.push(devisLine);
-                console.log('➕ Ligne de devis ajoutée (pas d\'objet 3D correspondant):', devisLine.details);
+                console.log('➕ Ligne de devis pure ajoutée:', devisLine.details);
             }
         }
+        
+        // 2. NE PAS ajouter automatiquement les objets 3D qui ne sont pas dans le devis
+        // Cela permet de garder des objets dans la maquette sans les facturer
          
         console.log('📊 Résultat du chargement avec fusion:');
         console.log('  - Objets 3D chargés:', newObjects.length);
@@ -339,6 +346,7 @@ const MaquettePage: React.FC = () => {
             // Charger les lignes de devis dans le store si disponibles
             if (location.state.devisData.lines && Array.isArray(location.state.devisData.lines)) {
                 console.log('📋 Chargement de', location.state.devisData.lines.length, 'lignes depuis FullQuote');
+                console.log('📋 Détail des lignes reçues:', location.state.devisData.lines);
                 // Convertir les lignes en format ObjectData pour le store
                 const devisLinesFromFullQuote = location.state.devisData.lines.map((line: any, index: number) => ({
                     id: line.id || `devis-line-${index}-${Date.now()}`,
@@ -362,8 +370,10 @@ const MaquettePage: React.FC = () => {
                     quantity: line.quantity || 1,
                     unit: line.unit || 'U'
                 }));
+                // Remplacer complètement le quote par les lignes venant de FullQuote
+                // FullQuote contient l'état EXACT du devis (ce qui doit être facturé)
                 setQuote(devisLinesFromFullQuote);
-                console.log('✅ Lignes chargées depuis FullQuote');
+                console.log('✅ Quote remplacé par les lignes exactes de FullQuote (', devisLinesFromFullQuote.length, 'lignes)');
             }
         } else {
             // Fallback: charger les métadonnées du devis depuis localStorage (retour depuis FullQuote - ancien système)
@@ -523,10 +533,78 @@ const MaquettePage: React.FC = () => {
         return newObject;
     }, [objectsUtils]);
 
-    // Fonction pour supprimer un objet
+    // Fonction pour supprimer un objet (du devis ET de la maquette si c'est un objet 3D)
     const handleRemoveObject = useCallback((id: string) => {
-        removeObject(id);
-    }, [removeObject]);
+        console.log('🗑️ MaquettePage.handleRemoveObject appelé pour ID:', id);
+        console.log('📊 État actuel - objects:', objects.length, 'quote:', quote.length);
+        
+        // Trouver l'item dans le quote d'abord
+        const itemInQuote = quote.find(item => item.id === id);
+        if (!itemInQuote) {
+            console.log('⚠️ Item non trouvé dans le quote:', id);
+            return;
+        }
+        
+        console.log('🔍 Item dans quote:', itemInQuote.details, 'type:', itemInQuote.type);
+        
+        // Debug: afficher quelques objets de la maquette pour comprendre la structure
+        console.log('🏗️ Premiers objets dans maquette:', objects.slice(0, 2).map(obj => ({
+            id: obj.id,
+            details: obj.details,
+            type: obj.type,
+            price: obj.price
+        })));
+        
+        // Vérifier si l'objet existe dans la maquette par ID
+        let objectInMaquette = objects.find(obj => obj.id === id);
+        console.log('🔍 Recherche par ID dans maquette:', objectInMaquette ? 'TROUVÉ' : 'NON TROUVÉ');
+        
+        // Si pas trouvé par ID, chercher par contenu (details, price) - on retire la condition sur le type
+        if (!objectInMaquette) {
+            // Essayer d'abord avec details + price + type
+            objectInMaquette = objects.find(obj => 
+                obj.details === itemInQuote.details && 
+                obj.price === itemInQuote.price &&
+                obj.type === itemInQuote.type
+            );
+            console.log('🔍 Recherche par contenu complet:', objectInMaquette ? `TROUVÉ: ${objectInMaquette.id}` : 'NON TROUVÉ');
+            
+            // Si toujours pas trouvé, essayer juste avec details + price
+            if (!objectInMaquette) {
+                objectInMaquette = objects.find(obj => 
+                    obj.details === itemInQuote.details && 
+                    obj.price === itemInQuote.price
+                );
+                console.log('🔍 Recherche par details + price:', objectInMaquette ? `TROUVÉ: ${objectInMaquette.id}` : 'NON TROUVÉ');
+            }
+            
+            // En dernier recours, chercher juste par details
+            if (!objectInMaquette) {
+                objectInMaquette = objects.find(obj => 
+                    obj.details === itemInQuote.details
+                );
+                console.log('🔍 Recherche par details seulement:', objectInMaquette ? `TROUVÉ: ${objectInMaquette.id}` : 'NON TROUVÉ');
+            }
+        }
+        
+        if (objectInMaquette) {
+            // Objet 3D trouvé : supprimer de la maquette ET du devis
+            console.log('🗑️ Suppression de la maquette ET du devis via removeObject');
+            console.log('🎯 Suppression objet maquette ID:', objectInMaquette.id);
+            console.log('🎯 Suppression objet devis ID:', id);
+            
+            // Supprimer l'objet de la maquette par son ID
+            setObjects(prevObjects => prevObjects.filter(obj => obj.id !== objectInMaquette.id));
+            // Supprimer l'item du devis par son ID
+            setQuote(prevQuote => prevQuote.filter(item => item.id !== id));
+        } else {
+            // Ligne de devis pure : supprimer seulement du quote
+            console.log('🗑️ Suppression du devis uniquement via setQuote');
+            setQuote(prevQuote => prevQuote.filter(item => item.id !== id));
+        }
+        
+        console.log('✅ handleRemoveObject terminé');
+    }, [objects, quote, setObjects, setQuote]);
 
     // Fonctions pour la sélection multiple
     const handleMultiSelect = useCallback((id: string, isCtrlPressed: boolean) => {

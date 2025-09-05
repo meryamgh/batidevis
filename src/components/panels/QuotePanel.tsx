@@ -78,8 +78,15 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
 
   // Fonction pour supprimer du devis ET de la maquette
   const handleCompleteRemoval = (itemId: string) => { 
-    setQuote(prevQuote => prevQuote.filter(q => q.id !== itemId));
-    handleRemoveObject(itemId);
+    console.log('🎯 QuotePanel.handleCompleteRemoval appelé pour:', itemId);
+    console.log('🔗 handleRemoveObject disponible:', typeof handleRemoveObject);
+    
+    // Déléguer complètement à handleRemoveObject qui gère intelligemment les deux cas
+    if (handleRemoveObject) {
+      handleRemoveObject(itemId);
+    } else {
+      console.error('❌ handleRemoveObject n\'est pas défini!');
+    }
   };
 
   // Fonction pour nettoyer complètement la maquette et le devis
