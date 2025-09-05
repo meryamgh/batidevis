@@ -1356,92 +1356,366 @@ const FullQuote: React.FC = () => {
 
     // Function to prepare a proper PDF document for signature
     const prepareDocumentForSignature = (): Promise<File> => {
-        return new Promise((resolve) => {
-            // Create a PDF document
-            const doc = new jsPDF();
+        return new Promise(async (resolve) => {
+            // Create a PDF document in A4 format
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.width;
+            const pageHeight = doc.internal.pageSize.height;
             
-            // Set font
-            doc.setFont("helvetica", "normal");
+            // Colors matching the website
+            const primaryColor = { r: 45, g: 60, b: 84 }; // #2D3C54
+            const lightGray = { r: 248, g: 249, b: 250 }; // #f8f9fa
             
-            // Add title
-            doc.setFontSize(18);
-            doc.text(`DEVIS N° ${devisNumero}`, 105, 20, { align: 'center' });
-            
-            // Client information
-            doc.setFontSize(12);
-            doc.text(`Client: ${societeBatiment}`, 20, 40);
-            doc.text(`Adresse: ${clientAdresse}, ${clientCodePostal}`, 20, 50);
-            doc.text(`Tel: ${clientTel}`, 20, 60);
-            doc.text(`Email: ${clientEmail}`, 20, 70);
-            
-            // Devis information
-            doc.text(`Date: ${enDateDu}`, 140, 40);
-            doc.text(`Valable jusqu'au: ${valableJusquau}`, 140, 50);
-            
-            // Headers for items table
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.text("N°", 20, 90);
-            doc.text("DÉSIGNATION", 40, 90);
-            doc.text("QTÉ", 130, 90);
-            doc.text("UNITÉ", 150, 90);
-            doc.text("PRIX U.", 170, 90);
-            doc.text("TOTAL HT", 190, 90);
-            
-            // Draw a line under headers
-            doc.setLineWidth(0.5);
-            doc.line(20, 95, 190, 95);
-            
-            // Items
-            doc.setFont("helvetica", "normal");
-            let y = 105;
-            
-            aggregatedQuote.forEach((item, idx) => {
-                doc.text((idx + 1).toString(), 20, y);
-                
-                // Handle long descriptions - wrap text
-                const lines = doc.splitTextToSize(item.details, 80);
-                doc.text(lines, 40, y);
-                
-                // Calculate correct Y position after multiline text
-                y += (lines.length - 1) * 10;
-                
-                doc.text(item.quantity.toString(), 130, y);
-                doc.text(item.unit || 'U', 150, y);
-                doc.text(`${formatNumber(item.price)} €`, 170, y);
-                doc.text(`${formatNumber(item.price * item.quantity)} €`, 190, y);
-                
-                y += 15;
-                
-                // Add a new page if we're running out of space
-                if (y > 260) {
-                    doc.addPage();
-                    y = 20;
+            // Helper function to add logo if available
+            const addLogoIfAvailable = async () => {
+                if (leftLogoSrc) {
+                    try {
+                        // Create an image element to load the logo
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        
+                        return new Promise<void>((logoResolve) => {
+                            img.onload = () => {
+                                try {
+                                    // Calculate proper logo dimensions to avoid deformation
+                                    const maxLogoWidth = 50;
+                                    const maxLogoHeight = 25;
+                                    
+                                    // Calculate aspect ratio
+                                    const aspectRatio = img.width / img.height;
+                                    
+                                    let logoWidth = maxLogoWidth;
+                                    let logoHeight = maxLogoWidth / aspectRatio;
+                                    
+                                    // If height is too big, scale by height instead
+                                    if (logoHeight > maxLogoHeight) {
+                                        logoHeight = maxLogoHeight;
+                                        logoWidth = maxLogoHeight * aspectRatio;
+                                    }
+                                    
+                                    // Add logo in top left with correct proportions
+                                    doc.addImage(img, 'JPEG', 20, 15, logoWidth, logoHeight);
+                                } catch (error) {
+                                    console.warn('Error adding logo to PDF:', error);
+                                }
+                                logoResolve();
+                            };
+                            img.onerror = () => logoResolve();
+                            img.src = leftLogoSrc;
+                        });
+                    } catch (error) {
+                        console.warn('Error loading logo for PDF:', error);
+                    }
                 }
+            };
+            
+            // Add logo if available
+            await addLogoIfAvailable();
+            
+            // Header section with devis information (matching website layout)
+            // Make the box wider to accommodate longer devis numbers
+            const devisBoxX = 120;
+            const devisBoxWidth = 75;
+            const devisBoxHeight = 40;
+            
+            doc.setFillColor(255, 255, 255);
+            doc.rect(devisBoxX, 15, devisBoxWidth, devisBoxHeight, 'F'); // White background for devis info
+            doc.setDrawColor(primaryColor.r, primaryColor.g, primaryColor.b); // Primary color border
+            doc.setLineWidth(0.5);
+            doc.rect(devisBoxX, 15, devisBoxWidth, devisBoxHeight, 'S'); // Border around devis info
+            
+            // Devis information table (right side, matching website)
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9); // Slightly smaller font to fit better
+            doc.setTextColor(0, 0, 0);
+            
+            const devisInfo = [
+                ['Devis n°', devisNumero],
+                ['En date du', enDateDu],
+                ['Valable jusqu\'au', valableJusquau],
+                ['Début des travaux', debutTravaux],
+                ['Durée estimée à', dureeTravaux]
+            ];
+            
+            let yPos = 22;
+            devisInfo.forEach(([label, value]) => {
+                doc.setFont("helvetica", "normal");
+                doc.text(label + ':', devisBoxX + 2, yPos);
+                doc.setFont("helvetica", "bold");
+                
+                // Handle long devis numbers by wrapping text if needed
+                const maxValueWidth = devisBoxWidth - 35;
+                const splitValue = doc.splitTextToSize(value, maxValueWidth);
+                doc.text(splitValue, devisBoxX + 30, yPos);
+                
+                // Adjust yPos based on wrapped text
+                yPos += splitValue.length > 1 ? splitValue.length * 4 : 7;
             });
             
-            // Draw a line under items
-            doc.line(20, y, 190, y);
-            y += 10;
+            // Company information (left side, matching website)
+            yPos = 55;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
             
-            // Totals
-            doc.text(`Total HT: ${formatNumber(totalHT)} €`, 140, y+10);
-            doc.text(`TVA (${(tvaRate * 100).toFixed(2)}%): ${formatNumber(totalTVA)} €`, 140, y+20);
-            doc.text(`Total TTC: ${formatNumber(totalTTC)} €`, 140, y+30);
-            doc.text(`Acompte (${(acompteRate * 100).toFixed(2)}%): ${formatNumber(acompte)} €`, 140, y+40);
-            doc.text(`Reste à payer: ${formatNumber(resteAPayer)} €`, 140, y+50);
             
-            // Signature area
-            y += 70;
-            doc.text("Signature du client:", 20, y);
-            doc.rect(20, y+5, 80, 40);
+            yPos += 8;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
             
-            // Convert to blob
+            const companyInfo = [
+                devoName,
+                devoAddress,
+                devoCity,
+                devoSiren
+            ].filter(info => info && info.trim());
+            
+            companyInfo.forEach(info => {
+                doc.text(info, 20, yPos);
+                yPos += 5;
+            });
+            
+            // Client information (right side) - adjust position to align with new devis box
+            yPos = 55;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
+            
+            
+            yPos += 8;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const clientInfo = [
+                societeBatiment,
+                clientAdresse,
+                clientCodePostal,
+                'Tél: ' + clientTel,
+                'Email: ' + clientEmail
+            ].filter(info => info && info.trim());
+            
+            clientInfo.forEach(info => {
+                // Wrap long client info if needed
+                const maxClientWidth = devisBoxWidth;
+                const splitClientInfo = doc.splitTextToSize(info, maxClientWidth);
+                doc.text(splitClientInfo, devisBoxX, yPos);
+                yPos += splitClientInfo.length > 1 ? splitClientInfo.length * 4 : 5;
+            });
+            
+            // Items table (matching website design) - reduce spacing
+            yPos = Math.max(yPos, 110) -18;
+            
+            // Table header with primary color background
+            doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b);
+            doc.rect(20, yPos - 5, pageWidth - 40, 8, 'F');
+            
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(255, 255, 255);
+            
+            // Header columns (tighter spacing for better use of space)
+            doc.text('N°', 22, yPos);
+            doc.text('DÉSIGNATION', 30, yPos);
+            doc.text('QTÉ', 115, yPos);
+            doc.text('UNITÉ', 130, yPos);
+            doc.text('PRIX U.', 145, yPos);
+            doc.text('TOTAL HT', 165, yPos);
+            
+            yPos += 5;
+            
+            // Table items
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(0, 0, 0);
+            
+            let itemNumber = 1;
+            aggregatedQuote.forEach((item) => {
+                // Check if we need a new page
+                if (yPos > pageHeight - 50) {
+                    doc.addPage();
+                    yPos = 25;
+                    
+                    // Repeat header on new page
+                    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b);
+                    doc.rect(20, yPos - 5, pageWidth - 40, 8, 'F');
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    doc.setTextColor(255, 255, 255);
+                    doc.text('N°', 22, yPos);
+                    doc.text('DÉSIGNATION', 30, yPos);
+                    doc.text('QTÉ', 115, yPos);
+                    doc.text('UNITÉ', 130, yPos);
+                    doc.text('PRIX U.', 145, yPos);
+                    doc.text('TOTAL HT', 165, yPos);
+                    yPos += 5;
+                    
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    doc.setTextColor(0, 0, 0);
+                }
+                
+                // Calculate description height first to determine row height (adaptive)
+                const maxDescrWidth = 80; // Adjust width to fit tighter column layout
+                const splitDetails = doc.splitTextToSize(item.details, maxDescrWidth);
+                const rowHeight = Math.max(10, splitDetails.length * 4 + 3); // Better adaptation to text length
+                
+                // Alternate row background (light gray) with proper height
+                if (itemNumber % 2 === 0) {
+                    doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+                    doc.rect(20, yPos - 2, pageWidth - 40, rowHeight, 'F');
+                }
+                
+                // Item number (centered vertically)
+                const textYOffset = rowHeight / 2 + 1;
+                doc.text(itemNumber.toString(), 22, yPos + textYOffset);
+                
+                // Description (with text wrapping, centered vertically)
+                const descrYStart = yPos + (rowHeight - splitDetails.length * 3) / 2 + 2;
+                doc.text(splitDetails, 30, descrYStart);
+                
+                // Quantity (centered)
+                doc.text(item.quantity.toString(), 117, yPos + textYOffset, { align: 'center' });
+                
+                // Unit (centered)
+                doc.text(item.unit || '', 132, yPos + textYOffset, { align: 'center' });
+                
+                // Unit price (centered)
+                doc.text(formatNumber(item.price) + ' €', 147, yPos + textYOffset, { align: 'center' });
+                
+                // Total price (centered and bold)
+                doc.setFont("helvetica", "bold");
+                doc.text(formatNumber(item.price * item.quantity) + ' €', 167, yPos + textYOffset, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                
+                // Move to next row
+                yPos += rowHeight;
+                itemNumber++;
+            });
+            
+            // Totals section (matching website design)
+            yPos += 10;
+            
+            // Use the same width as the devis box for consistency
+            const totalsBoxX = devisBoxX;
+            const totalsBoxWidth = devisBoxWidth;
+            
+            // Background for totals (make it taller to include more lines)
+            const totalsHeight = 35; // Increased height for more lines
+            doc.setFillColor(lightGray.r, lightGray.g, lightGray.b);
+            doc.rect(totalsBoxX, yPos - 5, totalsBoxWidth, totalsHeight, 'F');
+            doc.setDrawColor(220, 220, 220);
+            doc.rect(totalsBoxX, yPos - 5, totalsBoxWidth, totalsHeight, 'S');
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9); // Slightly smaller to fit more content
+            doc.setTextColor(0, 0, 0);
+            
+            // Total HT
+            doc.text('Total HT:', totalsBoxX + 5, yPos);
+            doc.text(formatNumber(totalHT) + ' €', totalsBoxX + totalsBoxWidth - 5, yPos, { align: 'right' });
+            yPos += 6;
+            
+            // TVA with clearer formatting
+            doc.text(`TVA (${(tvaRate * 100).toFixed(1)}%):`, totalsBoxX + 5, yPos);
+            doc.text(formatNumber(totalTVA) + ' €', totalsBoxX + totalsBoxWidth - 5, yPos, { align: 'right' });
+            yPos += 6;
+            
+            // Total TTC (bold and highlighted)
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text('Total TTC:', totalsBoxX + 5, yPos);
+            doc.text(formatNumber(totalTTC) + ' €', totalsBoxX + totalsBoxWidth - 5, yPos, { align: 'right' });
+            yPos += 8;
+            
+            // Add acompte and reste à payer if they exist
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            if (acompte > 0) {
+                doc.text(`Acompte (${(acompteRate * 100).toFixed(1)}%):`, totalsBoxX + 5, yPos);
+                doc.text(formatNumber(acompte) + ' €', totalsBoxX + totalsBoxWidth - 5, yPos, { align: 'right' });
+                yPos += 6;
+                
+                doc.text('Reste à payer:', totalsBoxX + 5, yPos);
+                doc.text(formatNumber(resteAPayer) + ' €', totalsBoxX + totalsBoxWidth - 5, yPos, { align: 'right' });
+            }
+            
+            // Signature area (matching website layout)
+            yPos += -15;
+            if (yPos > pageHeight - 40) {
+                    doc.addPage();
+                yPos = 30;
+            }
+            
+            // Signature box
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            
+            const sigBoxWidth = 80;
+            const sigBoxHeight = 45;
+            const sigBoxX = pageWidth - sigBoxWidth - 110;
+            
+            // Draw the signature box
+            doc.setDrawColor(primaryColor.r, primaryColor.g, primaryColor.b);
+            doc.setLineWidth(0.5);
+            doc.rect(sigBoxX, yPos, sigBoxWidth, sigBoxHeight, 'S');
+            
+            // All content inside the box with proper alignment
+            doc.text('Signature du client:', sigBoxX + 5, yPos + 8);
+            doc.text('Bon pour accord', sigBoxX + 5, yPos + 18);
+            doc.text('Date:', sigBoxX + 5, yPos + 28);
+            doc.text('Signature:', sigBoxX + 5, yPos + 38);
+            
+            // Footer
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Ce devis est valable 30 jours à compter de la date d\'émission.', pageWidth / 2, pageHeight - 15, { align: 'center' });
+            
+            // Convert to File
             const pdfBlob = doc.output('blob');
-            const file = new File([pdfBlob], 'devis.pdf', { type: 'application/pdf' });
-            
+            const file = new File([pdfBlob], `devis_${devisNumero}_${societeBatiment.replace(/\s+/g, '_')}.pdf`, { 
+                type: 'application/pdf' 
+            });
             resolve(file);
         });
+    };
+
+    // Function to download the PDF document directly
+    const handleDownloadPDF = async () => {
+        try {
+            // Vérifier que le devis a du contenu
+            if (aggregatedQuote.length === 0) {
+                alert('⚠️ Le devis doit contenir au moins une ligne pour être téléchargé');
+                return;
+            }
+
+            console.log('📄 Génération du PDF pour téléchargement...');
+            
+            // Générer le PDF en utilisant la même fonction que pour YouSign
+            const file = await prepareDocumentForSignature();
+            
+            // Créer un lien de téléchargement
+            const url = URL.createObjectURL(file);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = file.name; // Utilise le nom intelligent généré par prepareDocumentForSignature
+            
+            // Déclencher le téléchargement
+            document.body.appendChild(link);
+            link.click();
+            
+            // Nettoyer
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            console.log('✅ PDF téléchargé avec succès');
+        } catch (error) {
+            console.error('❌ Erreur lors du téléchargement du PDF:', error);
+            alert('Erreur lors de la génération du PDF. Veuillez réessayer.');
+        }
     };
 
     const fetchData = async (category_id: number) => {
@@ -1579,7 +1853,57 @@ const FullQuote: React.FC = () => {
             navigate('/connexion');
             return;
         }
+
+        try {
+            // Vérifier d'abord que le devis a du contenu
+            if (aggregatedQuote.length === 0) {
+                alert('⚠️ Le devis doit contenir au moins une ligne avant d\'être envoyé pour signature');
+                return;
+            }
+
+            // Sauvegarder le devis avant de demander la signature
+            console.log('💾 Sauvegarde du devis avant signature...');
+            
+            // Préparer les données du devis
+            const devisData = prepareDevisData();
+            const maquetteDataToSave = maquetteData || { objects: [] };
+            
+            if (originalDevisId && originalMaquetteId) {
+                // Mode modification : mettre à jour le devis existant
+                console.log('🔄 Mise à jour du devis existant pour signature:', originalDevisId);
+                
+                const updatedDevis = await DevisService.updateDevis(
+                    originalDevisId,
+                    `Devis ${devisNumero} - ${societeBatiment}`,
+                    devisData,
+                    `Devis pour ${societeBatiment}`,
+                    'brouillon' // Garder en brouillon pour l'instant
+                );
+                
+                console.log('✅ Devis mis à jour pour signature:', updatedDevis);
+            } else {
+                // Mode création : créer un nouveau devis
+                console.log('✨ Création d\'un nouveau devis pour signature');
+                
+                const { devis } = await DevisService.saveDevisWithMaquette(
+                    `Devis ${devisNumero} - ${societeBatiment}`,
+                    devisData,
+                    maquetteDataToSave,
+                    `Devis pour ${societeBatiment}`,
+                    user.id
+                );
+                
+                console.log('✅ Nouveau devis créé pour signature:', devis);
+                setOriginalDevisId(devis.id || null);
+            }
+            
+            // Maintenant ouvrir le formulaire de signature
         setShowSignerForm(true);
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de la sauvegarde du devis avant signature:', error);
+            alert('Erreur lors de la sauvegarde du devis. Veuillez réessayer.');
+        }
     };
 
     // Function to submit the signature request
@@ -1632,25 +1956,21 @@ const FullQuote: React.FC = () => {
             // Nettoyer le localStorage après signature réussie
             cleanupDevisDataFromLocalStorage();
 
-            // 6. Sauvegarder automatiquement le devis avec le statut 'sent' si pas déjà sauvegardé
+            // 6. Mettre à jour le statut du devis existant à 'envoyé'
             try {
-                const devisData = prepareDevisData();
-                const devisName = `Devis ${devisNumero} - ${societeBatiment}`;
-                if (user!=null) {
-                  const savedDevis = await DevisService.saveDevisWithUserId(
-                    devisName,
-                    devisData,
-                    user.id,
-                    `Devis envoyé pour signature à ${signerEmail}`
-                );
-                      // Mettre à jour le statut du devis sauvegardé
+                if (originalDevisId) {
+                    console.log('📧 Mise à jour du statut du devis à "envoyé":', originalDevisId);
+                    
                       await DevisService.updateDevisStatus(
-                        savedDevis.id!,
-                        'sent',
+                        originalDevisId,
+                        'envoyé', // Utiliser 'envoyé' au lieu de 'sent' pour correspondre à l'interface
                         signatureRequest.id,
                         signerResponse.signature_link
                     );
                      
+                    console.log('✅ Statut du devis mis à jour avec succès');
+                } else {
+                    console.error('❌ Aucun ID de devis disponible pour mettre à jour le statut');
               }
                 
            
@@ -2676,10 +2996,40 @@ const FullQuote: React.FC = () => {
                   borderRadius: '4px',
                   cursor: 'pointer',
                   fontSize: '16px',
-                  width: '100%'
+                  width: '100%',
+                  marginBottom: '10px'
                 }}
               >
                 Envoyer la facture électronique
+              </button>
+              
+              {/* Download PDF Button */}
+              <button
+                onClick={handleDownloadPDF}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6f42c1',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  width: '100%',
+                  marginBottom: '10px',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#5a2d91';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(111, 66, 193, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#6f42c1';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                📄 Télécharger le PDF
               </button>
             
             {signatureStatus === 'preparing' && (
