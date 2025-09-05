@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { MaquetteDevisData, MaquetteDevisState, DevisLine } from '../types/MaquetteDevisData';
-import { ObjectData } from '../types/ObjectData';
-import { generateUniqueId } from '../utils/generateUniqueId';
+import { ObjectData } from '../types/ObjectData'; 
 
 // Fonction utilitaire pour calculer les totaux
 const calculateTotals = (objects3D: ObjectData[], additionalLines: DevisLine[], tvaRate = 0.20, acompteRate = 0.30) => {

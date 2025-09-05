@@ -92,7 +92,7 @@ export interface MaquetteDevisState {
   updateTotals: () => void;
   setStatus: (status: MaquetteDevisData['status']) => void;
   saveToLocalStorage: () => void;
-  loadFromLocalStorage: () => void;
+  loadFromLocalStorage: () => boolean;
   clearAll: () => void;
 }
 
