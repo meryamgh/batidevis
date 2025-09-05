@@ -30,7 +30,6 @@ const MaquettePage: React.FC = () => {
     const { objects, quote, setObjects, setQuote } = useMaquetteStore();
     const { user } = useAuth();
     const location = useLocation();
-    const removeObject = useMaquetteStore(state => state.removeObject);
     const raycaster = useRef(new THREE.Raycaster()); 
     const [showUpload, setShowUpload] = useState(false);
     const [showObjectUpload, setShowObjectUpload] = useState(false);
