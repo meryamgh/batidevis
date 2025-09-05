@@ -221,6 +221,13 @@
     color: #884b00;
 }
 
+.ht-indicator {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-left: 0.25rem;
+}
+
 .actions-carte {
     padding: 1.25rem;
     border-top: 1px solid #e2e8f0;
@@ -265,6 +272,128 @@
 .bouton-action.supprimer.deleting {
     background: #fecaca;
     color: #dc2626;
+    cursor: not-allowed;
+}
+
+.bouton-action.statut {
+    background: #f0f9ff;
+    color: #075985;
+}
+
+.bouton-action.statut.changing {
+    background: #bfdbfe;
+    color: #1e40af;
+    cursor: not-allowed;
+}
+
+/* Styles pour la modal de changement de statut */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h3 {
+    color: #1e293b;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.modal-content p {
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.status-options {
+    margin: 1.5rem 0;
+}
+
+.status-options h4 {
+    color: #475569;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.status-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.status-button {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #475569;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    text-align: center;
+}
+
+.status-button:hover {
+    border-color: #884b00;
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.status-button.current {
+    border-color: #64748b;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.status-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.bouton-annuler {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    color: #64748b;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.bouton-annuler:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.bouton-annuler:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
 }
 

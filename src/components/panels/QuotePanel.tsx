@@ -14,21 +14,61 @@ interface QuotePanelProps {
   setQuote: (quote: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => void;
   getSerializableQuote: () => any[];
   handleRemoveObject: (id: string) => void;
+  devisMetadata?: any; // Métadonnées du devis (info, totals, etc.)
+  maquetteObjects?: ObjectData[]; // Tous les objets de la maquette (pour sauvegarde complète)
 }
 
 const QuotePanel: React.FC<QuotePanelProps> = ({ 
   quote, 
   setQuote, 
   getSerializableQuote,
-  handleRemoveObject
+  handleRemoveObject,
+  devisMetadata,
+  maquetteObjects
 }) => {
   const navigate = useNavigate();
   const clearMaquette = useMaquetteStore(state => state.clearMaquette);
 
   const navigateToFullQuote = () => {
     const serializableQuote = getSerializableQuote();
-    console.log(serializableQuote)
-    navigate('/full-quote', { state: { quote: serializableQuote } });
+    console.log('🚀 Navigation vers FullQuote avec', serializableQuote.length, 'lignes de devis');
+    console.log('📊 Métadonnées à transmettre:', devisMetadata ? 'PRÉSENTES' : 'ABSENTES');
+    console.log('🏗️ Objets maquette à transmettre:', maquetteObjects ? maquetteObjects.length : 0, 'objets');
+    
+    // Préparer les données de maquette pour la sauvegarde
+    const maquetteData = maquetteObjects ? {
+      objects: maquetteObjects.map((obj: any) => ({
+        id: obj.id,
+        url: obj.url,
+        price: obj.price,
+        details: obj.details,
+        position: obj.position,
+        texture: obj.texture,
+        scale: obj.scale,
+        rotation: obj.rotation,
+        color: obj.color,
+        startPoint: obj.startPoint,
+        endPoint: obj.endPoint,
+        parentScale: obj.parentScale,
+        boundingBox: obj.boundingBox,
+        faces: obj.faces,
+        type: obj.type,
+        parametricData: obj.parametricData,
+        isBatiChiffrageObject: obj.isBatiChiffrageObject || false,
+        quantity: obj.quantity,
+        unit: obj.unit
+      }))
+    } : null;
+    
+    // Passer les données directement via state au lieu de localStorage
+    navigate('/full-quote', { 
+      state: { 
+        quote: serializableQuote,
+        devisData: devisMetadata, // Inclure les métadonnées si disponibles
+        maquetteData: maquetteData, // Inclure les données complètes de la maquette
+        fromMaquette: true
+      } 
+    });
   };
 
   // Fonction pour supprimer uniquement du devis
@@ -235,7 +275,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
                     color: '#6c757d',
                     marginTop: '4px'
                   }}>
-                {item.quantity && item.quantity > 1 ? `${item.quantity} x ` : ''}{formatNumber(item.price)} € {item.quantity && item.quantity > 1 ? `= ${formatNumber(item.price * item.quantity)} €` : ''}
+                {item.quantity && item.quantity > 1 ? `${item.quantity} x ` : ''}{formatNumber(item.price)} €{item.unit ? `/${item.unit}` : ''} {item.quantity && item.quantity > 1 ? `= ${formatNumber(item.price * item.quantity)} €` : ''}
                   </div>
                 </div>
                 <div style={buttonsContainerStyle}>

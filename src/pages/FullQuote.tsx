@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Quote.css';
 import { useMaquetteStore } from '../store/maquetteStore'; 
 import axios from 'axios';
@@ -7,6 +7,7 @@ import { jsPDF } from 'jspdf';
 import { BACKEND_URL } from '../config/env';
 import { useAuth } from '../hooks/useAuth';
 import { DevisService, DevisData } from '../services/DevisService';
+import { MaquetteService } from '../services/MaquetteService';
 import { generateUniqueId } from '../utils/generateUniqueId';
 // YouSign API client
 class YouSignClient {
@@ -144,6 +145,7 @@ const formatNumber = (num: number): string => {
 
 const FullQuote: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { quote, syncObjectsAndQuote } = useMaquetteStore();
     const { user } = useAuth();
     const inputRef = useRef<HTMLInputElement>(null);
@@ -189,6 +191,16 @@ const FullQuote: React.FC = () => {
     const [showSaveDevisModal, setShowSaveDevisModal] = useState<boolean>(false);
     const [devisName, setDevisName] = useState<string>('');
     const [devisDescription, setDevisDescription] = useState<string>('');
+    
+    // États pour la modification de devis existants
+    const [originalDevisId, setOriginalDevisId] = useState<string | null>(null);
+    const [originalMaquetteId, setOriginalMaquetteId] = useState<string | null>(null);
+    const [originalDevisName, setOriginalDevisName] = useState<string | null>(null);
+    const [originalDevisDescription, setOriginalDevisDescription] = useState<string | null>(null);
+    const [isEditingExisting, setIsEditingExisting] = useState<boolean>(false);
+    
+    // État pour les données complètes de la maquette
+    const [maquetteData, setMaquetteData] = useState<any>(null);
 
     // Agrégation initiale des articles
     const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
@@ -247,10 +259,57 @@ const FullQuote: React.FC = () => {
     const resteAPayer = totalTTC - acompte;
 
     const handleBack = () => {
-        // Sauvegarder les données du devis avant de partir
-        saveDevisDataToLocalStorage(); 
+        console.log('🔙 Retour vers la maquette - Démarrage...');
+        console.log('📊 État actuel avant retour:', {
+            aggregatedQuoteLength: aggregatedQuote.length,
+            isEditingExisting,
+            originalDevisId
+        });
+        
+        // Préparer les données complètes du devis pour la navigation
+        const devisData = {
+            info: {
+                devoTitle,
+                devoName,
+                devoAddress,
+                devoCity,
+                devoSiren,
+                societeBatiment,
+                clientAdresse,
+                clientCodePostal,
+                clientTel,
+                clientEmail,
+                devisNumero,
+                enDateDu,
+                valableJusquau,
+                debutTravaux,
+                dureeTravaux,
+                isDevisGratuit,
+                logo: leftLogoSrc
+            },
+            lines: aggregatedQuote,
+            totals: {
+                totalHT,
+                totalTVA,
+                totalTTC,
+                acompte,
+                resteAPayer,
+                tvaRate,
+                acompteRate
+            },
+            originalDevisId,
+            originalMaquetteId,
+            originalDevisName,
+            originalDevisDescription,
+            isEditingExisting
+        };
+        
+        console.log('💾 Données préparées pour navigation vers maquette:', devisData); 
         
         // Synchroniser les données du devis avec le store maquetteStore
+        console.log('🔄 Synchronisation avec le store maquetteStore...');
+        console.log('📋 Conversion de', aggregatedQuote.length, 'lignes vers ObjectData');
+        
         // Convertir aggregatedQuote en format compatible avec ObjectData
         const updatedQuote = aggregatedQuote.map((item, index) => {
             // Vérifier si c'est un élément existant de la maquette
@@ -295,13 +354,66 @@ const FullQuote: React.FC = () => {
         });
         
         // Mettre à jour le store avec les nouvelles données du devis
+        console.log('🔄 Mise à jour du store avec', updatedQuote.length, 'éléments');
+        
+        // Afficher les informations générales du devis qui sont synchronisées
+        console.log('🏢 Informations générales du devis synchronisées:', {
+            entreprise: {
+                devoTitle,
+                devoName,
+                devoAddress,
+                devoCity,
+                devoSiren
+            },
+            client: {
+                societeBatiment,
+                clientAdresse,
+                clientCodePostal,
+                clientTel,
+                clientEmail
+            },
+            devis: {
+                devisNumero,
+                enDateDu,
+                valableJusquau,
+                debutTravaux,
+                dureeTravaux,
+                isDevisGratuit
+            },
+            totaux: {
+                totalHT: totalHT.toFixed(2),
+                totalTTC: totalTTC.toFixed(2),
+                acompteRate: (acompteRate * 100).toFixed(2) + '%'
+            },
+            logo: leftLogoSrc ? 'PRÉSENT (' + leftLogoSrc.length + ' caractères)' : 'ABSENT',
+            mode: isEditingExisting ? 'MODIFICATION' : 'CRÉATION',
+            originalIds: isEditingExisting ? {
+                devisId: originalDevisId,
+                maquetteId: originalMaquetteId,
+                nom: originalDevisName
+            } : 'N/A'
+        });
+        
+        
         // Passer aussi l'ordre exact des éléments
         syncObjectsAndQuote(updatedQuote);
+        console.log('✅ Synchronisation terminée');
         
-        // Attendre un court instant pour s'assurer que la sauvegarde est terminée
-        setTimeout(() => {
-        navigate('/maquette'); 
-        }, 100);
+        // Navigation avec les données via state au lieu du localStorage
+        console.log('🚀 Navigation vers /maquette avec données...');
+        navigate('/maquette', {
+            state: {
+                devisData: devisData,
+                fromFullQuote: true
+            }
+        });
+    };
+
+    // Fonction pour nettoyer le localStorage lors de la sauvegarde définitive (legacy)
+    const cleanupDevisDataFromLocalStorage = () => {
+        localStorage.removeItem('devisDataToLoad');
+        localStorage.removeItem('devisMetadataForMaquette');
+        console.log('🧹 localStorage legacy nettoyé après sauvegarde');
     };
 
     // Function to add a new empty row to the quote
@@ -313,8 +425,11 @@ const FullQuote: React.FC = () => {
             isNew: true
         };
         
+        console.log('➕ Ajout d\'une nouvelle ligne manuelle:', newItem);
+        
         setAggregatedQuote(prev => {
             const newArray = [...prev, newItem];
+            console.log('📋 Nombre total de lignes après ajout:', newArray.length);
             return newArray;
         });
         
@@ -656,66 +771,33 @@ const FullQuote: React.FC = () => {
          fetchFraisDivers();
      }, []);
 
-    // Charger les données du devis depuis le localStorage si elles existent
+    // Charger les données du devis depuis location.state ou localStorage (fallback)
     useEffect(() => {
-        // Vérifier d'abord s'il y a des données à charger depuis la navigation
-        const devisDataToLoad = localStorage.getItem('devisDataToLoad');
-        if (devisDataToLoad) {
-            try {
-                const devisData = JSON.parse(devisDataToLoad); 
+        console.log('🔄 FullQuote - Démarrage du chargement des données');
+        console.log('📂 Vérification de location.state...', location.state);
+        
+        // D'abord, vérifier s'il y a des données dans location.state
+        if (location.state) {
+            const { quote: quoteLine, devisData, maquetteData: receivedMaquetteData, fromMaquette } = location.state;
+            
+            if (fromMaquette && quoteLine) {
+                // Données venant de MaquettePage via QuotePanel
+                console.log('📊 Données reçues depuis MaquettePage:', quoteLine.length, 'lignes');
+                setAggregatedQuote(quoteLine);
+                console.log('✅ Lignes de devis chargées depuis navigation');
                 
-                // Charger les informations du devis
-                if (devisData.info) {
-                    setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
-                    setDevoName(devisData.info.devoName || 'Chen Emma');
-                    setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
-                    setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
-                    setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
-                    setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
-                    setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
-                    setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
-                    setClientTel(devisData.info.clientTel || '0678891223');
-                    setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
-                    setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
-                    setEnDateDu(devisData.info.enDateDu || '05/10/2024');
-                    setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
-                    setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
-                    setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
-                    setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
-                    // Restaurer le logo s'il existe
-                    if (devisData.info.logo) {
-                        setLeftLogoSrc(devisData.info.logo);
-                    }
+                // Sauvegarder les données de maquette si disponibles
+                if (receivedMaquetteData) {
+                    setMaquetteData(receivedMaquetteData);
+                    console.log('🏗️ Données de maquette sauvegardées:', receivedMaquetteData.objects?.length || 0, 'objets');
                 }
                 
-                // Charger les lignes du devis
-                if (devisData.lines && Array.isArray(devisData.lines)) { 
-                    setAggregatedQuote(devisData.lines);
-                }
-                
-                // Charger les totaux
-                if (devisData.totals) {
-                    if (devisData.totals.acompteRate !== undefined) {
-                        setAcompteRate(devisData.totals.acompteRate);
-                    }
-                }
-                
-                // Nettoyer le localStorage après chargement
-                localStorage.removeItem('devisDataToLoad'); 
-                
-            } catch (error) {
-                console.error('❌ Erreur lors du chargement des données du devis:', error);
-                localStorage.removeItem('devisDataToLoad');
-            }
-        } else {
-            // Si pas de données à charger, essayer de charger les données auto-sauvegardées
-            const autoSavedData = localStorage.getItem('devisDataAutoSave');
-            if (autoSavedData) {
-                try {
-                    const devisData = JSON.parse(autoSavedData); 
-                    
-                    // Charger les informations du devis
+                // Si on a aussi des métadonnées, les charger
+                if (devisData) {
+                    console.log('📊 Métadonnées également reçues depuis MaquettePage');
+                    // Charger les informations depuis les métadonnées
                     if (devisData.info) {
+                        console.log('📝 Chargement des informations depuis métadonnées MaquettePage');
                         setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
                         setDevoName(devisData.info.devoName || 'Chen Emma');
                         setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
@@ -732,122 +814,393 @@ const FullQuote: React.FC = () => {
                         setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
                         setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
                         setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
-                        // Restaurer le logo s'il existe
+                        
                         if (devisData.info.logo) {
+                            console.log('🖼️ Logo récupéré depuis métadonnées MaquettePage:', devisData.info.logo.length, 'caractères');
                             setLeftLogoSrc(devisData.info.logo);
                         }
                     }
                     
-                    // Charger les lignes du devis
-                    if (devisData.lines && Array.isArray(devisData.lines)) { 
-                        setAggregatedQuote(devisData.lines);
+                    // Charger les informations de modification
+                    if (devisData.originalDevisId && devisData.originalMaquetteId) {
+                        console.log('🔄 Mode modification détecté depuis métadonnées MaquettePage');
+                        setOriginalDevisId(devisData.originalDevisId);
+                        setOriginalMaquetteId(devisData.originalMaquetteId);
+                        setOriginalDevisName(devisData.originalDevisName || null);
+                        setOriginalDevisDescription(devisData.originalDevisDescription || null);
+                        setIsEditingExisting(true);
                     }
                     
                     // Charger les totaux
-                    if (devisData.totals) {
-                        if (devisData.totals.acompteRate !== undefined) {
-                            setAcompteRate(devisData.totals.acompteRate);
-                        }
+                    if (devisData.totals && devisData.totals.acompteRate !== undefined) {
+                        setAcompteRate(devisData.totals.acompteRate);
+                        console.log('💰 Taux d\'acompte récupéré depuis métadonnées MaquettePage:', devisData.totals.acompteRate);
                     }
-                     
-                    
-                } catch (error) {
-                    console.error('❌ Erreur lors du chargement des données auto-sauvegardées:', error);
                 }
-            }
-        }
-    }, []);
-
-    // Ajouter un useEffect pour recharger les données quand le composant est monté
-    useEffect(() => {
-        // Vérifier s'il y a des données auto-sauvegardées récentes
-        const autoSavedData = localStorage.getItem('devisDataAutoSave');
-        if (autoSavedData) {
-            try {
-                const devisData = JSON.parse(autoSavedData); 
+            } else if (devisData) {
+                // Données complètes venant d'un devis existant
+                console.log('📊 Données complètes reçues depuis navigation:', devisData);
                 
-                // Mettre à jour les informations du devis seulement si elles ne sont pas déjà définies
+                // Charger les informations depuis les données de navigation
                 if (devisData.info) {
-                    if (devoTitle === 'BatiDevis') setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
-                    if (devoName === 'Chen Emma') setDevoName(devisData.info.devoName || 'Chen Emma');
-                    if (devoAddress === '73 Rue Rateau') setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
-                    if (devoCity === '93120 La Courneuve, France') setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
-                    if (devoSiren === 'SIREN : 000.000.000.000') setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
-                    if (societeBatiment === 'Société Bâtiment') setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
-                    if (clientAdresse === '20 rue le blanc') setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
-                    if (clientCodePostal === '75013 Paris') setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
-                    if (clientTel === '0678891223') setClientTel(devisData.info.clientTel || '0678891223');
-                    if (clientEmail === 'sociétébatiment@gmail.com') setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
-                    if (devisNumero === generateUniqueDevisNumber()) setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
-                    if (enDateDu === '05/10/2024') setEnDateDu(devisData.info.enDateDu || '05/10/2024');
-                    if (valableJusquau === '04/12/2024') setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
-                    if (debutTravaux === '05/10/2024') setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
-                    if (dureeTravaux === '1 jour') setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
-                    // Restaurer le logo seulement s'il n'y en a pas déjà un
-                    if (leftLogoSrc === '' && devisData.info.logo) {
+                    console.log('📝 Chargement des informations depuis navigation');
+                    setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
+                    setDevoName(devisData.info.devoName || 'Chen Emma');
+                    setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
+                    setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
+                    setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+                    setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
+                    setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
+                    setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
+                    setClientTel(devisData.info.clientTel || '0678891223');
+                    setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+                    setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
+                    setEnDateDu(devisData.info.enDateDu || '05/10/2024');
+                    setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
+                    setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
+                    setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
+                    setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+                    
+                    if (devisData.info.logo) {
+                        console.log('🖼️ Logo récupéré depuis navigation:', devisData.info.logo.length, 'caractères');
                         setLeftLogoSrc(devisData.info.logo);
                     }
-                    // Ne pas écraser isDevisGratuit depuis ce useEffect pour éviter les conflits
-                    // Cette logique est gérée par le useEffect principal au montage du composant
                 }
                 
-                // Mettre à jour les lignes du devis seulement si elles ne sont pas déjà définies
-                if (devisData.lines && Array.isArray(devisData.lines) && aggregatedQuote.length === 0) { 
+                // Charger les lignes de devis
+                if (devisData.lines && Array.isArray(devisData.lines)) {
+                    console.log('📋 Chargement des lignes depuis navigation:', devisData.lines.length, 'lignes');
                     setAggregatedQuote(devisData.lines);
                 }
                 
-                // Mettre à jour le taux d'acompte seulement s'il n'est pas déjà défini
-                if (devisData.totals && devisData.totals.acompteRate !== undefined && acompteRate === 0.30) {
-                    setAcompteRate(devisData.totals.acompteRate);
+                // Charger les informations de modification
+                if (devisData.originalDevisId && devisData.originalMaquetteId) {
+                    console.log('🔄 Mode modification détecté depuis navigation');
+                    setOriginalDevisId(devisData.originalDevisId);
+                    setOriginalMaquetteId(devisData.originalMaquetteId);
+                    setOriginalDevisName(devisData.originalDevisName || null);
+                    setOriginalDevisDescription(devisData.originalDevisDescription || null);
+                    setIsEditingExisting(true);
                 }
-                 
                 
-            } catch (error) {
-                console.error('❌ Erreur lors du rechargement des données auto-sauvegardées:', error);
+                // Charger les totaux
+                if (devisData.totals && devisData.totals.acompteRate !== undefined) {
+                    setAcompteRate(devisData.totals.acompteRate);
+                    console.log('💰 Taux d\'acompte récupéré:', devisData.totals.acompteRate);
+                }
+            }
+        } else {
+            // Fallback: vérifier le localStorage pour compatibilité avec l'ancien système
+            console.log('📂 Aucune donnée de navigation, vérification localStorage...');
+            const devisMetadataFromMaquette = localStorage.getItem('devisMetadataForMaquette');
+            if (devisMetadataFromMaquette) {
+                try {
+                    const metadata = JSON.parse(devisMetadataFromMaquette);
+                    console.log('📊 Métadonnées récupérées depuis localStorage (fallback):', metadata);
+                    
+                    // Charger les informations depuis les métadonnées
+                    if (metadata.info) {
+                        console.log('📝 Chargement des informations depuis localStorage fallback');
+                        setDevoTitle(metadata.info.devoTitle || 'BatiDevis');
+                        setDevoName(metadata.info.devoName || 'Chen Emma');
+                        setDevoAddress(metadata.info.devoAddress || '73 Rue Rateau');
+                        setDevoCity(metadata.info.devoCity || '93120 La Courneuve, France');
+                        setDevoSiren(metadata.info.devoSiren || 'SIREN : 000.000.000.000');
+                        setSocieteBatiment(metadata.info.societeBatiment || 'Société Bâtiment');
+                        setClientAdresse(metadata.info.clientAdresse || '20 rue le blanc');
+                        setClientCodePostal(metadata.info.clientCodePostal || '75013 Paris');
+                        setClientTel(metadata.info.clientTel || '0678891223');
+                        setClientEmail(metadata.info.clientEmail || 'sociétébatiment@gmail.com');
+                        setDevisNumero(metadata.info.devisNumero || generateUniqueDevisNumber());
+                        setEnDateDu(metadata.info.enDateDu || '05/10/2024');
+                        setValableJusquau(metadata.info.valableJusquau || '04/12/2024');
+                        setDebutTravaux(metadata.info.debutTravaux || '05/10/2024');
+                        setDureeTravaux(metadata.info.dureeTravaux || '1 jour');
+                        setIsDevisGratuit(metadata.info.isDevisGratuit !== undefined ? metadata.info.isDevisGratuit : true);
+                        
+                        if (metadata.info.logo) {
+                            console.log('🖼️ Logo récupéré depuis localStorage fallback:', metadata.info.logo.length, 'caractères');
+                            setLeftLogoSrc(metadata.info.logo);
+                        }
+                    }
+                    
+                    // Charger les informations de modification
+                    if (metadata.isEditingExisting) {
+                        console.log('🔄 Mode modification récupéré depuis localStorage fallback');
+                        setOriginalDevisId(metadata.originalDevisId);
+                        setOriginalMaquetteId(metadata.originalMaquetteId);
+                        setOriginalDevisName(metadata.originalDevisName || null);
+                        setOriginalDevisDescription(metadata.originalDevisDescription || null);
+                        setIsEditingExisting(true);
+                    }
+                    
+                    // Charger les totaux
+                    if (metadata.totals && metadata.totals.acompteRate !== undefined) {
+                        setAcompteRate(metadata.totals.acompteRate);
+                        console.log('💰 Taux d\'acompte récupéré:', metadata.totals.acompteRate);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Erreur lors du chargement des métadonnées localStorage:', error);
+                    localStorage.removeItem('devisMetadataForMaquette');
+                }
             }
         }
-    }, [devoTitle, devoName, devoAddress, devoCity, devoSiren, societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail, devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux, aggregatedQuote.length, acompteRate]);
-
-    // Fonction pour sauvegarder automatiquement les données du devis
-    const saveDevisDataToLocalStorage = () => {
-        const devisData = {
-            info: {
-                devoTitle,
-                devoName,
-                devoAddress,
-                devoCity,
-                devoSiren,
-                societeBatiment,
-                clientAdresse,
-                clientCodePostal,
-                clientTel,
-                clientEmail,
-                devisNumero,
-                enDateDu,
-                valableJusquau,
-                debutTravaux,
-                dureeTravaux,
-                isDevisGratuit,
-                logo: leftLogoSrc
-            },
-            lines: aggregatedQuote,
-            totals: {
-                totalHT,
-                totalTVA,
-                totalTTC,
-                acompte,
-                resteAPayer,
-                tvaRate,
-                acompteRate
-            }
-        };
         
-        localStorage.setItem('devisDataAutoSave', JSON.stringify(devisData)); 
-    };
+        // Vérifier d'abord s'il y a des données à charger depuis la navigation
+        // const devisDataToLoad = localStorage.getItem('devisDataToLoad');
+        // console.log('📥 devisDataToLoad depuis localStorage:', devisDataToLoad ? 'TROUVÉ' : 'ABSENT');
+        
+        // if (devisDataToLoad) {
+        //     console.log('📋 Données brutes devisDataToLoad:', devisDataToLoad.substring(0, 200) + '...');
+        //     try {
+        //         const devisData = JSON.parse(devisDataToLoad);
+        //         console.log('✅ Données parsées avec succès');
+        //         console.log('📊 Structure des données:', {
+        //             hasInfo: !!devisData.info,
+        //             hasLines: !!devisData.lines,
+        //             linesCount: devisData.lines ? devisData.lines.length : 0,
+        //             hasTotals: !!devisData.totals,
+        //             hasOriginalIds: !!(devisData.originalDevisId && devisData.originalMaquetteId)
+        //         }); 
+                
+        //         // Charger les informations du devis
+        //         if (devisData.info) {
+        //             console.log('📝 Chargement des informations du devis:', {
+        //                 devoTitle: devisData.info.devoTitle,
+        //                 societeBatiment: devisData.info.societeBatiment,
+        //                 devisNumero: devisData.info.devisNumero,
+        //                 isDevisGratuit: devisData.info.isDevisGratuit,
+        //                 hasLogo: !!devisData.info.logo
+        //             });
+                    
+        //             setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
+        //             setDevoName(devisData.info.devoName || 'Chen Emma');
+        //             setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
+        //             setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
+        //             setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+        //             setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
+        //             setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
+        //             setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
+        //             setClientTel(devisData.info.clientTel || '0678891223');
+        //             setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+        //             setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
+        //             setEnDateDu(devisData.info.enDateDu || '05/10/2024');
+        //             setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
+        //             setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
+        //             setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
+        //             setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+        //             // Restaurer le logo s'il existe
+        //             if (devisData.info.logo) {
+        //                 console.log('🖼️ Logo trouvé, taille:', devisData.info.logo.length, 'caractères');
+        //                 setLeftLogoSrc(devisData.info.logo);
+        //             }
+                    
+        //             console.log('✅ Informations du devis chargées');
+        //         } else {
+        //             console.log('⚠️ Aucune information de devis trouvée');
+        //         }
+                
+        //         // Vérifier s'il s'agit d'une modification d'un devis existant
+        //         console.log('🔍 Vérification du mode modification...');
+        //         console.log('🔍 originalDevisId:', devisData.originalDevisId);
+        //         console.log('🔍 originalMaquetteId:', devisData.originalMaquetteId);
+        //         console.log('🔍 originalDevisName:', devisData.originalDevisName);
+        //         console.log('🔍 originalDevisDescription:', devisData.originalDevisDescription);
+                
+        //         if (devisData.originalDevisId && devisData.originalMaquetteId) {
+        //             console.log('✅ Mode modification détecté');
+        //             setOriginalDevisId(devisData.originalDevisId);
+        //             setOriginalMaquetteId(devisData.originalMaquetteId);
+        //             setOriginalDevisName(devisData.originalDevisName || null);
+        //             setOriginalDevisDescription(devisData.originalDevisDescription || null);
+        //             setIsEditingExisting(true);
+        //             console.log('🔄 Configuration mode modification:', {
+        //                 devisId: devisData.originalDevisId,
+        //                 maquetteId: devisData.originalMaquetteId,
+        //                 nom: devisData.originalDevisName,
+        //                 description: devisData.originalDevisDescription
+        //             });
+        //         } else {
+        //             console.log('✨ Mode création détecté - Aucun ID original');
+        //             // S'assurer que le mode modification est désactivé
+        //             setIsEditingExisting(false);
+        //             setOriginalDevisId(null);
+        //             setOriginalMaquetteId(null);
+        //             setOriginalDevisName(null);
+        //             setOriginalDevisDescription(null);
+        //         }
+                
+        //         // Charger les lignes du devis
+        //         if (devisData.lines && Array.isArray(devisData.lines)) { 
+        //             console.log('📋 Chargement des lignes du devis depuis localStorage');
+        //             console.log('📊 Nombre de lignes à charger:', devisData.lines.length);
+                    
+        //             setAggregatedQuote(devisData.lines);
+        //             console.log('✅ Lignes de devis chargées avec succès');
+        //         } else {
+        //             console.log('⚠️ Aucune ligne de devis trouvée ou format invalide');
+        //         }
+                
+        //         // Charger les totaux
+        //         if (devisData.totals) {
+        //             console.log('💰 Chargement des totaux:', {
+        //                 totalHT: devisData.totals.totalHT,
+        //                 totalTTC: devisData.totals.totalTTC,
+        //                 acompteRate: devisData.totals.acompteRate,
+        //                 tvaRate: devisData.totals.tvaRate
+        //             });
+        //             if (devisData.totals.acompteRate !== undefined) {
+        //                 setAcompteRate(devisData.totals.acompteRate);
+        //                 console.log('✅ Taux d\'acompte mis à jour:', devisData.totals.acompteRate);
+        //             }
+        //         } else {
+        //             console.log('⚠️ Aucun total trouvé, utilisation des valeurs par défaut');
+        //         }
+                
+        //         // NE PAS nettoyer le localStorage immédiatement pour permettre les navigations
+        //         // Il sera nettoyé lors de la sauvegarde ou quand on quitte définitivement le flux
+        //         // localStorage.removeItem('devisDataToLoad'); 
+        //         console.log('🎯 Chargement depuis devisDataToLoad terminé avec succès');
+                
+        //     } catch (error) {
+        //         console.error('❌ Erreur lors du chargement des données du devis:', error);
+     
+        //         localStorage.removeItem('devisDataToLoad');
+        //         console.log('🧹 devisDataToLoad supprimé après erreur');
+        //     }
+        // } else {
+        //     console.log('📂 Aucune donnée devisDataToLoad trouvée, vérification de devisDataAutoSave...');
+        //     // Si pas de données à charger, essayer de charger les données auto-sauvegardées
+        //     const autoSavedData = localStorage.getItem('devisDataAutoSave');
+        //     console.log('💾 devisDataAutoSave depuis localStorage:', autoSavedData ? 'TROUVÉ' : 'ABSENT');
+            
+        //     if (autoSavedData) {
+        //         console.log('📋 Données brutes devisDataAutoSave:', autoSavedData.substring(0, 200) + '...');
+        //         try {
+        //             const devisData = JSON.parse(autoSavedData);
+        //             console.log('✅ Données auto-sauvegardées parsées avec succès');
+        //             console.log('📊 Structure des données auto-sauvegardées:', {
+        //                 hasInfo: !!devisData.info,
+        //                 hasLines: !!devisData.lines,
+        //                 linesCount: devisData.lines ? devisData.lines.length : 0,
+        //                 hasTotals: !!devisData.totals,
+        //                 hasOriginalIds: !!(devisData.originalDevisId && devisData.originalMaquetteId)
+        //             }); 
+                    
+        //             // Charger les informations du devis
+        //             if (devisData.info) {
+        //                 setDevoTitle(devisData.info.devoTitle || 'BatiDevis');
+        //                 setDevoName(devisData.info.devoName || 'Chen Emma');
+        //                 setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
+        //                 setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
+        //                 setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+        //                 setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
+        //                 setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
+        //                 setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
+        //                 setClientTel(devisData.info.clientTel || '0678891223');
+        //                 setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+        //                 setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
+        //                 setEnDateDu(devisData.info.enDateDu || '05/10/2024');
+        //                 setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
+        //                 setDebutTravaux(devisData.info.debutTravaux || '05/10/2024');
+        //                 setDureeTravaux(devisData.info.dureeTravaux || '1 jour');
+        //                 setIsDevisGratuit(devisData.info.isDevisGratuit !== undefined ? devisData.info.isDevisGratuit : true);
+        //                 // Restaurer le logo s'il existe
+        //                 console.log("exiiiisssttteee")
+        //                 if (devisData.info.logo) {
+        //                     setLeftLogoSrc(devisData.info.logo);
+        //                 }
+        //             }
+                    
+        //                             // Vérifier s'il s'agit d'une modification d'un devis existant
+        //         if (devisData.originalDevisId && devisData.originalMaquetteId) {
+        //             setOriginalDevisId(devisData.originalDevisId);
+        //             setOriginalMaquetteId(devisData.originalMaquetteId);
+        //             setOriginalDevisName(devisData.originalDevisName || null);
+        //             setOriginalDevisDescription(devisData.originalDevisDescription || null);
+        //             setIsEditingExisting(true);
+        //             console.log('🔄 Mode modification restauré depuis auto-sauvegarde - Devis ID:', devisData.originalDevisId);
+        //         } else {
+        //             console.log('⚠️ Mode création - Auto-sauvegarde sans ID de modification');
+        //             // S'assurer que le mode modification est désactivé
+        //             setIsEditingExisting(false);
+        //             setOriginalDevisId(null);
+        //             setOriginalMaquetteId(null);
+        //             setOriginalDevisName(null);
+        //             setOriginalDevisDescription(null);
+        //         }
+                    
+        //             // Charger les lignes du devis
+        //             if (devisData.lines && Array.isArray(devisData.lines)) { 
+        //                 console.log('📋 Chargement des lignes auto-sauvegardées:', devisData.lines.length, 'lignes');
+        //                 setAggregatedQuote(devisData.lines);
+        //                 console.log('✅ Lignes auto-sauvegardées chargées');
+        //             } else {
+        //                 console.log('⚠️ Aucune ligne auto-sauvegardée trouvée');
+        //             }
+                    
+        //             // Charger les totaux
+        //             if (devisData.totals) {
+        //                 console.log('💰 Chargement des totaux auto-sauvegardés:', devisData.totals);
+        //                 if (devisData.totals.acompteRate !== undefined) {
+        //                     setAcompteRate(devisData.totals.acompteRate);
+        //                     console.log('✅ Taux d\'acompte auto-sauvegardé restauré:', devisData.totals.acompteRate);
+        //                 }
+        //             }
+                    
+        //             console.log('🎯 Chargement depuis devisDataAutoSave terminé avec succès');
+                    
+        //         } catch (error) {
+        //             console.error('❌ Erreur lors du chargement des données auto-sauvegardées:', error);
+                    
+        //         }
+        //     } else {
+        //         // Aucune donnée sauvegardée - nouveau devis
+        //         console.log('✨ Nouveau devis - Aucune donnée sauvegardée');
+        //         console.log('🔧 Initialisation des valeurs par défaut');
+        //         setIsEditingExisting(false);
+        //         setOriginalDevisId(null);
+        //         setOriginalMaquetteId(null);
+        //         setOriginalDevisName(null);
+        //         setOriginalDevisDescription(null);
+        //     }
+        // }
+        
+        // // Log final de l'état du chargement
+        // console.log('🏁 Fin du useEffect principal de chargement');
+        // console.log('📊 État final après chargement:');
+        // console.log('🏢 Informations générales chargées:', {
+        //     entreprise: {
+        //         devoTitle,
+        //         devoName,
+        //         devoSiren
+        //     },
+        //     client: {
+        //         societeBatiment,
+        //         clientEmail
+        //     },
+        //     devis: {
+        //         devisNumero,
+        //         isDevisGratuit
+        //     },
+        //     mode: isEditingExisting ? 'MODIFICATION' : 'CRÉATION',
+        //     originalIds: isEditingExisting ? {
+        //         devisId: originalDevisId,
+        //         maquetteId: originalMaquetteId
+        //     } : 'N/A'
+        // });
+        console.log('📋 Lignes chargées:', aggregatedQuote.length, 'lignes');
+        console.log('🖼️ Logo:', leftLogoSrc ? 'PRÉSENT' : 'ABSENT');
+    }, [location.state]);
+ 
+    // Fonction pour sauvegarder automatiquement les données du devis (legacy - supprimée)
+    // Cette fonction n'est plus nécessaire car les données sont passées via React Router state
 
-    // Sauvegarder automatiquement les données du devis à chaque changement
+    // Sauvegarder automatiquement les données du devis à chaque changement (legacy - optionnel)
     useEffect(() => {
-        saveDevisDataToLocalStorage();
+        // Sauvegarde legacy pour compatibilité - peut être désactivée
+        // saveDevisDataToLocalStorage();
     }, [
         devoTitle, devoName, devoAddress, devoCity, devoSiren,
         societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail,
@@ -862,6 +1215,8 @@ const FullQuote: React.FC = () => {
         const selectedIds = Array.from(event.target.selectedOptions, option => parseInt(option.value));
         setSelectedFraisDivers(selectedIds);
         
+        console.log('💰 Ajout de frais divers, IDs sélectionnés:', selectedIds);
+        
         // Ajouter les frais divers sélectionnés au devis
         selectedIds.forEach(id => {
             const frais = fraisDivers.find(f => f.id === id);
@@ -873,6 +1228,9 @@ const FullQuote: React.FC = () => {
                     unit: frais.unite,
                     isNew: true
                 };
+                
+                console.log('💰 Ajout d\'un frais divers:', newItem);
+                
                 // Ajouter après les frais obligatoires
                 setAggregatedQuote(prev => {
                     const fraisObligatoiresCount = prev.filter(item => 
@@ -880,6 +1238,7 @@ const FullQuote: React.FC = () => {
                     ).length;
                     const newArray = [...prev];
                     newArray.splice(fraisObligatoiresCount, 0, newItem);
+                    console.log('📋 Nombre total de lignes après ajout frais divers:', newArray.length);
                     return newArray;
                 });
             }
@@ -1269,6 +1628,9 @@ const FullQuote: React.FC = () => {
             setSignatureStatus('sent');
             setSignatureUrl(signerResponse.signature_link);
             setShowSignerForm(false);
+            
+            // Nettoyer le localStorage après signature réussie
+            cleanupDevisDataFromLocalStorage();
 
             // 6. Sauvegarder automatiquement le devis avec le statut 'sent' si pas déjà sauvegardé
             try {
@@ -1468,6 +1830,19 @@ const FullQuote: React.FC = () => {
 
     // Function to prepare devis data for saving
     const prepareDevisData = (): DevisData => {
+        console.log('🔍 Préparation des données de devis pour sauvegarde:');
+        console.log('📋 Nombre total de lignes dans aggregatedQuote:', aggregatedQuote.length);
+        console.log('📋 Détail des lignes:', aggregatedQuote);
+        
+        const devisLines = aggregatedQuote.map(item => ({
+            details: item.details,
+            price: item.price,
+            quantity: item.quantity,
+            unit: item.unit
+        }));
+        
+        console.log('💾 Lignes qui seront sauvegardées:', devisLines);
+        
         return {
             info: {
                 devoTitle,
@@ -1488,12 +1863,7 @@ const FullQuote: React.FC = () => {
                 isDevisGratuit,
                 logo: leftLogoSrc
             },
-            lines: aggregatedQuote.map(item => ({
-                details: item.details,
-                price: item.price,
-                quantity: item.quantity,
-                unit: item.unit
-            })),
+            lines: devisLines,
             totals: {
                 totalHT,
                 totalTVA,
@@ -1520,52 +1890,100 @@ const FullQuote: React.FC = () => {
 
         setIsSavingDevis(true);
         try { 
-            syncObjectsAndQuote();
+            // ❌ SUPPRIMÉ : syncObjectsAndQuote() car cela écrase aggregatedQuote avec seulement les objets 3D
+            // On veut sauvegarder TOUTES les lignes de aggregatedQuote (objets + lignes manuelles + frais divers)
             
+            console.log('💾 Sauvegarde en cours - aggregatedQuote avant préparation:', aggregatedQuote);
             const devisData = prepareDevisData();
-             
-            const maquetteData = {
-                objects: quote.map((obj: any) => {
-                  
-                    
-                    return {
-                        id: obj.id,
-                        url: obj.url,
-                        price: obj.price,
-                        details: obj.details,
-                        position: obj.position,
-                        texture: obj.texture,
-                        scale: obj.scale,
-                        rotation: obj.rotation,
-                        color: obj.color,
-                        startPoint: obj.startPoint,
-                        endPoint: obj.endPoint,
-                        parentScale: obj.parentScale,
-                        boundingBox: obj.boundingBox,
-                        faces: obj.faces,
-                        type: obj.type,
-                        parametricData: obj.parametricData,
-                        isBatiChiffrageObject: obj.isBatiChiffrageObject || false
-                    };
-                })
-            };
-
-            // Sauvegarder le devis avec sa maquette associée
-            const { devis, maquette } = await DevisService.saveDevisWithMaquette(
-                devisName.trim(),
-                devisData,
-                maquetteData,
-                devisDescription.trim() || undefined,
-                user.id
-            );
             
-            console.log('Devis et maquette sauvegardés avec succès:', { devis, maquette });
-            alert('Devis et maquette sauvegardés avec succès!');
+            // Utiliser les données de maquette reçues depuis MaquettePage ou fallback sur quote
+            let maquetteDataToSave;
+            if (maquetteData && maquetteData.objects) {
+                console.log('🏗️ Utilisation des données de maquette complètes:', maquetteData.objects.length, 'objets');
+                maquetteDataToSave = maquetteData;
+            } else {
+                console.log('⚠️ Fallback: reconstruction des données de maquette depuis quote');
+                maquetteDataToSave = {
+                    objects: quote.map((obj: any) => {
+                        return {
+                            id: obj.id,
+                            url: obj.url,
+                            price: obj.price,
+                            details: obj.details,
+                            position: obj.position,
+                            texture: obj.texture,
+                            scale: obj.scale,
+                            rotation: obj.rotation,
+                            color: obj.color,
+                            startPoint: obj.startPoint,
+                            endPoint: obj.endPoint,
+                            parentScale: obj.parentScale,
+                            boundingBox: obj.boundingBox,
+                            faces: obj.faces,
+                            type: obj.type,
+                            parametricData: obj.parametricData,
+                            isBatiChiffrageObject: obj.isBatiChiffrageObject || false
+                        };
+                    })
+                };
+            }
+
+            if (isEditingExisting && originalDevisId && originalMaquetteId) {
+                // Mode modification : mettre à jour les enregistrements existants
+                console.log('🔄 Mise à jour du devis existant:', originalDevisId, 'et maquette:', originalMaquetteId);
+                
+                try {
+                    // Mettre à jour le devis
+                    const updatedDevis = await DevisService.updateDevis(
+                        originalDevisId,
+                        devisName.trim(),
+                        devisData,
+                        devisDescription.trim() || undefined
+                    );
+                    console.log('✅ Devis mis à jour:', updatedDevis);
+                    
+                    // Mettre à jour la maquette
+                    const updatedMaquette = await MaquetteService.updateMaquette(
+                        originalMaquetteId,
+                        devisName.trim(), // Utiliser le même nom que le devis
+                        maquetteDataToSave,
+                        devisDescription.trim() || undefined
+                    );
+                    console.log('✅ Maquette mise à jour:', updatedMaquette);
+                    
+                    console.log('✅ Devis et maquette mis à jour avec succès:', { 
+                        devis: updatedDevis, 
+                        maquette: updatedMaquette 
+                    });
+                    alert('Devis et maquette mis à jour avec succès!');
+                } catch (updateError) {
+                    console.error('❌ Erreur lors de la mise à jour:', updateError);
+                    throw updateError;
+                }
+            } else {
+                // Mode création : créer de nouveaux enregistrements
+                console.log('✨ Création d\'un nouveau devis');
+                
+                const { devis, maquette } = await DevisService.saveDevisWithMaquette(
+                    devisName.trim(),
+                    devisData,
+                    maquetteDataToSave,
+                    devisDescription.trim() || undefined,
+                    user.id
+                );
+                
+                console.log('✅ Devis et maquette créés avec succès:', { devis, maquette });
+                alert('Devis et maquette sauvegardés avec succès!');
+            }
+            
             setShowSaveDevisModal(false);
             setDevisName('');
             setDevisDescription('');
+            
+            // Nettoyer le localStorage après sauvegarde réussie
+            cleanupDevisDataFromLocalStorage();
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde du devis:', error);
+            console.error('❌ Erreur lors de la sauvegarde du devis:', error);
             alert('Erreur lors de la sauvegarde du devis. Veuillez réessayer.');
         } finally {
             setIsSavingDevis(false);
@@ -1580,9 +1998,26 @@ const FullQuote: React.FC = () => {
             return;
         }
         
-        // Set default name based on client and devis number
-        const defaultName = `Devis ${devisNumero} - ${societeBatiment}`;
-        setDevisName(defaultName);
+        // En mode modification, utiliser le nom existant, sinon créer un nom par défaut
+        if (isEditingExisting && originalDevisName) {
+            setDevisName(originalDevisName);
+            setDevisDescription(originalDevisDescription || '');
+            console.log('📝 Mode modification - Nom existant utilisé:', originalDevisName);
+        } else {
+            // Set default name based on client and devis number pour les nouveaux devis
+            const defaultName = `Devis ${devisNumero} - ${societeBatiment}`;
+            setDevisName(defaultName);
+            setDevisDescription('');
+            console.log('✨ Mode création - Nom par défaut:', defaultName);
+        }
+        
+        // Debug pour vérifier l'état de modification
+        console.log('🔍 État lors de l\'ouverture du modal:');
+        console.log('- isEditingExisting:', isEditingExisting);
+        console.log('- originalDevisId:', originalDevisId);
+        console.log('- originalMaquetteId:', originalMaquetteId);
+        console.log('- originalDevisName:', originalDevisName);
+        
         setShowSaveDevisModal(true);
     };
 
@@ -2208,7 +2643,7 @@ const FullQuote: React.FC = () => {
                 marginBottom: '10px'
               }}
             >
-              💾 Sauvegarder le devis
+                             {isEditingExisting ? '💾 Mettre à jour le devis' : '💾 Sauvegarder le devis'}
             </button>
             
             {/* Electronic Signature Button */}
@@ -2604,16 +3039,33 @@ const FullQuote: React.FC = () => {
               width: '400px',
               maxWidth: '90%'
             }}>
-              <h3 style={{ marginTop: 0 }}>Sauvegarder le devis</h3>
+                             <h3 style={{ marginTop: 0 }}>{isEditingExisting ? 'Mettre à jour le devis' : 'Sauvegarder le devis'}</h3>
+              
+              {isEditingExisting && (
+                <div style={{ 
+                  marginBottom: '15px', 
+                  padding: '10px', 
+                  backgroundColor: '#e3f2fd', 
+                  borderRadius: '4px',
+                  border: '1px solid #2196f3'
+                }}>
+                  <small style={{ color: '#1976d2', fontWeight: 'bold' }}>
+                    ℹ️ Mode modification : Les modifications seront appliquées au devis existant
+                  </small>
+                </div>
+              )}
               
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Nom du devis *</label>
+                <label style={{ display: 'block', marginBottom: '5px' }}>
+                  Nom du devis *
+                  {isEditingExisting && <small style={{ color: '#666', fontWeight: 'normal' }}> (nom actuel)</small>}
+                </label>
                 <input
                   type="text"
                   value={devisName}
                   onChange={e => setDevisName(e.target.value)}
                   style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                  placeholder="Nom du devis"
+                  placeholder={isEditingExisting ? "Nom du devis existant" : "Nom du devis"}
                 />
               </div>
               
@@ -2660,7 +3112,7 @@ const FullQuote: React.FC = () => {
                     cursor: isSavingDevis ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {isSavingDevis ? 'Sauvegarde...' : 'Sauvegarder'}
+                  {isSavingDevis ? (isEditingExisting ? 'Mise à jour...' : 'Sauvegarde...') : (isEditingExisting ? 'Mettre à jour' : 'Sauvegarder')}
                 </button>
               </div>
             </div>

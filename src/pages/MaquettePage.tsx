@@ -60,6 +60,7 @@ const MaquettePage: React.FC = () => {
     const [surfaceEndPoint, setSurfaceEndPoint] = useState<THREE.Vector3 | null>(null);
     const [surfacePreview, setSurfacePreview] = useState<THREE.Mesh | null>(null);
     const [selectedTexture, setSelectedTexture] = useState<string | undefined>(undefined);
+    const [devisMetadata, setDevisMetadata] = useState<any>(null); // Métadonnées du devis
 
     
 
@@ -198,10 +199,270 @@ const MaquettePage: React.FC = () => {
         }, 500); // Délai plus long pour s'assurer que tous les objets sont bien chargés
     };
 
+    // Fonction utilitaire pour charger les données d'une maquette en préservant les lignes de devis
+    const loadMaquetteDataWithDevis = async (data: any, devisLines: ObjectData[]) => {
+        if (!data.objects || !Array.isArray(data.objects)) {
+            throw new Error('Format de données invalide');
+        }
+        
+        console.log('🔍 Chargement de la maquette avec', data.objects.length, 'objets et', devisLines.length, 'lignes de devis à préserver');
+        
+        // Nettoyer seulement les objets 3D, pas le quote
+        setObjects([]);
+        
+        // Reconstruire avec les données
+        const newObjects: ObjectData[] = [];
+        const maquetteQuoteItems: ObjectData[] = [];
+        
+        for (const rawObjData of data.objects) { 
+            const objData = cleanObjectData(rawObjData);
+            
+            console.log('📦 Objet:', objData.id, 'Type:', objData.type, 'URL:', objData.url, 'Position:', objData.position);
+            
+            // Distinguer les vrais objets 3D des lignes de devis pures
+            const hasValid3DGeometry = objData.position && 
+                                     Array.isArray(objData.position) && 
+                                     objData.position.length === 3 &&
+                                     (objData.url || objData.type === 'floor' || objData.type === 'wall' || objData.type === 'ceiling' || objData.type === 'object');
+            
+            if (hasValid3DGeometry) {
+                console.log('✅ Vrai objet 3D détecté, ajouté à la maquette');
+                const originalPosition = objData.position;
+                
+                if (objData.url) {
+                    try {
+                        const loader = new GLTFLoader();
+                        const gltf = await loader.loadAsync(objData.url);
+                        
+                        const newObject: ObjectData = {
+                            ...objData,
+                            position: originalPosition,
+                            gltf: gltf,
+                            isBatiChiffrageObject: objData.isBatiChiffrageObject || false
+                        };
+                        
+                        newObjects.push(newObject); 
+                        console.log('✅ Objet 3D chargé avec URL:', objData.url);
+                    } catch (error) {
+                        console.error(`Erreur lors du chargement de l'objet ${objData.url}:`, error);
+                    }
+                } else {
+                    const geometry = objData.type === 'floor' 
+                        ? new THREE.PlaneGeometry(1, 1)
+                        : new THREE.BoxGeometry(1, 1, 1);
+                    
+                    const material = new THREE.MeshStandardMaterial();
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    const newObject: ObjectData = {
+                        ...objData,
+                        position: originalPosition,
+                        gltf: mesh
+                    };
+                    
+                    newObjects.push(newObject); 
+                    console.log('✅ Objet 3D chargé avec géométrie par défaut');
+                }
+            }
+            
+            // Ajouter les objets de la maquette au quote (sans gltf), mais exclure les lignes de devis
+            // pour éviter les doublons avec les lignes venant du devis
+            if (objData.type !== 'devis-item') {
+                maquetteQuoteItems.push({
+                    ...objData,
+                    gltf: undefined
+                });
+            }
+        }
+        
+        // Combiner les objets de la maquette (sans les lignes de devis) avec les lignes de devis préservées
+        // Éviter les doublons en filtrant les éléments avec des détails et prix identiques
+        const combinedQuote = [...maquetteQuoteItems];
+        
+        // Ajouter les lignes de devis uniquement si elles ne correspondent pas à un objet 3D existant
+        for (const devisLine of devisLines) {
+            // Vérifier si un objet 3D avec le même nom existe déjà
+            const correspondingObject = combinedQuote.find(item => 
+                item.details === devisLine.details || 
+                (item.url && item.url.includes(devisLine.details))
+            );
+            
+            if (correspondingObject) {
+                // Fusionner les données : garder l'objet 3D mais avec les infos prix du devis
+                console.log('🔄 Fusion objet 3D + ligne devis pour:', devisLine.details);
+                correspondingObject.price = devisLine.price;
+                correspondingObject.quantity = devisLine.quantity;
+                correspondingObject.unit = devisLine.unit || correspondingObject.unit;
+            } else {
+                // Ajouter la ligne de devis car aucun objet 3D correspondant
+                combinedQuote.push(devisLine);
+                console.log('➕ Ligne de devis ajoutée (pas d\'objet 3D correspondant):', devisLine.details);
+            }
+        }
+         
+        console.log('📊 Résultat du chargement avec fusion:');
+        console.log('  - Objets 3D chargés:', newObjects.length);
+        console.log('  - Objets de maquette dans quote (sans devis-item):', maquetteQuoteItems.length);
+        console.log('  - Lignes de devis à traiter:', devisLines.length);
+        console.log('  - Total éléments de quote FINAL:', combinedQuote.length);
+        console.log('  - Détails dans combinedQuote:', combinedQuote.map(item => `${item.type}: ${item.details} (${item.price}€)`));
+        
+        // Mettre à jour les états
+        setObjects(newObjects); // Seulement les vrais objets 3D
+        setQuote(combinedQuote); // Objets de maquette + lignes de devis préservées
+        
+        // Appliquer les textures et faces après un délai
+        setTimeout(() => {
+            for (const obj of newObjects) {
+                if (obj.texture) { 
+                    objectsUtils.handleUpdateTexture(obj.id, obj.texture);
+                }
+                if (obj.faces) { 
+                    objectsUtils.handleUpdateFaces(obj.id, obj.faces);
+                }
+            }
+        }, 500);
+    };
+
     // Charger automatiquement une maquette si elle est passée en paramètre de navigation
     useEffect(() => {
+        console.log('🔄 MaquettePage - Démarrage du chargement des données');
+        
+        // Charger les données depuis location.state si disponibles (retour depuis FullQuote)
+        if (location.state?.fromFullQuote && location.state?.devisData) {
+            console.log('📊 Données reçues depuis FullQuote:', location.state.devisData);
+            
+            // Sauvegarder les métadonnées complètes du devis
+            setDevisMetadata(location.state.devisData);
+            console.log('💾 Métadonnées du devis sauvegardées dans MaquettePage');
+            
+            // Charger les lignes de devis dans le store si disponibles
+            if (location.state.devisData.lines && Array.isArray(location.state.devisData.lines)) {
+                console.log('📋 Chargement de', location.state.devisData.lines.length, 'lignes depuis FullQuote');
+                // Convertir les lignes en format ObjectData pour le store
+                const devisLinesFromFullQuote = location.state.devisData.lines.map((line: any, index: number) => ({
+                    id: line.id || `devis-line-${index}-${Date.now()}`,
+                    url: '',
+                    price: line.price || 0,
+                    details: line.details || 'Produit sans nom',
+                    position: [0, 0, 0] as [number, number, number],
+                    scale: [1, 1, 1] as [number, number, number],
+                    texture: undefined,
+                    rotation: [0, 0, 0] as [number, number, number],
+                    color: '#ffffff',
+                    startPoint: undefined,
+                    endPoint: undefined,
+                    parentScale: [1, 1, 1] as [number, number, number],
+                    boundingBox: undefined,
+                    faces: undefined,
+                    type: 'devis-item' as const,
+                    parametricData: undefined,
+                    isBatiChiffrageObject: false,
+                    gltf: undefined,
+                    quantity: line.quantity || 1,
+                    unit: line.unit || 'U'
+                }));
+                setQuote(devisLinesFromFullQuote);
+                console.log('✅ Lignes chargées depuis FullQuote');
+            }
+        } else {
+            // Fallback: charger les métadonnées du devis depuis localStorage (retour depuis FullQuote - ancien système)
+            const devisMetadata = localStorage.getItem('devisMetadataForMaquette');
+            if (devisMetadata) {
+            try {
+                const metadata = JSON.parse(devisMetadata);
+                console.log('📊 Métadonnées du devis récupérées depuis FullQuote:', {
+                    entreprise: {
+                        devoTitle: metadata.info?.devoTitle,
+                        devoName: metadata.info?.devoName,
+                        devoSiren: metadata.info?.devoSiren
+                    },
+                    client: {
+                        societeBatiment: metadata.info?.societeBatiment,
+                        clientEmail: metadata.info?.clientEmail
+                    },
+                    devis: {
+                        devisNumero: metadata.info?.devisNumero,
+                        isDevisGratuit: metadata.info?.isDevisGratuit
+                    },
+                    totaux: metadata.totals,
+                    logo: metadata.info?.logo ? 'PRÉSENT (' + metadata.info.logo.length + ' caractères)' : 'ABSENT',
+                    mode: metadata.isEditingExisting ? 'MODIFICATION' : 'CRÉATION',
+                    originalIds: metadata.isEditingExisting ? {
+                        devisId: metadata.originalDevisId,
+                        maquetteId: metadata.originalMaquetteId,
+                        nom: metadata.originalDevisName
+                    } : 'N/A'
+                });
+                
+                // NE PAS nettoyer les métadonnées ici - elles seront nettoyées par FullQuote
+                // localStorage.removeItem('devisMetadataForMaquette');
+                console.log('📌 Métadonnées conservées pour FullQuote');
+                
+            } catch (error) {
+                console.error('❌ Erreur lors du chargement des métadonnées du devis:', error);
+                localStorage.removeItem('devisMetadataForMaquette');
+            }
+                    } else {
+                console.log('📂 Aucune métadonnée de devis trouvée (navigation normale)');
+            }
+        }
+        // Si on arrive sur /maquette sans données (nouveau devis), nettoyer les anciennes données
+        // if (!location.state?.devisData && !location.state?.maquetteData) {
+        //     console.log('🧹 Navigation vers nouveau devis - Nettoyage complet');
+        //     localStorage.removeItem('devisDataToLoad');
+        //     localStorage.removeItem('devisDataAutoSave');
+        //     // Nettoyer aussi le store pour un nouveau devis
+        //     setQuote([]);
+        // }
+        
+        // D'abord, préparer les lignes de devis si elles existent
+        let devisLines: ObjectData[] = [];
+        if (location.state?.devisData) { 
+            console.log('📋 Chargement des données de devis dans MaquettePage:', location.state.devisData);
+            
+            // Sauvegarder les métadonnées du devis (venant de MesDevisFactures)
+            setDevisMetadata(location.state.devisData);
+            console.log('💾 Métadonnées du devis sauvegardées depuis MesDevisFactures');
+            
+            // Les données du devis sont maintenant passées directement via location.state
+            // Plus besoin de localStorage pour ce flux
+            
+            // Charger les lignes de devis dans le store pour les afficher dans QuotePanel
+            if (location.state.devisData.lines && Array.isArray(location.state.devisData.lines)) {
+                console.log('📋 Préparation de', location.state.devisData.lines.length, 'lignes de devis');
+                
+                // Convertir les lignes de devis en format ObjectData pour le store
+                devisLines = location.state.devisData.lines.map((line: any, index: number) => ({
+                    id: `devis-line-${index}-${Date.now()}`,
+                    url: '',
+                    price: line.price || 0,
+                    details: line.details || 'Produit sans nom',
+                    position: [0, 0, 0] as [number, number, number],
+                    scale: [1, 1, 1] as [number, number, number],
+                    texture: undefined,
+                    rotation: [0, 0, 0] as [number, number, number],
+                    color: '#ffffff',
+                    startPoint: undefined,
+                    endPoint: undefined,
+                    parentScale: [1, 1, 1] as [number, number, number],
+                    boundingBox: undefined,
+                    faces: undefined,
+                    type: 'devis-item' as const,
+                    parametricData: undefined,
+                    isBatiChiffrageObject: false,
+                    gltf: undefined,
+                    quantity: line.quantity || 1,
+                    unit: line.unit || 'U'
+                }));
+                
+                console.log('✅ Lignes de devis préparées');
+            }
+        }
+
+        // Ensuite, charger la maquette en préservant les lignes de devis
         if (location.state?.maquetteData) {
-            loadMaquetteData(location.state.maquetteData);
+            loadMaquetteDataWithDevis(location.state.maquetteData, devisLines);
          
             // Recentrer la caméra après le chargement de la maquette
             setTimeout(() => {
@@ -210,14 +471,12 @@ const MaquettePage: React.FC = () => {
                     orbitControlsRef.current.update();
                 }
             }, 1000);
+        } else if (devisLines.length > 0) {
+            // Si on a seulement des données de devis sans maquette, les charger directement
+            setQuote(devisLines);
+            console.log('✅ Lignes de devis chargées dans le store quote (sans maquette)');
         }
-        
-        // Si des données de devis sont présentes, les stocker pour les passer à FullQuote
-        if (location.state?.devisData) { 
-            // Stocker les données du devis dans le localStorage pour les récupérer dans FullQuote
-            localStorage.setItem('devisDataToLoad', JSON.stringify(location.state.devisData));
-        }
-    }, [location.state]);
+    }, [location.state, setQuote]);
 
     
  
@@ -1677,6 +1936,8 @@ const MaquettePage: React.FC = () => {
                             setQuote={setQuote}
                             getSerializableQuote={objectsUtils.getSerializableQuote}
                             handleRemoveObject={handleRemoveObject}
+                            devisMetadata={devisMetadata}
+                            maquetteObjects={objects}
                         />
                     </div>
                 )}

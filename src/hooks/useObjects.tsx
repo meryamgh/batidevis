@@ -463,7 +463,11 @@ export const useObjects = ({
       scale: item.scale,
       texture: item.texture,
       rotation: item.rotation,
-      isBatiChiffrageObject: item.isBatiChiffrageObject
+      isBatiChiffrageObject: item.isBatiChiffrageObject,
+      quantity: item.quantity || 1, // Inclure la quantité
+      unit: item.unit, // Inclure l'unité
+      type: item.type, // Inclure le type pour distinguer les devis-items
+      parametricData: item.parametricData // Inclure les données paramétriques
     }));
   }, [quote]);
 

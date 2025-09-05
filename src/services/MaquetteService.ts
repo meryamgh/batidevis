@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import cookie from 'js-cookie';
 
 // Type pour les objets sauvegardés (sans gltf qui ne peut pas être sérialisé)
 export interface SavedObjectData {
@@ -43,6 +44,24 @@ export interface MaquetteData {
 }
 
 export class MaquetteService {
+  // Méthode utilitaire pour récupérer l'ID utilisateur depuis le cookie
+  private static getUserIdFromCookie(): string {
+    const userTokenString = cookie.get('supabase_session');
+    if (!userTokenString) {
+      throw new Error('Aucun utilisateur connecté');
+    }
+    
+    try {
+      const userToken = JSON.parse(decodeURIComponent(userTokenString));
+      if (!userToken.user || !userToken.user.id) {
+        throw new Error('Token utilisateur invalide');
+      }
+      return userToken.user.id;
+    } catch (error) {
+      throw new Error('Erreur lors du parsing du token utilisateur');
+    }
+  }
+
   // Méthode de débogage pour vérifier l'état de l'authentification
   static async debugAuth() {
     try {
@@ -178,9 +197,13 @@ export class MaquetteService {
   // Récupérer toutes les maquettes de l'utilisateur connecté
   static async getUserMaquettes(): Promise<Maquette[]> {
     try {
+      // Récupérer l'ID utilisateur depuis le cookie
+      const userId = this.getUserIdFromCookie();
+
       const { data: maquettes, error } = await supabase
         .from('maquettes')
         .select('*')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -237,9 +260,13 @@ export class MaquetteService {
   // Récupérer la dernière maquette de l'utilisateur
   static async getLastMaquette(): Promise<Maquette | null> {
     try {
+      // Récupérer l'ID utilisateur depuis le cookie
+      const userId = this.getUserIdFromCookie();
+
       const { data: maquette, error } = await supabase
         .from('maquettes')
         .select('*')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();

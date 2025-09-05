@@ -27,6 +27,9 @@ const MesDevisFactures: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deletingDevisId, setDeletingDevisId] = useState<string | null>(null);
+    const [changingStatusDevisId, setChangingStatusDevisId] = useState<string | null>(null);
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [selectedDevis, setSelectedDevis] = useState<Document | null>(null);
 
     // Récupérer les devis avec leurs maquettes depuis Supabase
     useEffect(() => {
@@ -53,7 +56,7 @@ const MesDevisFactures: React.FC = () => {
         numero: devis.name,
         client: devis.data?.info?.societeBatiment || 'Client non spécifié',
         date: devis.created_at || new Date().toISOString(),
-        montant: devis.data?.totals?.totalTTC || 0,
+        montant: devis.data?.totals?.totalHT || 0,
         statut: devis.status,
         maquette_id: devis.maquette_id,
         maquette_name: maquette?.name || 'Aucune maquette'
@@ -110,12 +113,50 @@ const MesDevisFactures: React.FC = () => {
                 state: { 
                     maquetteData: maquette.data,
                     maquetteName: maquette.name,
-                    devisData: devis.data // Ajouter les données du devis
+                    devisData: {
+                        ...devis.data,
+                        // Ajouter les IDs et métadonnées au niveau racine pour permettre la mise à jour
+                        originalDevisId: devis.id,
+                        originalMaquetteId: maquette.id,
+                        originalDevisName: devis.name,
+                        originalDevisDescription: devis.description
+                    }
                 } 
             });
         } catch (error) {
             console.error('Erreur lors de la récupération du devis et de la maquette:', error);
             alert('Erreur lors de la récupération du devis et de la maquette');
+        }
+    };
+
+    // Fonction pour changer le statut d'un devis
+    const handleChangerStatut = (doc: Document) => {
+        setSelectedDevis(doc);
+        setShowStatusModal(true);
+    };
+
+    // Fonction pour confirmer le changement de statut
+    const handleConfirmerChangementStatut = async (nouveauStatut: string) => {
+        if (!selectedDevis) return;
+
+        try {
+            setChangingStatusDevisId(selectedDevis.id);
+            
+            // Mettre à jour le statut du devis
+            await DevisService.updateDevisStatus(selectedDevis.id, nouveauStatut);
+            
+            // Recharger la liste des devis
+            const devisData = await DevisService.getUserDevisWithMaquettes();
+            setDevisWithMaquettes(devisData);
+            
+            // Fermer la modal
+            setShowStatusModal(false);
+            setSelectedDevis(null);
+        } catch (error) {
+            console.error('Erreur lors du changement de statut:', error);
+            alert('Erreur lors du changement de statut.');
+        } finally {
+            setChangingStatusDevisId(null);
         }
     };
 
@@ -239,7 +280,7 @@ const MesDevisFactures: React.FC = () => {
                                         )}
                                     </div>
                                     <div className="montant">
-                                        {doc.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                        {doc.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })} <span className="ht-indicator">HT</span>
                                     </div>
                                 </div>
 
@@ -247,14 +288,21 @@ const MesDevisFactures: React.FC = () => {
                                     <button 
                                         className="bouton-action modifier" 
                                         onClick={() => handleModifierDevis(doc)}
-                                        disabled={deletingDevisId === doc.id}
+                                        disabled={deletingDevisId === doc.id || changingStatusDevisId === doc.id}
                                     >
                                         Modifier
                                     </button>
                                     <button 
+                                        className={`bouton-action statut ${changingStatusDevisId === doc.id ? 'changing' : ''}`}
+                                        onClick={() => handleChangerStatut(doc)}
+                                        disabled={deletingDevisId === doc.id || changingStatusDevisId === doc.id}
+                                    >
+                                        {changingStatusDevisId === doc.id ? 'Changement...' : 'Changer statut'}
+                                    </button>
+                                    <button 
                                         className={`bouton-action supprimer ${deletingDevisId === doc.id ? 'deleting' : ''}`}
                                         onClick={() => handleSupprimerDevis(doc)}
-                                        disabled={deletingDevisId === doc.id}
+                                        disabled={deletingDevisId === doc.id || changingStatusDevisId === doc.id}
                                     >
                                         {deletingDevisId === doc.id ? 'Suppression...' : 'Supprimer'}
                                     </button>
@@ -263,6 +311,43 @@ const MesDevisFactures: React.FC = () => {
                         ))
                     )}
                 </div>
+
+                {/* Modal pour changer le statut */}
+                {showStatusModal && selectedDevis && (
+                    <div className="modal-overlay" onClick={() => setShowStatusModal(false)}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <h3>Changer le statut du devis</h3>
+                            <p><strong>Devis:</strong> {selectedDevis.numero}</p>
+                            <p><strong>Statut actuel:</strong> {getTexteStatut(selectedDevis.statut)}</p>
+                            
+                            <div className="status-options">
+                                <h4>Nouveau statut:</h4>
+                                <div className="status-buttons">
+                                    {['brouillon', 'envoyé', 'accepté', 'annulé', 'signé'].map(statut => (
+                                        <button
+                                            key={statut}
+                                            className={`status-button ${statut === selectedDevis.statut ? 'current' : ''}`}
+                                            onClick={() => handleConfirmerChangementStatut(statut)}
+                                            disabled={statut === selectedDevis.statut || changingStatusDevisId === selectedDevis.id}
+                                        >
+                                            {getTexteStatut(statut)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="modal-actions">
+                                <button 
+                                    className="bouton-annuler" 
+                                    onClick={() => setShowStatusModal(false)}
+                                    disabled={changingStatusDevisId === selectedDevis.id}
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
             <br></br>
             <footer className="footer">

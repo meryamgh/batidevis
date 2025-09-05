@@ -758,7 +758,7 @@ body {
 
 /* Footer */
 .footer {
-    background: linear-gradient(to right, rgb(20, 11, 8), rgb(32, 18, 13));
+    background: linear-gradient(to right, #d19d13, rgb(32, 18, 13));
     color: white;
     padding: 2.5rem 0 1.5rem;
     position: relative;

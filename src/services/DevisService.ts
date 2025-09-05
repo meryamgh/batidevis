@@ -1,4 +1,6 @@
 import { supabase } from '../config/supabase';
+import cookie from 'js-cookie';
+
 
 // Interface pour les lignes de devis
 export interface DevisLine {
@@ -74,6 +76,24 @@ export interface DevisData {
 }
 
 export class DevisService {
+  // Méthode utilitaire pour récupérer l'ID utilisateur depuis le cookie
+  private static getUserIdFromCookie(): string {
+    const userTokenString = cookie.get('supabase_session');
+    if (!userTokenString) {
+      throw new Error('Aucun utilisateur connecté');
+    }
+    
+    try {
+      const userToken = JSON.parse(decodeURIComponent(userTokenString));
+      if (!userToken.user || !userToken.user.id) {
+        throw new Error('Token utilisateur invalide');
+      }
+      return userToken.user.id;
+    } catch (error) {
+      throw new Error('Erreur lors du parsing du token utilisateur');
+    }
+  }
+
   // Méthode de débogage pour vérifier l'état de l'authentification
   static async debugAuth() {
     try {
@@ -251,9 +271,13 @@ export class DevisService {
   // Récupérer tous les devis de l'utilisateur connecté
   static async getUserDevis(): Promise<Devis[]> {
     try {
+      // Récupérer l'ID utilisateur depuis le cookie
+      const userId = this.getUserIdFromCookie();
+
       const { data: devis, error } = await supabase
         .from('devis')
         .select('*')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -310,9 +334,13 @@ export class DevisService {
   // Récupérer le dernier devis de l'utilisateur
   static async getLastDevis(): Promise<Devis | null> {
     try {
+      // Récupérer l'ID utilisateur depuis le cookie
+      const userId = this.getUserIdFromCookie();
+
       const { data: devis, error } = await supabase
         .from('devis')
         .select('*')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
@@ -439,12 +467,18 @@ export class DevisService {
     }
   }
 
+
+
   // Récupérer tous les devis avec leurs maquettes associées
   static async getUserDevisWithMaquettes(): Promise<Array<{ devis: Devis; maquette: any }>> {
     try {
+      // Récupérer l'ID utilisateur depuis le cookie
+      const userId = this.getUserIdFromCookie();
+
       const { data: devis, error } = await supabase
         .from('devis')
         .select('*')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false });
 
       if (error) {

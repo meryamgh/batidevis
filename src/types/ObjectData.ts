@@ -50,4 +50,5 @@ export type ObjectData = {
     parametricData?: any; 
     isBatiChiffrageObject : boolean;
     quantity?: number; // Ajout du champ quantity pour les devis
+    unit?: string; // Ajout du champ unit pour les devis (ex: m², U, ml, etc.)
 };
