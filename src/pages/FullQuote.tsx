@@ -2099,7 +2099,7 @@ const FullQuote: React.FC = () => {
     const handleSendInvoiceByEmail = async (email: string) => {
       try {
         const invoiceData = {
-          logo: devoTitle,
+          logo: leftLogoSrc,
           client: {
             nom: devoName,
             adresse: `${devoAddress}, ${devoCity}`,
