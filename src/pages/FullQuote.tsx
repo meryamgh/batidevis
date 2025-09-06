@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Quote.css';
 import { useMaquetteStore } from '../store/maquetteStore'; 
@@ -202,8 +202,18 @@ const FullQuote: React.FC = () => {
     // État pour les données complètes de la maquette
     const [maquetteData, setMaquetteData] = useState<any>(null);
 
-    // Agrégation initiale des articles
-    const initialAggregated: AggregatedQuoteItem[] = quote.reduce((acc, item) => {
+    // Agrégation initiale des articles - utiliser useMemo pour éviter les recalculs
+    const initialAggregated: AggregatedQuoteItem[] = useMemo(() => {
+      console.log('🔄 FullQuote - Recalcul de initialAggregated avec', quote.length, 'objets');
+      return quote.reduce((acc, item) => {
+      console.log('🔍 FullQuote.initialAggregated - Traitement de l\'objet:', {
+        id: item.id,
+        details: item.details,
+        isBatiChiffrageObject: item.isBatiChiffrageObject,
+        hasParametricData: !!item.parametricData,
+        parametricData: item.parametricData
+      });
+      
       let details: string;
       let unit: string | undefined;
       
@@ -211,9 +221,19 @@ const FullQuote: React.FC = () => {
       if (item.parametricData && item.parametricData.item_details) {
         details = item.parametricData.item_details.libtech || item.details || 'Produit sans nom';
         unit = item.parametricData.item_details.unite || 'U';
+        console.log('✅ FullQuote.initialAggregated - Utilisation de parametricData:', {
+          libtech: item.parametricData.item_details.libtech,
+          unite: item.parametricData.item_details.unite,
+          finalDetails: details,
+          finalUnit: unit
+        });
       } else {
         details = item.details || 'Produit sans nom';
         unit = 'U';
+        console.log('⚠️ FullQuote.initialAggregated - Utilisation de item.details:', {
+          details: details,
+          unit: unit
+        });
       }
       
       const existingItem = acc.find(
@@ -221,22 +241,33 @@ const FullQuote: React.FC = () => {
       );
       if (existingItem) {
           // Si l'élément existe déjà, ajouter la quantité existante ou 1
-          existingItem.quantity += item.quantity || 1; 
+          existingItem.quantity += item.quantity || 1;
+          console.log('🔄 FullQuote.initialAggregated - Quantité mise à jour pour:', details, 'nouvelle quantité:', existingItem.quantity);
       } else {
           // Utiliser la quantité existante de l'item ou 1 par défaut
-          acc.push({ 
+          const newItem = { 
               details: details, 
               price: item.price, 
               quantity: item.quantity || 1, 
               unit: unit 
-          }); 
+          };
+          acc.push(newItem);
+          console.log('✅ FullQuote.initialAggregated - Nouvel item ajouté:', newItem);
       }
       return acc;
     }, [] as AggregatedQuoteItem[]);
+    }, [quote]); // Dépendance sur quote
 
     const [aggregatedQuote, setAggregatedQuote] = useState<AggregatedQuoteItem[]>(initialAggregated);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isFetchingSuggestions, setIsFetchingSuggestions] = useState<boolean>(false);
+
+    // Synchroniser aggregatedQuote avec initialAggregated quand il change
+    useEffect(() => {
+        console.log('🔄 FullQuote - Synchronisation de aggregatedQuote avec initialAggregated');
+        console.log('🔄 FullQuote - initialAggregated:', initialAggregated);
+        setAggregatedQuote(initialAggregated);
+    }, [initialAggregated]);
 
     // Fonction pour supprimer une ligne
     const handleDeleteRow = (index: number) => {
@@ -395,9 +426,9 @@ const FullQuote: React.FC = () => {
         });
         
         
-        // Passer aussi l'ordre exact des éléments
-        syncObjectsAndQuote(updatedQuote);
-        console.log('✅ Synchronisation terminée');
+        // ❌ SUPPRIMÉ : syncObjectsAndQuote(updatedQuote) car cela écrase les bonnes données
+        // Les données sont déjà correctement préparées dans updatedQuote
+        console.log('✅ Synchronisation terminée (sans syncObjectsAndQuote)');
         
         // Navigation avec les données via state au lieu du localStorage
         console.log('🚀 Navigation vers /maquette avec données...');
@@ -783,8 +814,9 @@ const FullQuote: React.FC = () => {
             if (fromMaquette && quoteLine) {
                 // Données venant de MaquettePage via QuotePanel
                 console.log('📊 Données reçues depuis MaquettePage:', quoteLine.length, 'lignes');
-                setAggregatedQuote(quoteLine);
-                console.log('✅ Lignes de devis chargées depuis navigation');
+                // ❌ SUPPRIMÉ : setAggregatedQuote(quoteLine) car cela écrase les bonnes données agrégées
+                // Les données seront correctement agrégées par initialAggregated
+                console.log('✅ Lignes de devis chargées depuis navigation (agrégation automatique)');
                 
                 // Sauvegarder les données de maquette si disponibles
                 if (receivedMaquetteData) {
@@ -2154,14 +2186,58 @@ const FullQuote: React.FC = () => {
         console.log('📋 Nombre total de lignes dans aggregatedQuote:', aggregatedQuote.length);
         console.log('📋 Détail des lignes:', aggregatedQuote);
         
-        const devisLines = aggregatedQuote.map(item => ({
-            details: item.details,
-            price: item.price,
-            quantity: item.quantity,
-            unit: item.unit
-        }));
+        const devisLines = aggregatedQuote.map(item => {
+            console.log('🔍 FullQuote.prepareDevisData - Préparation de la ligne:', {
+                itemDetails: item.details,
+                itemPrice: item.price,
+                itemQuantity: item.quantity
+            });
+            
+            // Pour les objets batichiffrage, inclure les informations nécessaires pour la correspondance
+            const originalQuoteItem = quote.find(q => {
+                // Si c'est un objet batichiffrage, comparer avec libtech
+                if (q.isBatiChiffrageObject && q.parametricData?.item_details?.libtech) {
+                    return q.parametricData.item_details.libtech === item.details;
+                }
+                // Sinon, comparer avec details normal
+                return q.details === item.details;
+            });
+            
+            console.log('🔍 FullQuote.prepareDevisData - Objet original trouvé:', {
+                found: !!originalQuoteItem,
+                originalId: originalQuoteItem?.id,
+                isBatiChiffrageObject: originalQuoteItem?.isBatiChiffrageObject,
+                hasParametricData: !!originalQuoteItem?.parametricData
+            });
+            
+            const devisLine = {
+                details: item.details,
+                price: item.price,
+                quantity: item.quantity,
+                unit: item.unit,
+                isBatiChiffrageObject: originalQuoteItem?.isBatiChiffrageObject || false,
+                originalId: originalQuoteItem?.id,
+                parametricData: originalQuoteItem?.parametricData
+            };
+            
+            console.log('✅ FullQuote.prepareDevisData - Ligne de devis créée:', devisLine);
+            
+            return devisLine;
+        });
         
         console.log('💾 Lignes qui seront sauvegardées:', devisLines);
+        
+        // Log détaillé des objets batichiffrage dans les lignes à sauvegarder
+        const batichiffrageLines = devisLines.filter(line => line.isBatiChiffrageObject);
+        console.log('🔧 Lignes batichiffrage à sauvegarder:', batichiffrageLines.length);
+        batichiffrageLines.forEach((line, index) => {
+            console.log(`🔧 Ligne batichiffrage ${index + 1} à sauvegarder:`, {
+                details: line.details,
+                isBatiChiffrageObject: line.isBatiChiffrageObject,
+                originalId: line.originalId,
+                hasParametricData: !!line.parametricData
+            });
+        });
         
         return {
             info: {
@@ -2701,6 +2777,14 @@ const FullQuote: React.FC = () => {
               <tbody>
                 {/* Commenté pour masquer les 2 premières lignes de devis */}
                 {aggregatedQuote.map((item, index) => {
+                  // Log pour voir ce qui est affiché dans le tableau
+                  if (item.details.includes('Chassis_') || item.details.includes('Fourniture et pose')) {
+                    console.log(`🔍 FullQuote Table - Ligne ${index + 1} affichée:`, {
+                      details: item.details,
+                      price: item.price,
+                      quantity: item.quantity
+                    });
+                  }
                   
                   const isEditingDetails = editingCell?.rowIndex === index && editingCell?.field === 'details';
                   const isEditingQuantity = editingCell?.rowIndex === index && editingCell?.field === 'quantity';

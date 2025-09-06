@@ -8,6 +8,27 @@ const formatNumber = (num: number): string => {
     return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
 
+// Fonction utilitaire pour extraire le texte à afficher pour un objet
+const getDisplayText = (item: ObjectData): string => {
+    console.log('🔍 QuotePanel.getDisplayText - Analyse de l\'objet:', {
+        id: item.id,
+        details: item.details,
+        isBatiChiffrageObject: item.isBatiChiffrageObject,
+        hasParametricData: !!item.parametricData,
+        parametricDataItemDetails: item.parametricData?.item_details,
+        libtech: item.parametricData?.item_details?.libtech
+    });
+    
+    // Pour les objets batichiffrage, utiliser parametricData.item_details.libtech
+    if (item.isBatiChiffrageObject && item.parametricData?.item_details?.libtech) {
+        console.log('✅ QuotePanel.getDisplayText - Utilisation de parametricData.item_details.libtech:', item.parametricData.item_details.libtech);
+        return item.parametricData.item_details.libtech;
+    }
+    // Sinon, utiliser item.details
+    console.log('⚠️ QuotePanel.getDisplayText - Utilisation de item.details:', item.details);
+    return item.details || 'Produit sans nom';
+};
+
 interface QuotePanelProps {
   quote: ObjectData[];
   setObjects: (objects: ObjectData[] | ((prev: ObjectData[]) => ObjectData[])) => void;
@@ -34,6 +55,21 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
     console.log('🚀 Navigation vers FullQuote avec', serializableQuote.length, 'lignes de devis');
     console.log('📊 Métadonnées à transmettre:', devisMetadata ? 'PRÉSENTES' : 'ABSENTES');
     console.log('🏗️ Objets maquette à transmettre:', maquetteObjects ? maquetteObjects.length : 0, 'objets');
+    
+    // Log détaillé des objets batichiffrage dans le quote
+    const batichiffrageObjects = quote.filter(obj => obj.isBatiChiffrageObject);
+    console.log('🔧 Objets batichiffrage dans le quote:', batichiffrageObjects.length);
+    batichiffrageObjects.forEach((obj, index) => {
+      console.log(`🔧 Objet batichiffrage ${index + 1}:`, {
+        id: obj.id,
+        details: obj.details,
+        isBatiChiffrageObject: obj.isBatiChiffrageObject,
+        hasParametricData: !!obj.parametricData,
+        parametricData: obj.parametricData,
+        price: obj.price,
+        quantity: obj.quantity
+      });
+    });
     
     // Préparer les données de maquette pour la sauvegarde
     const maquetteData = maquetteObjects ? {
@@ -272,8 +308,8 @@ const QuotePanel: React.FC<QuotePanelProps> = ({
             <div key={item.id} style={itemStyle}>
               <div style={itemContentStyle}>
                 <div style={itemTextStyle}>
-                  {(item.parametricData && item.parametricData.item_details && item.parametricData.item_details.libtech ? item.parametricData.item_details.libtech : item.details).split('_').map((part: string, index: number) => (
-                    <div key={index} style={{ marginBottom: index < (item.parametricData && item.parametricData.item_details && item.parametricData.item_details.libtech ? item.parametricData.item_details.libtech : item.details).split('_').length - 1 ? '4px' : '0' }}>
+                  {getDisplayText(item).split('_').map((part: string, index: number) => (
+                    <div key={index} style={{ marginBottom: index < getDisplayText(item).split('_').length - 1 ? '4px' : '0' }}>
                       {part}
                     </div>
                   ))}

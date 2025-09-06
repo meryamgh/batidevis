@@ -8,6 +8,10 @@ export interface DevisLine {
   price: number;
   quantity: number;
   unit?: string;
+  // Propriétés pour les objets batichiffrage
+  isBatiChiffrageObject?: boolean;
+  originalId?: string;
+  parametricData?: any;
 }
 
 // Interface pour les informations du devis

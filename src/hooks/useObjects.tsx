@@ -146,16 +146,27 @@ export const useObjects = ({
 
       // Fetch parametric data from the API
       if (details) {
+        console.log('🔧 useObjects.handleAddObject - Récupération des données paramétriques pour:', details);
         try {
           const parametricData = await fetchParametricData(details);
+          console.log('🔧 useObjects.handleAddObject - Données paramétriques reçues:', parametricData);
           if (parametricData) {
             newObject.parametricData = parametricData;
             const prix = parametricData.item_details.prix;
             newObject.price = prix;
-            newObject.isBatiChiffrageObject = true; 
+            newObject.isBatiChiffrageObject = true;
+            console.log('✅ useObjects.handleAddObject - Objet batichiffrage créé:', {
+              id: newObject.id,
+              details: newObject.details,
+              price: newObject.price,
+              isBatiChiffrageObject: newObject.isBatiChiffrageObject,
+              parametricData: newObject.parametricData
+            });
+          } else {
+            console.log('⚠️ useObjects.handleAddObject - Aucune donnée paramétrique reçue');
           }
         } catch (error) {
-          console.error('Error fetching parametric data:', error);
+          console.error('❌ useObjects.handleAddObject - Erreur lors de la récupération des données paramétriques:', error);
         }
       } 
       

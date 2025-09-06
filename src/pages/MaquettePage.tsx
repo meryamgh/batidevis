@@ -346,29 +346,100 @@ const MaquettePage: React.FC = () => {
             if (location.state.devisData.lines && Array.isArray(location.state.devisData.lines)) {
                 console.log('📋 Chargement de', location.state.devisData.lines.length, 'lignes depuis FullQuote');
                 console.log('📋 Détail des lignes reçues:', location.state.devisData.lines);
+                
+                // Log des objets batichiffrage dans les lignes reçues
+                const batichiffrageLines = location.state.devisData.lines.filter((line: any) => line.isBatiChiffrageObject);
+                console.log('🔧 Lignes batichiffrage reçues:', batichiffrageLines.length);
+                batichiffrageLines.forEach((line: any, index: number) => {
+                    console.log(`🔧 Ligne batichiffrage ${index + 1}:`, {
+                        details: line.details,
+                        isBatiChiffrageObject: line.isBatiChiffrageObject,
+                        originalId: line.originalId,
+                        hasParametricData: !!line.parametricData,
+                        parametricData: line.parametricData
+                    });
+                });
                 // Convertir les lignes en format ObjectData pour le store
-                const devisLinesFromFullQuote = location.state.devisData.lines.map((line: any, index: number) => ({
-                    id: line.id || `devis-line-${index}-${Date.now()}`,
-                    url: '',
-                    price: line.price || 0,
-                    details: line.details || 'Produit sans nom',
-                    position: [0, 0, 0] as [number, number, number],
-                    scale: [1, 1, 1] as [number, number, number],
-                    texture: undefined,
-                    rotation: [0, 0, 0] as [number, number, number],
-                    color: '#ffffff',
-                    startPoint: undefined,
-                    endPoint: undefined,
-                    parentScale: [1, 1, 1] as [number, number, number],
-                    boundingBox: undefined,
-                    faces: undefined,
-                    type: 'devis-item' as const,
-                    parametricData: undefined,
-                    isBatiChiffrageObject: false,
-                    gltf: undefined,
-                    quantity: line.quantity || 1,
-                    unit: line.unit || 'U'
-                }));
+                const devisLinesFromFullQuote = location.state.devisData.lines.map((line: any, index: number) => {
+                    // Détecter si c'est un objet batichiffrage (par le flag ou par le pattern du nom)
+                    const isLikelyBatichiffrage = line.isBatiChiffrageObject || 
+                        (line.details && /^[A-Za-z]+_\d+$/.test(line.details));
+                    
+                    console.log(`🔍 MaquettePage - Conversion ligne ${index + 1}:`, {
+                        lineDetails: line.details,
+                        isBatiChiffrageObject: line.isBatiChiffrageObject,
+                        originalId: line.originalId,
+                        hasParametricData: !!line.parametricData,
+                        isLikelyBatichiffrage: isLikelyBatichiffrage
+                    });
+                    
+                    // Pour les objets batichiffrage, essayer de retrouver les parametricData depuis les objets de la maquette
+                    let parametricData = undefined;
+                    let isBatiChiffrageObject = false;
+                    
+                    // Si c'est un objet batichiffrage, chercher les parametricData correspondantes
+                    if (isLikelyBatichiffrage && location.state.maquetteData?.objects) {
+                        console.log('🔧 MaquettePage - Recherche de l\'objet original pour batichiffrage...');
+                        console.log('🔧 MaquettePage - Objets disponibles dans maquetteData:', location.state.maquetteData.objects.length);
+                        
+                        const originalObject = location.state.maquetteData.objects.find((obj: any) => 
+                            obj.id === line.originalId || obj.details === line.details
+                        );
+                        
+                        console.log('🔧 MaquettePage - Objet original trouvé:', {
+                            found: !!originalObject,
+                            originalObjectId: originalObject?.id,
+                            originalObjectDetails: originalObject?.details,
+                            hasParametricData: !!originalObject?.parametricData
+                        });
+                        
+                        if (originalObject && originalObject.parametricData) {
+                            parametricData = originalObject.parametricData;
+                            isBatiChiffrageObject = true;
+                            console.log('✅ MaquettePage - ParametricData restaurées pour l\'objet batichiffrage');
+                        } else {
+                            console.log('⚠️ MaquettePage - Impossible de restaurer les parametricData');
+                        }
+                    } else if (line.parametricData) {
+                        // Utiliser directement les parametricData de la ligne si disponibles
+                        parametricData = line.parametricData;
+                        isBatiChiffrageObject = line.isBatiChiffrageObject;
+                        console.log('✅ MaquettePage - Utilisation des parametricData directement de la ligne');
+                    }
+                    
+                    const convertedObject = {
+                        id: line.id || `devis-line-${index}-${Date.now()}`,
+                        url: '',
+                        price: line.price || 0,
+                        details: line.details || 'Produit sans nom',
+                        position: [0, 0, 0] as [number, number, number],
+                        scale: [1, 1, 1] as [number, number, number],
+                        texture: undefined,
+                        rotation: [0, 0, 0] as [number, number, number],
+                        color: '#ffffff',
+                        startPoint: undefined,
+                        endPoint: undefined,
+                        parentScale: [1, 1, 1] as [number, number, number],
+                        boundingBox: undefined,
+                        faces: undefined,
+                        type: 'devis-item' as const,
+                        parametricData: parametricData,
+                        isBatiChiffrageObject: isBatiChiffrageObject,
+                        gltf: undefined,
+                        quantity: line.quantity || 1,
+                        unit: line.unit || 'U'
+                    };
+                    
+                    console.log(`✅ MaquettePage - Objet converti ${index + 1}:`, {
+                        id: convertedObject.id,
+                        details: convertedObject.details,
+                        isBatiChiffrageObject: convertedObject.isBatiChiffrageObject,
+                        hasParametricData: !!convertedObject.parametricData,
+                        parametricData: convertedObject.parametricData
+                    });
+                    
+                    return convertedObject;
+                });
                 // Remplacer complètement le quote par les lignes venant de FullQuote
                 // FullQuote contient l'état EXACT du devis (ce qui doit être facturé)
                 setQuote(devisLinesFromFullQuote);
