@@ -1686,7 +1686,7 @@ const FullQuote: React.FC = () => {
             doc.setTextColor(0, 0, 0);
             
             const sigBoxWidth = 80;
-            const sigBoxHeight = 45;
+            const sigBoxHeight = 30;
             const sigBoxX = pageWidth - sigBoxWidth - 110;
             
             // Draw the signature box
@@ -1695,16 +1695,15 @@ const FullQuote: React.FC = () => {
             doc.rect(sigBoxX, yPos, sigBoxWidth, sigBoxHeight, 'S');
             
             // All content inside the box with proper alignment
-            doc.text('Signature du client:', sigBoxX + 5, yPos + 8);
+            doc.text('Signature :', sigBoxX + 5, yPos + 8);
             doc.text('Bon pour accord', sigBoxX + 5, yPos + 18);
             doc.text('Date:', sigBoxX + 5, yPos + 28);
-            doc.text('Signature:', sigBoxX + 5, yPos + 38);
             
             // Footer
             doc.setFont("helvetica", "italic");
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
-            doc.text('Ce devis est valable 30 jours à compter de la date d\'émission.', pageWidth / 2, pageHeight - 15, { align: 'center' });
+            doc.text('Les marchandises vendues restent notre propriété, jusqu\'au paiement complet de la facture (loi°80.335 du 2 mai 1980)', pageWidth / 2, pageHeight - 15, { align: 'center' });
             
             // Convert to File
             const pdfBlob = doc.output('blob');

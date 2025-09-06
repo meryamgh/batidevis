@@ -24,6 +24,7 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
   const [generatedFilename, setGeneratedFilename] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [isAccepting, setIsAccepting] = useState(false);
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -176,6 +177,9 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
       return;
     }
 
+    setIsAccepting(true);
+    setError(null);
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/3d/approve/${generatedFilename}`, {
         method: 'POST',
@@ -209,6 +213,8 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'acceptation');
+    } finally {
+      setIsAccepting(false);
     }
   };
 
@@ -365,12 +371,21 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
               <button 
                 className="accept-button" 
                 onClick={handleAccept}
+                disabled={isAccepting}
               >
-                APPROUVER LE FICHIER GLB
+                {isAccepting ? (
+                  <>
+                    <span className="spinner"></span>
+                    ACCEPTATION EN COURS...
+                  </>
+                ) : (
+                  'APPROUVER LE FICHIER GLB'
+                )}
               </button>
               <button 
                 className="reject-button" 
                 onClick={handleReject}
+                disabled={isAccepting}
               >
                 REJETER LE FICHIER
               </button>
@@ -378,9 +393,19 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
           </div>
         )}
         
+        {isAccepting && (
+          <div className="accepting-message">
+            <div className="accepting-spinner">
+              <span className="spinner"></span>
+            </div>
+            <p>Acceptation de votre objet 3D en cours...</p>
+            <small>Veuillez patienter, cela peut prendre quelques instants.</small>
+          </div>
+        )}
+        
         {success && (
           <div className="success-message">
-            ✅ Votre objet a été accepté et sera téléchargé !
+            Votre objet 3D a été accepté et sera téléchargé. Le panel va se fermer automatiquement...
           </div>
         )}
 
