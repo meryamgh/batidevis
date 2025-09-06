@@ -146,7 +146,7 @@ const formatNumber = (num: number): string => {
 const FullQuote: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { quote, syncObjectsAndQuote } = useMaquetteStore();
+    const { quote } = useMaquetteStore();
     const { user } = useAuth();
     const inputRef = useRef<HTMLInputElement>(null);
     const quoteRef = useRef<HTMLDivElement>(null);
