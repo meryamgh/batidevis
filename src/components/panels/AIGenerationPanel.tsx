@@ -27,12 +27,16 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
   const [isAccepting, setIsAccepting] = useState(false);
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const previewPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
+      }
+      if (previewPollingRef.current) {
+        clearInterval(previewPollingRef.current);
       }
     };
   }, []);
@@ -102,6 +106,11 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
         const response = await fetch(`${BACKEND_URL}/api/3d/status/${taskId}`);
         
         if (!response.ok) {
+          if (response.status === 404) {
+            // Si 404, continuer le polling - la tâche n'est peut-être pas encore créée
+            console.log('Statut non trouvé (404), continuation du polling...');
+            return;
+          }
           throw new Error('Erreur lors de la vérification du statut');
         }
 
@@ -161,14 +170,49 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
         const blob = await response.blob();
         const imageUrl = URL.createObjectURL(blob);
         setPreviewImage(imageUrl);
+        // Arrêter le polling si on a réussi à charger la preview
+        if (previewPollingRef.current) {
+          clearInterval(previewPollingRef.current);
+          previewPollingRef.current = null;
+        }
       } else {
-        console.error('Preview non disponible');
+        console.error('Preview non disponible, retry dans 3 secondes...');
         setPreviewImage(null);
+        // Relancer le polling pour la preview
+        startPreviewPolling(taskId);
       }
     } catch (error) {
       console.error('Erreur lors du chargement de la preview:', error);
       setPreviewImage(null);
+      // Relancer le polling pour la preview
+      startPreviewPolling(taskId);
     }
+  };
+
+  const startPreviewPolling = (taskId: string) => {
+    // Nettoyer l'ancien polling s'il existe
+    if (previewPollingRef.current) {
+      clearInterval(previewPollingRef.current);
+    }
+
+    previewPollingRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/3d/preview/${taskId}`);
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const imageUrl = URL.createObjectURL(blob);
+          setPreviewImage(imageUrl);
+          // Arrêter le polling car on a réussi
+          clearInterval(previewPollingRef.current!);
+          previewPollingRef.current = null;
+        } else {
+          console.log('Preview toujours non disponible, retry dans 3 secondes...');
+        }
+      } catch (error) {
+        console.error('Erreur lors du polling de la preview:', error);
+      }
+    }, 3000); // Retry toutes les 3 secondes
   };
 
   const handleAccept = async () => {

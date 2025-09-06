@@ -173,7 +173,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
         }
 
         // Ne recalculer automatiquement la position Y que pour les murs et uniquement si la position Y actuelle est proche de la position minimale
-        if (selectedObject?.type === 'wall') {
+        if (selectedObject) {
             const minY = getMinYAxis(selectedObject);
             const currentY = position[1];
             // Seulement recalculer si la position actuelle est très proche de la position minimale (tolerance de 0.1)
@@ -196,7 +196,7 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
 
     // Logique pour recalculer la position Y quand l'échelle change (uniquement pour les murs et dans des cas spécifiques)
     useEffect(() => {
-        if (selectedObject && recalculateYPosition && selectedObject.type === 'wall') {
+        if (selectedObject && recalculateYPosition ) {
             const minY = getMinYAxis(selectedObject);
             // Recalculer seulement si nécessaire pour éviter d'écraser les positions définies manuellement
             const newPosition: [number, number, number] = [position[0], minY, position[2]];
