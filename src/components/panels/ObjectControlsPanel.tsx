@@ -411,9 +411,21 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                         disabled={!selectedObjectId}
                         style={{ width: '100%', height: '14px', margin: '0 4px' }}
                     />
-                    <span className="position-value" style={{ fontSize: '11px', minWidth: '32px', textAlign: 'right' }}>
-                        {position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(1)}
-                    </span>
+                    <input
+                        type="number"
+                        className="position-value"
+                        step="0.01"
+                        min={selectedAxis === 'y' && selectedObject ? getMinYAxis(selectedObject) : -25}
+                        max={25}
+                        value={Number(position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(2))}
+                        onChange={(e) => {
+                            const raw = parseFloat(e.target.value) || 0;
+                            const rounded = Math.round(raw * 100) / 100;
+                            handleUpdatePosition(selectedAxis, rounded);
+                        }}
+                        disabled={!selectedObjectId}
+                        style={{ width: '90px', height: '22px', fontSize: '11px', textAlign: 'right' }}
+                    />
                 </div>
                 {/* Champs de saisie manuelle pour la position */}
                 <div className="position-inputs" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', width: '100%' }}>
