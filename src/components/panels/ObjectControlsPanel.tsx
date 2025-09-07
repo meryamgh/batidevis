@@ -417,12 +417,8 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                         step="0.01"
                         min={selectedAxis === 'y' && selectedObject ? getMinYAxis(selectedObject) : -25}
                         max={25}
-                        value={Number(position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(2))}
-                        onChange={(e) => {
-                            const raw = parseFloat(e.target.value) || 0;
-                            const rounded = Math.round(raw * 100) / 100;
-                            handleUpdatePosition(selectedAxis, rounded);
-                        }}
+                        value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
+                        onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value) || 0)}
                         disabled={!selectedObjectId}
                         style={{ width: '90px', height: '22px', fontSize: '11px', textAlign: 'right' }}
                     />

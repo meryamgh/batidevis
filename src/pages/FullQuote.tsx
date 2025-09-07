@@ -575,7 +575,6 @@ const FullQuote: React.FC = () => {
 
     const handleBlur = () => {
         // Ne rien faire si on clique sur une suggestion
-
         if (isSuggestionClicking) {
             return;
         }
@@ -583,6 +582,7 @@ const FullQuote: React.FC = () => {
         // Attendre un court instant pour permettre le clic sur les suggestions
         setTimeout(() => {
             if (!isSuggestionClicking) {
+                // On ne supprime pas automatiquement si vide; juste fermer l'édition
                 setEditingCell(null);
                 setEditValue('');
                 setSuggestions([]);
@@ -593,6 +593,17 @@ const FullQuote: React.FC = () => {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            // Si Entrée est pressée et que le champ DÉSIGNATION est vide, supprimer la ligne
+            if (editingCell?.field === 'details' && editValue.trim() === '') {
+                e.preventDefault();
+                handleDeleteRow(editingCell.rowIndex);
+                setEditingCell(null);
+                setEditValue('');
+                setSuggestions([]);
+                setCurrentSuggestionData(null);
+                setSelectedSuggestionIndex(-1);
+                return;
+            }
             if (selectedSuggestionIndex >= 0 && suggestions.length > 0) {
                 // If a suggestion is selected, use it
                 setEditValue(suggestions[selectedSuggestionIndex]);
