@@ -113,28 +113,37 @@ button:hover {
 }
 
 .user-menu-item {
-  width: 100%;
+  width: calc(100% - 1rem);
   padding: 0.75rem 1rem;
-  background: none;
-  border: none;
+  background: #ffffff;
+  border: 2px solid #3A4D6E;
+  border-radius: 6px;
   text-align: left;
   font-size: 12px;
-  color: #64748b;
+  font-weight: 600;
+  color: #2D3C54;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
+  margin: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-menu-item:hover {
-  background: #f1f5f9;
-  color: #884b00;
+  background: #3A4D6E;
+  border-color: #2D3C54;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(58, 77, 110, 0.3);
 }
 
 .user-menu-item.logout-item:hover {
-  color: #dc2626;
+  background: #dc2626;
+  border-color: #b91c1c;
+  color: #ffffff;
 }
 
 .profile-icon {
