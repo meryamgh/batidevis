@@ -135,16 +135,7 @@ const Home: React.FC = () => {
                         <div className="showcase-slider" ref={sliderRef} style={{ transform: `translateX(-${currentSlide * 33.333}%)` }}>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_interieur.jpg" alt="Aménagement intérieur" />
-                                    <div className="slide-info">
-                                        <h3>Second oeuvre et finitions</h3>
-                                        <p>Prévisualisez vos finitions et aménagements intérieurs</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="showcase-slide">
-                                <div className="slide-content">
-                                    <img src="/assets/Image_exterieur.jpg" alt="Aménagements extérieurs" />
+                                    <img src="/assets/Image_exterieur.png" alt="Aménagements extérieurs" />
                                     <div className="slide-info">
                                         <h3>Aménagements extérieurs</h3>
                                         <p>Modélisez vos espaces extérieurs avec précision</p>
@@ -153,16 +144,16 @@ const Home: React.FC = () => {
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_interieur_3.jpg" alt="Structure et Gros Œuvre" />
+                                    <img src="/assets/Image_3.png" alt="Terrassement et Infrastructures" />
                                     <div className="slide-info">
-                                        <h3>Structure et gros oeuvre</h3>
-                                        <p>Visualisez la structure et le gros œuvre avant construction</p>
+                                        <h3>Terrassement et infrastructures</h3>
+                                        <p>Optimisez vos travaux de sol et fondations</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_interieur_2.jpg" alt="Charpente et Couverture" />
+                                    <img src="/assets/Image_interieur_2.png" alt="Charpente et Couverture" />
                                     <div className="slide-info">
                                         <h3>Charpente et couverture</h3>
                                         <p>Concevez et ajustez votre charpente et couverture</p>
@@ -171,13 +162,23 @@ const Home: React.FC = () => {
                             </div>
                             <div className="showcase-slide">
                                 <div className="slide-content">
-                                    <img src="/assets/Image_interieur.jpg" alt="Terrassement et Infrastructures" />
+                                    <img src="/assets/Image_interieur_3.png" alt="Structure et Gros Œuvre" />
                                     <div className="slide-info">
-                                        <h3>Terrassement et infrastructures</h3>
-                                        <p>Optimisez vos travaux de sol et fondations</p>
+                                        <h3>Structure et gros oeuvre</h3>
+                                        <p>Visualisez la structure et le gros œuvre avant construction</p>
                                     </div>
                                 </div>
                             </div>
+                            <div className="showcase-slide">
+                                <div className="slide-content">
+                                    <img src="/assets/Image_interieur.png" alt="Aménagement intérieur" />
+                                    <div className="slide-info">
+                                        <h3>Second oeuvre et finitions</h3>
+                                        <p>Prévisualisez vos finitions et aménagements intérieurs</p>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                         <button 
                             className={`control-btn prev-btn ${currentSlide === 0 ? 'disabled' : ''}`}
