@@ -84,7 +84,11 @@ const ObjectsPanel: React.FC<ObjectsPanelProps> = ({ onSelectObject, selectedObj
                                     alt={object.name.replace(".gltf", "").replace(".glb", "")}
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                        target.src = '/placeholder-3d.png';
+                                        // Éviter les boucles infinies en vérifiant si on a déjà essayé le fallback
+                                        if (!target.dataset.fallbackUsed) {
+                                            target.dataset.fallbackUsed = 'true';
+                                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNmI3MjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+MzQ8L3RleHQ+PC9zdmc+';
+                                        }
                                     }}
                                 />
                                 <span>{object.name.replace(".gltf", "").replace(".glb", "")}</span>
