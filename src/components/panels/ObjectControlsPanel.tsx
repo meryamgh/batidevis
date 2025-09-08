@@ -363,7 +363,6 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
             <div className="dimensions-section" style={{ marginTop: '4px', width: '100%' }}>
                 <div className="section-header" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
                     <DimensionsIcon />
-                    <span style={{ fontSize: '8px', marginLeft: '2px' }}>Dimensions</span>
                 </div>
                 <div className="dimension-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
                     <label style={{ fontSize: '11px', marginRight: '2px', width: '15px' }}>L:</label>
