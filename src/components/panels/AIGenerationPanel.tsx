@@ -41,6 +41,29 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
     };
   }, []);
 
+  // Gestion des raccourcis clavier pour permettre Ctrl+C et Ctrl+V
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Permettre Ctrl+C et Ctrl+V dans les champs de texte
+      if ((event.ctrlKey || event.metaKey) && (event.key === 'c' || event.key === 'v')) {
+        const target = event.target as HTMLElement;
+        // Vérifier si on est dans un champ de texte (input ou textarea)
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          // Laisser le comportement par défaut (copier/coller)
+          return;
+        }
+      }
+    };
+
+    // Ajouter l'écouteur d'événements
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Nettoyer l'écouteur d'événements
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const setPromptExample = (text: string, suggestedFilename: string = '') => {
     setPrompt(text);
     if (suggestedFilename) {
@@ -353,6 +376,12 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
               onChange={(e) => setDesiredFilename(e.target.value)}
               placeholder="Ex: chaise_moderne, table_salle_manger, etc. (sans extension)"
               disabled={isLoading}
+              onKeyDown={(e) => {
+                // Permettre Ctrl+C et Ctrl+V
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v')) {
+                  e.stopPropagation();
+                }
+              }}
             />
             <small>Si laissé vide, un nom sera généré automatiquement</small>
           </div>
@@ -366,6 +395,12 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
               placeholder="Décrivez en détail l'objet que vous voulez générer. Plus la description est précise, meilleur sera le résultat..."
               disabled={isLoading}
               required
+              onKeyDown={(e) => {
+                // Permettre Ctrl+C et Ctrl+V
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v')) {
+                  e.stopPropagation();
+                }
+              }}
             />
           </div>
           
@@ -380,6 +415,39 @@ const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({ onClose, onObject
             {isLoading && <span className="spinner"></span>}
           </button>
         </form>
+        
+        {/* Bouton vers le générateur d'objets 3D liés aux travaux */}
+        <div style={{ 
+          margin: '20px 0', 
+          padding: '15px', 
+          backgroundColor: '#f8f9fa', 
+          borderRadius: '8px',
+          border: '1px solid #e9ecef'
+        }}>
+          
+          <button 
+            onClick={() => window.open('https://devo-app.fly.dev/page', '_blank')}
+              style={{
+                backgroundColor: '#4304ac',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '10px 20px',
+                fontSize: '20px',
+                width: '100%',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 4px rgba(43, 4, 172, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+          >
+           Consulter le générateur d'objets 3D liés aux travaux
+          </button>
+        </div>
         
         {error && <div className="error-message">{error}</div>}
         
