@@ -75,11 +75,10 @@ const Tarifs: React.FC = () => {
                                     </div>
 
                                     <ul className="features-list">
+                                        <li>Génération de devis et de facture</li>
+                                        <li>Signature électronique</li>
+                                        <li>Émission de facture électronique</li>
                                         <li>Accès illimité au forfait standard pendant 1 mois</li>
-                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
-                                        <li>Accès limité à la création de 10 maquette 3D</li>
-                                        <li>Accès à la librairie d'objets 3D</li>
-                                        <li>Accès à l'IA générative : permet à l'utilisateur de créer jusqu'à 5 objets 3D personnalisés à partir d'une simple description, lorsque l'objet recherché n'existe pas encore dans la bibliothèque.</li>
                                     </ul>
                                     <button className="pricing-btn">Choisir l'offre</button>
                                 </div>
@@ -96,11 +95,11 @@ const Tarifs: React.FC = () => {
                                     </div>
 
                                     <ul className="features-list">
+                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
+                                        <li>Accès limité à la création de 10 maquette 3D</li>
+                                        <li>Accès à la librairie d'objets 3D</li>
+                                        <li>Accès à l'IA générative : permet à l'utilisateur de créer jusqu'à 5 objets 3D personnalisés à partir d'une simple description, lorsque l'objet recherché n'existe pas encore dans la bibliothèque.</li>
                                         <li>Accès illimité au forfait pro pendant 1 mois</li>
-                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
-                                        <li>Accès à la création de maquette 3D en illimité</li>
-                                        <li>Accès à l'IA pour générer les objets 3D personnalisé qui constitue la bibliothèque personnel (limité à 50 génération)</li>
-                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
                                     </ul>
                                     <button className="pricing-btn">Choisir l'offre</button>
                                 </div>
@@ -117,8 +116,7 @@ const Tarifs: React.FC = () => {
                                     <ul className="features-list">
                                         <li>Toutes les fonctionnalités du forfait inférieur</li>
                                         <li>Accès à la création de maquette 3D en illimité</li>
-                                        <li>Accès à l'IA pour générer les objets 3D personnalisé qui constitue la bibliothèque personnel (limité à 50 génération)</li>
-                                        <li>Toutes les fonctionnalités du forfait inférieur</li>
+                                        <li>Accès à l’IA pour générer les objets 3D personnalisé qui constitue la bibliothèque personnel (limité à 50 génération)</li>
                                     </ul>
                                     <button className="pricing-btn">Choisir l'offre</button>
                                 </div>

@@ -325,7 +325,7 @@ body {
     transform: scale(1.02);
     will-change: transform;
     transition: opacity 0.3s ease-in-out;
-    filter: brightness(0.85) contrast(1.15) saturate(1.05) hue-rotate(2deg);
+    filter: none;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
     backface-visibility: hidden;
@@ -336,7 +336,7 @@ body {
     perspective: 1000px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    -webkit-filter: brightness(0.85) contrast(1.15) saturate(1.05) hue-rotate(2deg);
+    -webkit-filter: none;
 }
 
 .video-overlay {
@@ -992,7 +992,7 @@ body {
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
-    filter: sepia(30%) brightness(1.1) contrast(1.1);
+    filter: none;
 }
 
 .slide-info {

@@ -53,6 +53,10 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
     const [showTexturePanel, setShowTexturePanel] = useState(false);
     const [selectedFace, setSelectedFace] = useState<FaceName>('front');
     const [faces, setFaces] = useState<FacesData>(selectedObject?.faces || {});
+    // Etats d'édition textuelle pour L/H/P afin d'autoriser la saisie fluide
+    const [widthInput, setWidthInput] = useState<string>(width.toFixed(2));
+    const [heightInput, setHeightInput] = useState<string>(height.toFixed(2));
+    const [depthInput, setDepthInput] = useState<string>(depth.toFixed(2));
     
     // Utilisation du hook personnalisé pour récupérer les textures
     const { textures: apiTextures, isLoading: isLoadingTextures, error: texturesError } = useTextures();
@@ -115,6 +119,11 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
             setExtendedObjects([]);
         }
     }, [selectedObject]);
+
+    // Synchroniser les champs d'entrée texte lorsqu'une valeur numérique change (ex. duplication, boutons +/-)
+    useEffect(() => { setWidthInput(width.toFixed(2)); }, [width]);
+    useEffect(() => { setHeightInput(height.toFixed(2)); }, [height]);
+    useEffect(() => { setDepthInput(depth.toFixed(2)); }, [depth]);
 
     const handleRotate90 = () => {
         if (selectedObjectId) {
@@ -181,6 +190,32 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                 setRecalculateYPosition(true);
             }
         }
+    };
+
+    // Fonctions de validation/commit pour les champs L/H/P
+    const commitWidthInput = () => {
+        if (widthInput === '') { setWidthInput(width.toFixed(2)); return; }
+        const parsed = parseFloat(widthInput);
+        if (isNaN(parsed)) { setWidthInput(width.toFixed(2)); return; }
+        const rounded = Math.round(parsed * 100) / 100;
+        handleUpdateScale(rounded, height, depth);
+        setWidthInput(rounded.toFixed(2));
+    };
+    const commitHeightInput = () => {
+        if (heightInput === '') { setHeightInput(height.toFixed(2)); return; }
+        const parsed = parseFloat(heightInput);
+        if (isNaN(parsed)) { setHeightInput(height.toFixed(2)); return; }
+        const rounded = Math.round(parsed * 100) / 100;
+        handleUpdateScale(width, rounded, depth);
+        setHeightInput(rounded.toFixed(2));
+    };
+    const commitDepthInput = () => {
+        if (depthInput === '') { setDepthInput(depth.toFixed(2)); return; }
+        const parsed = parseFloat(depthInput);
+        if (isNaN(parsed)) { setDepthInput(depth.toFixed(2)); return; }
+        const rounded = Math.round(parsed * 100) / 100;
+        handleUpdateScale(width, height, rounded);
+        setDepthInput(rounded.toFixed(2));
     };
 
     const getMinYAxis = (object: ObjectData) => {
@@ -328,40 +363,39 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
             <div className="dimensions-section" style={{ marginTop: '4px', width: '100%' }}>
                 <div className="section-header" style={{ marginBottom: '2px', display: 'flex', alignItems: 'center' }}>
                     <DimensionsIcon />
-                    <span style={{ fontSize: '8px', marginLeft: '2px' }}>Dimensions</span>
                 </div>
                 <div className="dimension-row" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
                     <label style={{ fontSize: '11px', marginRight: '2px', width: '15px' }}>L:</label>
                     <input
                         type="number"
                         step="0.01"
-                        value={width}
-                        onChange={(e) => {
-                            const newWidth = parseFloat(e.target.value) || 0;
-                            handleUpdateScale(newWidth, height, depth);
-                        }}
+                        min="0"
+                        value={widthInput}
+                        onChange={(e) => setWidthInput(e.target.value)}
+                        onBlur={commitWidthInput}
+                        onKeyDown={(e) => { if (e.key === 'Enter') commitWidthInput(); }}
                         style={{ width: '80px', height: '24px', fontSize: '12px' }}
                     />
                     <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>H:</label>
                     <input
                         type="number"
                         step="0.01"
-                        value={height}
-                        onChange={(e) => {
-                            const newHeight = parseFloat(e.target.value) || 0;
-                            handleUpdateScale(width, newHeight, depth);
-                        }}
+                        min="0"
+                        value={heightInput}
+                        onChange={(e) => setHeightInput(e.target.value)}
+                        onBlur={commitHeightInput}
+                        onKeyDown={(e) => { if (e.key === 'Enter') commitHeightInput(); }}
                         style={{ width: '80px', height: '24px', fontSize: '12px' }}
                     />
                     <label style={{ fontSize: '11px', margin: '0 2px 0 8px', width: '15px' }}>P:</label>
                     <input
                         type="number"
                         step="0.01"
-                        value={depth}
-                        onChange={(e) => {
-                            const newDepth = parseFloat(e.target.value) || 0;
-                            handleUpdateScale(width, height, newDepth);
-                        }}
+                        min="0"
+                        value={depthInput}
+                        onChange={(e) => setDepthInput(e.target.value)}
+                        onBlur={commitDepthInput}
+                        onKeyDown={(e) => { if (e.key === 'Enter') commitDepthInput(); }}
                         style={{ width: '80px', height: '24px', fontSize: '12px' }}
                     />
                 </div>
@@ -411,9 +445,17 @@ const ObjectControls: React.FC<ObjectControlsProps> = ({
                         disabled={!selectedObjectId}
                         style={{ width: '100%', height: '14px', margin: '0 4px' }}
                     />
-                    <span className="position-value" style={{ fontSize: '11px', minWidth: '32px', textAlign: 'right' }}>
-                        {position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2].toFixed(1)}
-                    </span>
+                    <input
+                        type="number"
+                        className="position-value"
+                        step="0.01"
+                        min={selectedAxis === 'y' && selectedObject ? getMinYAxis(selectedObject) : -25}
+                        max={25}
+                        value={position[selectedAxis === 'x' ? 0 : selectedAxis === 'y' ? 1 : 2]}
+                        onChange={(e) => handleUpdatePosition(selectedAxis, parseFloat(e.target.value) || 0)}
+                        disabled={!selectedObjectId}
+                        style={{ width: '90px', height: '22px', fontSize: '11px', textAlign: 'right' }}
+                    />
                 </div>
                 {/* Champs de saisie manuelle pour la position */}
                 <div className="position-inputs" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', width: '100%' }}>

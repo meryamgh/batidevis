@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../styles/Header.css';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -135,8 +136,7 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
                             {showUserMenu && (
                                 <div className="user-menu">
                                     <Link to="/profil" className="user-menu-item" onClick={() => setShowUserMenu(false)}>
-                                        <span className="profile-icon">👤</span>
-                                        Mon Profil
+                                        Mon profil
                                     </Link>
                                     <button 
                                         className={`user-menu-item logout-item ${isSigningOut ? 'signing-out' : ''}`}
@@ -149,10 +149,7 @@ const Header: React.FC<HeaderProps> = ({ scrollPosition }) => {
                                                 Déconnexion...
                                             </>
                                         ) : (
-                                            <>
-                                                <span className="logout-icon">🚪</span>
-                                                Se déconnecter
-                                            </>
+                                            <>Se déconnecter</>
                                         )}
                                     </button>
                                 </div>
