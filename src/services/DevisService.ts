@@ -29,6 +29,7 @@ export interface DevisInfo {
   clientCodePostal: string;
   clientTel: string;
   clientEmail: string;
+  additionalClientFields?: Array<{id: string, label: string, value: string}>;
   
   // Informations de devis
   devisNumero: string;
@@ -50,7 +51,6 @@ export interface DevisTotals {
   totalTTC: number;
   acompte: number;
   resteAPayer: number;
-  tvaRate: number;
   acompteRate: number;
 }
 

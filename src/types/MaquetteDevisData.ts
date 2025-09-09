@@ -48,7 +48,6 @@ export interface MaquetteDevisData {
     totalTTC: number;
     acompte: number;
     resteAPayer: number;
-    tvaRate: number;
     acompteRate: number;
   };
   

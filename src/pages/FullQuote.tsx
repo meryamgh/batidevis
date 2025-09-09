@@ -123,6 +123,7 @@ type AggregatedQuoteItem = {
     quantity: number;
     unit?: string;
     isNew?: boolean;
+    tva?: number; // Taux de TVA pour cette ligne (par défaut 0.20 = 20%)
 };
 
 // Interface for API response
@@ -279,12 +280,14 @@ const FullQuote: React.FC = () => {
 
     
 
-    // Paramètres de TVA, Acompte
-    const tvaRate = 0.20; 
+    // Paramètres d'Acompte
     const [acompteRate, setAcompteRate] = useState<number>(0.30);
 
     const totalHT = aggregatedQuote.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const totalTVA = totalHT * tvaRate;
+    const totalTVA = aggregatedQuote.reduce((sum, item) => {
+        const itemTva = item.tva || 0.20; // Par défaut 20% si non défini
+        return sum + (item.price * item.quantity * itemTva);
+    }, 0);
     const totalTTC = totalHT + totalTVA;
     const acompte = totalTTC * acompteRate;
     const resteAPayer = totalTTC - acompte;
@@ -325,7 +328,6 @@ const FullQuote: React.FC = () => {
                 totalTTC,
                 acompte,
                 resteAPayer,
-                tvaRate,
                 acompteRate
             },
             originalDevisId,
@@ -453,7 +455,8 @@ const FullQuote: React.FC = () => {
             details: "Nouveau produit",
             price: 0,
             quantity: 1,
-            isNew: true
+            isNew: true,
+            tva: 0.20 // TVA par défaut à 20%
         };
         
         console.log('➕ Ajout d\'une nouvelle ligne manuelle:', newItem);
@@ -664,6 +667,7 @@ const FullQuote: React.FC = () => {
     const [editingAcompte, setEditingAcompte] = useState<boolean>(false);
     const [acompteEditValue, setAcompteEditValue] = useState<string>('');
 
+
     const handleAcompteClick = () => {
         setAcompteEditValue((acompteRate * 100).toString());
         setEditingAcompte(true);
@@ -689,6 +693,43 @@ const FullQuote: React.FC = () => {
             handleAcompteBlurOrEnter();
         }
     };
+
+    // Gestion de l'édition du taux de TVA par ligne
+    const [editingTvaLine, setEditingTvaLine] = useState<number | null>(null);
+
+    const handleTvaClick = (lineIndex: number) => {
+        if (isEditMode) {
+            setEditingTvaLine(lineIndex);
+        }
+    };
+
+    const handleTvaRateSelect = (lineIndex: number, rate: number) => {
+        const newAggregated = [...aggregatedQuote];
+        newAggregated[lineIndex].tva = rate / 100;
+        setAggregatedQuote(newAggregated);
+        setEditingTvaLine(null);
+    };
+
+    // Fonctions pour gérer les champs clients supplémentaires
+    const addAdditionalClientField = () => {
+        const newField = {
+            id: `field_${Date.now()}`,
+            label: 'Nouveau champ',
+            value: ''
+        };
+        setAdditionalClientFields(prev => [...prev, newField]);
+    };
+
+    const removeAdditionalClientField = (fieldId: string) => {
+        setAdditionalClientFields(prev => prev.filter(field => field.id !== fieldId));
+    };
+
+    const updateAdditionalClientField = (fieldId: string, field: 'label' | 'value', newValue: string) => {
+        setAdditionalClientFields(prev => 
+            prev.map(f => f.id === fieldId ? { ...f, [field]: newValue } : f)
+        );
+    };
+
 
     // Gestion du logo modifiable
     const [leftLogoSrc, setLeftLogoSrc] = useState<string>("");
@@ -740,6 +781,9 @@ const FullQuote: React.FC = () => {
     const [clientCodePostal, setClientCodePostal] = useState<string>('75013 Paris');
     const [clientTel, setClientTel] = useState<string>('0678891223');
     const [clientEmail, setClientEmail] = useState<string>('sociétébatiment@gmail.com');
+
+    // État pour les champs clients supplémentaires
+    const [additionalClientFields, setAdditionalClientFields] = useState<Array<{id: string, label: string, value: string}>>([]);
 
     // Fonction pour générer un numéro de devis unique
     const generateUniqueDevisNumber = (): string => {
@@ -840,6 +884,7 @@ const FullQuote: React.FC = () => {
                         setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
                         setClientTel(devisData.info.clientTel || '0678891223');
                         setClientEmail(devisData.info.clientEmail || 'sociétébatiment@gmail.com');
+                        setAdditionalClientFields(devisData.info.additionalClientFields || []);
                         setDevisNumero(devisData.info.devisNumero || generateUniqueDevisNumber());
                         setEnDateDu(devisData.info.enDateDu || '05/10/2024');
                         setValableJusquau(devisData.info.valableJusquau || '04/12/2024');
@@ -1238,7 +1283,7 @@ const FullQuote: React.FC = () => {
         societeBatiment, clientAdresse, clientCodePostal, clientTel, clientEmail,
         devisNumero, enDateDu, valableJusquau, debutTravaux, dureeTravaux,
          isDevisGratuit, leftLogoSrc,
-        aggregatedQuote, acompteRate
+        aggregatedQuote, acompteRate, additionalClientFields
     ]);
 
 
@@ -1258,7 +1303,8 @@ const FullQuote: React.FC = () => {
                     price: frais.prix,
                     quantity: 1,
                     unit: frais.unite,
-                    isNew: true
+                    isNew: true,
+                    tva: 0.20 // TVA par défaut à 20%
                 };
                 
                 console.log('💰 Ajout d\'un frais divers:', newItem);
@@ -1525,7 +1571,11 @@ const FullQuote: React.FC = () => {
                 clientAdresse,
                 clientCodePostal,
                 'Tél: ' + clientTel,
-                'Email: ' + clientEmail
+                'Email: ' + clientEmail,
+                // Ajouter les champs supplémentaires
+                ...additionalClientFields
+                    .filter(field => field.label && field.value && field.label.trim() && field.value.trim())
+                    .map(field => `${field.label}: ${field.value}`)
             ].filter(info => info && info.trim());
             
             clientInfo.forEach(info => {
@@ -1550,10 +1600,11 @@ const FullQuote: React.FC = () => {
             // Header columns (tighter spacing for better use of space)
             doc.text('N°', 22, yPos);
             doc.text('DÉSIGNATION', 30, yPos);
-            doc.text('QTÉ', 115, yPos);
-            doc.text('UNITÉ', 130, yPos);
-            doc.text('PRIX U.', 145, yPos);
-            doc.text('TOTAL HT', 165, yPos);
+            doc.text('QTÉ', 110, yPos);
+            doc.text('UNITÉ', 125, yPos);
+            doc.text('PRIX U.', 140, yPos);
+            doc.text('TVA', 155, yPos);
+            doc.text('TOTAL HT', 170, yPos);
             
             yPos += 5;
             
@@ -1577,10 +1628,11 @@ const FullQuote: React.FC = () => {
                     doc.setTextColor(255, 255, 255);
                     doc.text('N°', 22, yPos);
                     doc.text('DÉSIGNATION', 30, yPos);
-                    doc.text('QTÉ', 115, yPos);
-                    doc.text('UNITÉ', 130, yPos);
-                    doc.text('PRIX U.', 145, yPos);
-                    doc.text('TOTAL HT', 165, yPos);
+                    doc.text('QTÉ', 110, yPos);
+                    doc.text('UNITÉ', 125, yPos);
+                    doc.text('PRIX U.', 140, yPos);
+                    doc.text('TVA', 155, yPos);
+                    doc.text('TOTAL HT', 170, yPos);
                     yPos += 5;
                     
                     doc.setFont("helvetica", "normal");
@@ -1608,17 +1660,21 @@ const FullQuote: React.FC = () => {
                 doc.text(splitDetails, 30, descrYStart);
                 
                 // Quantity (centered)
-                doc.text(item.quantity.toString(), 117, yPos + textYOffset, { align: 'center' });
+                doc.text(item.quantity.toString(), 110, yPos + textYOffset, { align: 'center' });
                 
                 // Unit (centered)
-                doc.text(item.unit || '', 132, yPos + textYOffset, { align: 'center' });
+                doc.text(item.unit || '', 125, yPos + textYOffset, { align: 'center' });
                 
                 // Unit price (centered)
-                doc.text(formatNumber(item.price) + ' €', 147, yPos + textYOffset, { align: 'center' });
+                doc.text(formatNumber(item.price) + ' €', 140, yPos + textYOffset, { align: 'center' });
+                
+                // TVA rate (centered)
+                const tvaRate = (item.tva || 0.20) * 100;
+                doc.text(tvaRate.toFixed(1) + '%', 155, yPos + textYOffset, { align: 'center' });
                 
                 // Total price (centered and bold)
                 doc.setFont("helvetica", "bold");
-                doc.text(formatNumber(item.price * item.quantity) + ' €', 167, yPos + textYOffset, { align: 'center' });
+                doc.text(formatNumber(item.price * item.quantity) + ' €', 170, yPos + textYOffset, { align: 'center' });
                 doc.setFont("helvetica", "normal");
                 
                 // Move to next row
@@ -1650,7 +1706,7 @@ const FullQuote: React.FC = () => {
             yPos += 6;
             
             // TVA with clearer formatting
-            doc.text(`TVA (${(tvaRate * 100).toFixed(1)}%):`, totalsBoxX + 5, yPos);
+            doc.text('TVA (taux variables):', totalsBoxX + 5, yPos);
             doc.text(formatNumber(totalTVA) + ' €', totalsBoxX + totalsBoxWidth - 5, yPos, { align: 'right' });
             yPos += 6;
             
@@ -1893,7 +1949,7 @@ const FullQuote: React.FC = () => {
             }
 
             // Sauvegarder le devis avant de demander la signature
-            console.log('💾 Sauvegarde du devis avant signature...');
+            console.log('Sauvegarde du devis avant signature...');
             
             // Préparer les données du devis
             const devisData = prepareDevisData();
@@ -2106,11 +2162,18 @@ const FullQuote: React.FC = () => {
             siren: devoSiren
           },
           entreprise: {
-            nom: societeBatiment,
+            nom: devoTitle,
             adresse: clientAdresse,
             code_postal: clientCodePostal,
             telephone: clientTel,
-            email: clientEmail
+            email: clientEmail,
+            // Ajouter les champs supplémentaires
+            champs_supplementaires: additionalClientFields
+              .filter(field => field.label && field.value && field.label.trim() && field.value.trim())
+              .reduce((acc, field) => {
+                acc[field.label] = field.value;
+                return acc;
+              }, {} as Record<string, string>)
           },
           devis: {
             numero: devisNumero,
@@ -2125,7 +2188,7 @@ const FullQuote: React.FC = () => {
             quantite: item.quantity,
             unite: item.unit || 'U',
             prix_unitaire: item.price,
-            tva: tvaRate * 100,
+            tva: (item.tva || 0.20) * 100,
             total_ht: item.price * item.quantity
           })),
           paiement: {
@@ -2250,6 +2313,7 @@ const FullQuote: React.FC = () => {
                 clientCodePostal,
                 clientTel,
                 clientEmail,
+                additionalClientFields,
                 devisNumero,
                 enDateDu,
                 valableJusquau,
@@ -2265,7 +2329,6 @@ const FullQuote: React.FC = () => {
                 totalTTC,
                 acompte,
                 resteAPayer,
-                tvaRate,
                 acompteRate
             }
         };
@@ -2633,6 +2696,7 @@ const FullQuote: React.FC = () => {
                                                 details: `Frais de devis - ${fraisDevis.libtech} (${formatNumber(fraisDevis.prix)}€/${fraisDevis.unite})`,
                                                 price: fraisDevis.prix,
                                                 quantity: 1,
+                                                tva: 0.20, // TVA par défaut à 20%
                                                 unit: fraisDevis.unite,
                                                 isNew: false
                                               };
@@ -2751,6 +2815,89 @@ const FullQuote: React.FC = () => {
                             <EditableText fieldName="clientEmail" value={clientEmail} />
                           </td>
                         </tr>
+                        {/* Champs clients supplémentaires */}
+                        {additionalClientFields.map((field) => (
+                          <tr key={field.id}>
+                            <td style={{ paddingRight: '5px' }}>
+                              {isEditMode ? (
+                                <input
+                                  type="text"
+                                  value={field.label}
+                                  onChange={(e) => updateAdditionalClientField(field.id, 'label', e.target.value)}
+                                  style={{ 
+                                    width: '100px', 
+                                    border: '1px solid #ccc', 
+                                    padding: '2px',
+                                    fontSize: '12px'
+                                  }}
+                                />
+                              ) : (
+                                field.label
+                              )}
+                            </td>
+                            <td>
+                              {isEditMode ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <input
+                                    type="text"
+                                    value={field.value}
+                                    onChange={(e) => updateAdditionalClientField(field.id, 'value', e.target.value)}
+                                    style={{ 
+                                      flex: 1, 
+                                      border: '1px solid #ccc', 
+                                      padding: '2px',
+                                      fontSize: '12px'
+                                    }}
+                                    placeholder="Valeur du champ"
+                                  />
+                                  <button
+                                    onClick={() => removeAdditionalClientField(field.id)}
+                                    style={{
+                                      background: '#dc3545',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '3px',
+                                      padding: '2px 6px',
+                                      cursor: 'pointer',
+                                      fontSize: '10px'
+                                    }}
+                                    title="Supprimer ce champ"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ) : (
+                                field.value
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {/* Bouton pour ajouter un nouveau champ */}
+                        {isEditMode && (
+                          <tr>
+                            <td colSpan={2} style={{ textAlign: 'center', padding: '10px' }}>
+                              <button
+                                onClick={addAdditionalClientField}
+                                style={{
+                                  background: '#3A4D6E',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '5px',
+                                  padding: '8px 16px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  margin: '0 auto'
+                                }}
+                                title="Ajouter un nouveau champ client"
+                              >
+                                +
+                              </button>
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -2913,7 +3060,67 @@ const FullQuote: React.FC = () => {
                           />
                           : `${formatNumber(item.price)} €`}
                       </td>
-                      <td>{(tvaRate * 100).toFixed(2)} %</td>
+                      <td>
+                        {isEditMode && editingTvaLine === index ? (
+                          <div style={{ display: 'inline-block' }}>
+                            <button 
+                              onClick={() => handleTvaRateSelect(index, 20)}
+                              style={{ 
+                                margin: '0 1px', 
+                                padding: '1px 4px', 
+                                fontSize: '10px',
+                                backgroundColor: (item.tva || 0.20) === 0.20 ? '#007bff' : '#f8f9fa',
+                                color: (item.tva || 0.20) === 0.20 ? 'white' : 'black',
+                                border: '1px solid #ccc',
+                                borderRadius: '2px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              20%
+                            </button>
+                            <button 
+                              onClick={() => handleTvaRateSelect(index, 10)}
+                              style={{ 
+                                margin: '0 1px', 
+                                padding: '1px 4px', 
+                                fontSize: '10px',
+                                backgroundColor: (item.tva || 0.20) === 0.10 ? '#007bff' : '#f8f9fa',
+                                color: (item.tva || 0.20) === 0.10 ? 'white' : 'black',
+                                border: '1px solid #ccc',
+                                borderRadius: '2px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              10%
+                            </button>
+                            <button 
+                              onClick={() => handleTvaRateSelect(index, 5.5)}
+                              style={{ 
+                                margin: '0 1px', 
+                                padding: '1px 4px', 
+                                fontSize: '10px',
+                                backgroundColor: (item.tva || 0.20) === 0.055 ? '#007bff' : '#f8f9fa',
+                                color: (item.tva || 0.20) === 0.055 ? 'white' : 'black',
+                                border: '1px solid #ccc',
+                                borderRadius: '2px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              5,5%
+                            </button>
+                          </div>
+                        ) : (
+                          <span 
+                            onClick={() => handleTvaClick(index)} 
+                            style={{
+                              cursor: isEditMode ? 'pointer' : 'default',
+                              textDecoration: isEditMode ? 'underline' : 'none'
+                            }}
+                          >
+                            {((item.tva || 0.20) * 100).toFixed(2)}
+                          </span>
+                        )} %
+                      </td>
                       <td>{formatNumber(item.price * item.quantity)} €</td>
                                              {isEditMode && (
                          <td>
@@ -2991,8 +3198,8 @@ const FullQuote: React.FC = () => {
                       <td className='size_price'><strong>{formatNumber(totalHT)} €</strong></td>
                     </tr>
                     <tr>
-                      <td>TVA { (tvaRate * 100).toFixed(2) } %</td>
-                      <td>{formatNumber(totalTVA)} €</td>
+                      <td><strong>TVA (taux variables)</strong></td>
+                      <td><strong>{formatNumber(totalTVA)} €</strong></td>
                     </tr>
                     <tr>
                       <td><strong>Total TTC</strong></td>
@@ -3112,7 +3319,7 @@ const FullQuote: React.FC = () => {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                📄 Télécharger le PDF
+                 Télécharger le PDF
               </button>
             
             {signatureStatus === 'preparing' && (
