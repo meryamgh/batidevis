@@ -150,8 +150,12 @@ export class AuthService {
         });
         
         const responseData = await response.json();
+
+        console.log('responseData', responseData);
+        console.log('response', response.ok);
+        console.log('responseData.user', responseData.user);
        
-        if (response.ok && responseData.user) {
+        if (response.ok) {
           // Récupérer les données du profil depuis la base de données
           const { data: profile, error: profileError } = await supabase
             .from('profiles')

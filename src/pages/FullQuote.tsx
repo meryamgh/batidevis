@@ -308,6 +308,7 @@ const FullQuote: React.FC = () => {
                 devoAddress,
                 devoCity,
                 devoSiren,
+                devoStatutJuridique,
                 societeBatiment,
                 clientAdresse,
                 clientCodePostal,
@@ -774,6 +775,7 @@ const FullQuote: React.FC = () => {
     const [devoAddress, setDevoAddress] = useState<string>('73 Rue Rateau');
     const [devoCity, setDevoCity] = useState<string>('93120 La Courneuve, France');
     const [devoSiren, setDevoSiren] = useState<string>('SIREN : 000.000.000.000');
+    const [devoStatutJuridique, setDevoStatutJuridique] = useState<string>('SAS');
 
     // Informations client
     const [societeBatiment, setSocieteBatiment] = useState<string>('Société Bâtiment');
@@ -879,6 +881,7 @@ const FullQuote: React.FC = () => {
                         setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
                         setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
                         setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+                        setDevoStatutJuridique(devisData.info.devoStatutJuridique || 'SAS');
                         setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
                         setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
                         setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
@@ -926,6 +929,7 @@ const FullQuote: React.FC = () => {
                     setDevoAddress(devisData.info.devoAddress || '73 Rue Rateau');
                     setDevoCity(devisData.info.devoCity || '93120 La Courneuve, France');
                     setDevoSiren(devisData.info.devoSiren || 'SIREN : 000.000.000.000');
+                    setDevoStatutJuridique(devisData.info.devoStatutJuridique || 'SAS');
                     setSocieteBatiment(devisData.info.societeBatiment || 'Société Bâtiment');
                     setClientAdresse(devisData.info.clientAdresse || '20 rue le blanc');
                     setClientCodePostal(devisData.info.clientCodePostal || '75013 Paris');
@@ -983,6 +987,7 @@ const FullQuote: React.FC = () => {
                         setDevoAddress(metadata.info.devoAddress || '73 Rue Rateau');
                         setDevoCity(metadata.info.devoCity || '93120 La Courneuve, France');
                         setDevoSiren(metadata.info.devoSiren || 'SIREN : 000.000.000.000');
+                        setDevoStatutJuridique(metadata.info.devoStatutJuridique || 'SAS');
                         setSocieteBatiment(metadata.info.societeBatiment || 'Société Bâtiment');
                         setClientAdresse(metadata.info.clientAdresse || '20 rue le blanc');
                         setClientCodePostal(metadata.info.clientCodePostal || '75013 Paris');
@@ -1372,6 +1377,9 @@ const FullQuote: React.FC = () => {
             case 'devoSiren':
                 setDevoSiren(newValue);
                 break;
+            case 'devoStatutJuridique':
+                setDevoStatutJuridique(newValue);
+                break;
             case 'societeBatiment':
                 setSocieteBatiment(newValue);
                 break;
@@ -1546,7 +1554,8 @@ const FullQuote: React.FC = () => {
                 devoName,
                 devoAddress,
                 devoCity,
-                devoSiren
+                devoSiren,
+                devoStatutJuridique
             ].filter(info => info && info.trim());
             
             companyInfo.forEach(info => {
@@ -2157,12 +2166,14 @@ const FullQuote: React.FC = () => {
         const invoiceData = {
           logo: leftLogoSrc,
           client: {
+            entreprise : devoTitle,
             nom: devoName,
             adresse: `${devoAddress}, ${devoCity}`,
-            siren: devoSiren
+            siren: devoSiren,
+            statut_juridique: devoStatutJuridique
           },
           entreprise: {
-            nom: devoTitle,
+            nom: societeBatiment,
             adresse: clientAdresse,
             code_postal: clientCodePostal,
             telephone: clientTel,
@@ -2771,6 +2782,12 @@ const FullQuote: React.FC = () => {
                         <td>SIREN</td>
                         <td>
                           <EditableText fieldName="devoSiren" value={devoSiren} />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Statut juridique</td>
+                        <td>
+                          <EditableText fieldName="devoStatutJuridique" value={devoStatutJuridique} />
                         </td>
                       </tr>
                     </tbody>

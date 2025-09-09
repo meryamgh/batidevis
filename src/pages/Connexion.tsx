@@ -62,8 +62,9 @@ const Connexion: React.FC = () => {
                 email: loginForm.email,
                 password: loginForm.password
             }); 
-
+            console.log('result', result);
             if (result.success) { 
+                console.log('Connexion réussie !');
                 setSuccess('Connexion réussie !');
                 setLoading(false);
                 // Redirection immédiate sans délai
