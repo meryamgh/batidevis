@@ -56,8 +56,7 @@ const createEmptyDocument = (): MaquetteDevisData => ({
     totalTVA: 0,
     totalTTC: 0,
     acompte: 0,
-    resteAPayer: 0,
-    tvaRate: 0.20,
+    resteAPayer: 0, 
     acompteRate: 0.30
   },
   status: 'draft'
@@ -91,7 +90,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
         devisInfo: { ...current.devisInfo, ...info },
         updatedAt: new Date().toISOString()
       };
-      updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+      updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.acompteRate);
       
       set({ 
         currentDocument: updated,
@@ -109,7 +108,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
       objects3D: [...doc.objects3D, object],
       updatedAt: new Date().toISOString()
     };
-    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines,  updated.totals.acompteRate);
     
     set({ 
       currentDocument: updated,
@@ -128,7 +127,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
       ),
       updatedAt: new Date().toISOString()
     };
-    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines,  updated.totals.acompteRate);
     
     set({ 
       currentDocument: updated,
@@ -145,7 +144,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
       objects3D: current.objects3D.filter(obj => obj.id !== id),
       updatedAt: new Date().toISOString()
     };
-    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines,  updated.totals.acompteRate);
     
     set({ 
       currentDocument: updated,
@@ -162,7 +161,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
       additionalLines: [...doc.additionalLines, line],
       updatedAt: new Date().toISOString()
     };
-    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines,  updated.totals.acompteRate);
     
     set({ 
       currentDocument: updated,
@@ -181,7 +180,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
       ),
       updatedAt: new Date().toISOString()
     };
-    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.acompteRate);
     
     set({ 
       currentDocument: updated,
@@ -198,7 +197,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
       additionalLines: current.additionalLines.filter(line => line.id !== id),
       updatedAt: new Date().toISOString()
     };
-    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.tvaRate, updated.totals.acompteRate);
+    updated.totals = calculateTotals(updated.objects3D, updated.additionalLines, updated.totals.acompteRate);
     
     set({ 
       currentDocument: updated,
@@ -212,7 +211,7 @@ export const useMaquetteDevisStore = create<MaquetteDevisState>((set, get) => ({
     
     const updated = {
       ...current,
-      totals: calculateTotals(current.objects3D, current.additionalLines, current.totals.tvaRate, current.totals.acompteRate),
+      totals: calculateTotals(current.objects3D, current.additionalLines, current.totals.acompteRate),
       updatedAt: new Date().toISOString()
     };
     

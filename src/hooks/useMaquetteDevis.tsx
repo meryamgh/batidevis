@@ -83,7 +83,6 @@ export const useMaquetteDevis = () => {
         totalTTC: 0,
         acompte: 0,
         resteAPayer: 0,
-        tvaRate: 0.20,
         acompteRate: 0.30
       },
       status: 'draft'

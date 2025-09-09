@@ -47,7 +47,6 @@ export const testDevisService = async () => {
         totalTTC: 114,
         acompte: 34.2,
         resteAPayer: 79.8,
-        tvaRate: 0.2,
         acompteRate: 0.3
       }
     };

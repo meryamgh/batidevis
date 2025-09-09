@@ -75,7 +75,6 @@ export const dataConverter: DataConverter = {
         totalTTC: devisData?.totals?.totalTTC || 0,
         acompte: devisData?.totals?.acompte || 0,
         resteAPayer: devisData?.totals?.resteAPayer || 0,
-        tvaRate: devisData?.totals?.tvaRate || 0.20,
         acompteRate: devisData?.totals?.acompteRate || 0.30
       },
       
